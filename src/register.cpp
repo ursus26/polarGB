@@ -57,6 +57,9 @@ void Register::write16(RegID id, U16 val)
 {
     switch(id)
     {
+        case RegID_AF:
+            AF.pair = val;
+            break;
         case RegID_BC:
             BC.pair = val;
             break;

@@ -9,8 +9,8 @@ Emulator::Emulator()
 {
     cout << "Hello Emulator!" << endl;
 
-    this->mem = new Mmu();
-    this->cpu = new Cpu(this->mem);
+    this->mmu = new Mmu();
+    this->cpu = new Cpu(this->mmu);
 }
 
 Emulator::~Emulator()
@@ -18,14 +18,17 @@ Emulator::~Emulator()
     delete this->cpu;
     this->cpu = nullptr;
 
-    delete this->mem;
-    this->mem = nullptr;
+    delete this->mmu;
+    this->mmu = nullptr;
 }
 
 
 void Emulator::run()
 {
-    // cpu->run(25);
+    /* First boot up the emulator with the correct values. */
+    cpu->boot();
+
+    // cpu->run(10);
     // cpu->runSingleFrame();
 
     while(true)
@@ -38,5 +41,5 @@ void Emulator::run()
  */
 void Emulator::loadCartridge(string fileName)
 {
-    this->mem->loadRom(fileName);
+    this->mmu->loadRom(fileName);
 }

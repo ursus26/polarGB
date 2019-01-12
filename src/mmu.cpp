@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <cstring>
 #include "mmu.h"
 
 
@@ -9,7 +10,7 @@ using namespace std;
 
 Mmu::Mmu()
 {
-    cout << "Initialize memory manager" << endl;
+    cout << "Initialize Mmu" << endl;
 
     VRAM.size = VRAM_END_ADDR - VRAM_START_ADDR + 1;
     VRAM.mem = new U8[VRAM.size]();
@@ -39,14 +40,55 @@ Mmu::~Mmu()
     HRAM.mem = nullptr;
 }
 
+/**
+ * Small boot program that initializes specific memory locations.
+ */
+void Mmu::boot()
+{
+    /* First clear vram. */
+    memset(VRAM.mem, 0, sizeof(VRAM.size));
+
+    /* Reference: http://gbdev.gg8.se/wiki/articles/Power_Up_Sequence */
+    this->write(0xff05, 0x00);   /* TIMA */
+    this->write(0xff06, 0x00);   /* TMA */
+    this->write(0xff07, 0x00);   /* TAC */
+    this->write(0xff10, 0x80);   /* NR10 */
+    this->write(0xff11, 0xbf);   /* NR11 */
+    this->write(0xff12, 0xf3);   /* NR12 */
+    this->write(0xff14, 0xbf);   /* NR14 */
+    this->write(0xff16, 0x3f);   /* NR21 */
+    this->write(0xff17, 0x00);   /* NR22 */
+    this->write(0xff19, 0xbf);   /* NR24 */
+    this->write(0xff1a, 0x7f);   /* NR30 */
+    this->write(0xff1b, 0xff);   /* NR31 */
+    this->write(0xff1c, 0x9f);   /* NR32 */
+    this->write(0xff1e, 0xbf);   /* NR33 */
+    this->write(0xff20, 0xff);   /* NR41 */
+    this->write(0xff21, 0x00);   /* NR42 */
+    this->write(0xff22, 0x00);   /* NR43 */
+    this->write(0xff23, 0xbf);   /* NR44 */
+    this->write(0xff24, 0x77);   /* NR50 */
+    this->write(0xff25, 0xf3);   /* NR51 */
+    this->write(0xff26, 0xf1);   /* NR52 */
+    this->write(0xff40, 0x91);   /* LCDC */
+    this->write(0xff42, 0x00);   /* SCY */
+    this->write(0xff43, 0x00);   /* SCX */
+    this->write(0xff45, 0x00);   /* LYC */
+    this->write(0xff47, 0xfc);   /* BGP */
+    this->write(0xff48, 0xff);   /* OBP0 */
+    this->write(0xff49, 0xff);   /* OBP1 */
+    this->write(0xff4a, 0x00);   /* WY */
+    this->write(0xff4b, 0x00);   /* WX */
+    HRAM.mem[0xff] = 0x00;       /* IE, also the only time we allow writing to this location. */
+}
+
+
 U8 Mmu::read(U16 addr)
 {
-    // cout << "It should load some memory at address: " << hex << addr << dec << endl;
-
     U8 data = 0;
 
     if(addr <= 0x7FFF) /* ROM banks */
-        data = rom.load(addr);
+        data = rom.read(addr);
     else if(addr >= 0x8000 && addr <= 0x9FFF) /* VRAM */
         data = VRAM.mem[addr - 0x8000];
     else if(addr >= 0xA000 && addr <= 0xBFFF) /* Switchable external RAM bank */
@@ -91,6 +133,7 @@ U16 Mmu::readU16(U16 addr)
 void Mmu::loadRom(string fileName)
 {
     this->rom.loadCartridge(fileName);
+    this->rom.printInfo();
 }
 
 
@@ -115,7 +158,10 @@ void Mmu::write(U16 addr, U8 data)
     else if(addr >= 0xD000 && addr <= 0xDFFF) /* Working RAM bank 1 */
         WRAM.mem[addr - 0xC000] = data;
     else if(addr >= 0xE000 && addr <= 0xFDFF) /* Echo ram, typically not used. */
+    {
         cerr << "Error, unsuported echo RAM" << endl;
+        exit(EXIT_FAILURE);
+    }
     else if(addr >= 0xFE00 && addr <= 0xFE9F) /* Sprite attribute table */
         HRAM.mem[addr - 0xFF00] = data;
     else if(addr >= 0xFEA0 && addr <= 0xFEFF) /* Not usable */

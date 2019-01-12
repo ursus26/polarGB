@@ -22,6 +22,36 @@ Cpu::~Cpu()
     mmu = nullptr;
 }
 
+
+void Cpu::boot()
+{
+    /* Initialize the registers. */
+    this->reg.write16(RegID_AF, 0x01b0);    /* Initialize AF register. */
+    this->reg.write16(RegID_BC, 0x0013);    /* Initialize BC register. */
+    this->reg.write16(RegID_DE, 0x00d8);    /* Initialize DE register. */
+    this->reg.write16(RegID_HL, 0x014d);    /* Initialize HL register. */
+    this->reg.write16(RegID_SP, 0xfffe);    /* Initialize the stack. */
+
+    /* Initialize the memory. */
+    this->mmu->boot();
+
+    /* Perform checksum. */
+    U8 checksum = 0x19;
+    for(U16 addr = 0x0134; addr <= 0x014d; addr++)
+        checksum += this->mmu->read(addr);
+
+    if(checksum != 0)
+    {
+        std::cerr << "Error, checksum on boot failed. Possibly did not use a correct cartridge." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Checksum: PASSED" << std::endl;
+
+    /* Finish the boot sequence by setting the pc counter to 0x100. */
+    this->reg.setProgramCounter(0x100);
+}
+
 void Cpu::run(int cycles)
 {
     for(int i = 0; i < cycles; i++)
@@ -59,8 +89,6 @@ U8 Cpu::fetchNextInstruction()
     /* Get the program counter. */
     U16 pc = reg.getProgramCounter();
     printf("PC: 0x%04x\n", pc);
-    if(pc >= 0xFE)
-        exit(EXIT_SUCCESS);
 
     /* Fetch the next instruction from memory. */
     U8 opcode = mmu->read(pc);

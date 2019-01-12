@@ -1,6 +1,7 @@
 bin/*
 build/*
 rom/*
+notes.txt
 
 ### C++ ###
 # Prerequisites

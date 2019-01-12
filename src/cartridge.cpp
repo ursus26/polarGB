@@ -39,22 +39,52 @@ bool Cartridge::loadCartridge(string fileName)
     /* Close the file. */
     f.close();
 
-    /* Print the result. */
-    // for(unsigned int i = 0; i < this->size; i++)
-    // {
-    //     cout << hex << (int) this->mem[i] << " ";
-    // }
-    // cout << endl;
-
+    processCartridgeHeader();
 
     return true;
 }
 
 
-uint8_t Cartridge::load(unsigned int address)
+uint8_t Cartridge::read(unsigned int address)
 {
     if(address > size)
         return 0;
 
     return mem[address];
+}
+
+
+/**
+ * More info can be found here: http://gbdev.gg8.se/wiki/articles/The_Cartridge_Header
+ */
+void Cartridge::processCartridgeHeader()
+{
+    /* Read the game title. */
+    this->gameTitle = "";
+    for(int i = 0x134; i < 0x144; i++)
+    {
+        U8 character = this->read(i);
+        if(character == 0)
+            break;
+
+        gameTitle += character;
+    }
+
+    /* Read the SGB Flag. */
+    if(this->read(0x146) == 0x03)
+        SGBFlag = true;
+    else
+        SGBFlag = false;
+
+    cartridgeType = this->read(0x147);
+    romSize = this->read(0x148);
+    ramSize = this->read(0x149);
+    destinationCode = this->read(0x14a);
+}
+
+
+void Cartridge::printInfo()
+{
+    cout << "Game Title: " << this->gameTitle << endl;
+    cout << "Cartridge Type: " << hex << cartridgeType << endl;
 }

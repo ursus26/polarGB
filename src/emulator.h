@@ -18,7 +18,7 @@ public:
     void loadCartridge(std::string fileName);
 
 private:
-    Mmu* mem;
+    Mmu* mmu;
     Cpu* cpu;
 };
 

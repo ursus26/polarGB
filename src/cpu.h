@@ -27,6 +27,8 @@ public:
     Cpu(Mmu* m);
     ~Cpu();
 
+    void boot();
+
     /* Basic CPU operations. (Running cycles, fetching and executing instructions) */
     void run(int cycles);
     void runSingleFrame();

@@ -2,6 +2,7 @@
 #define CARTRIDGE_H
 
 #include <string>
+#include "types.h"
 
 class Cartridge
 {
@@ -10,11 +11,23 @@ public:
     ~Cartridge();
 
     bool loadCartridge(std::string fileName);
-    uint8_t load(unsigned int address);
+    void processCartridgeHeader();
+    void printInfo();
+
+    uint8_t read(unsigned int address);
 
 private:
-    uint8_t* mem;
+    U8* mem;
     unsigned int size;
+
+    /* Cartridge info taken from the cartridge header. Memory location 0x100-0x150 */
+    std::string gameTitle;
+    int CGBFlag;
+    bool SGBFlag;
+    int cartridgeType;
+    int romSize;
+    int ramSize;
+    int destinationCode;
 };
 
 #endif /* CARTRIDGE_H */

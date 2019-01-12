@@ -5,7 +5,7 @@ TARGET = polarGB
 CXX = g++
 
 # C++ compiler flags
-CXXFLAGS = -g -std=c++11 -Wall -Wextra -pedantic -O2
+CXXFLAGS = -g -std=c++11 -Wall -Wextra -pedantic -O3
 
 # Linker flags
 LDFLAGS = -g -lboost_program_options

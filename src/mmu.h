@@ -31,6 +31,9 @@ public:
     Mmu();
     ~Mmu();
 
+    /* Small boot program for the mmu. */
+    void boot();
+
     /* Read from an address. */
     U8 read(U16 addr);
     U16 readU16(U16 addr);
