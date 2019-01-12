@@ -9,7 +9,7 @@ Emulator::Emulator()
 {
     cout << "Hello Emulator!" << endl;
 
-    this->mem = new MemoryManager();
+    this->mem = new Mmu();
     this->cpu = new Cpu(this->mem);
 }
 
@@ -25,11 +25,11 @@ Emulator::~Emulator()
 
 void Emulator::run()
 {
-    cpu->run(25);
+    // cpu->run(25);
     // cpu->runSingleFrame();
 
-    // while(true)
-    //     cpu->runSingleFrame();
+    while(true)
+        cpu->runSingleFrame();
 }
 
 

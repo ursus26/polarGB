@@ -25,17 +25,21 @@ const U16 HRAM_START_ADDR = 0xFE00;
 const U16 HRAM_END_ADDR = 0xFFFF;
 
 
-class MemoryManager
+class Mmu
 {
 public:
-    MemoryManager();
-    ~MemoryManager();
+    Mmu();
+    ~Mmu();
 
-    U8 fetch(U16 addr);
-    U16 fetchU16(U16 addr);
-    void loadRom(std::string fileName);
+    /* Read from an address. */
+    U8 read(U16 addr);
+    U16 readU16(U16 addr);
 
+    /* Write data to memory. */
     void write(U16 addr, U8 data);
+
+    /* Load a rom file into memory. */
+    void loadRom(std::string fileName);
 
 private:
     Cartridge rom;  /* Game cartridge */

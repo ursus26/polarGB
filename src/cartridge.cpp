@@ -29,7 +29,7 @@ bool Cartridge::loadCartridge(string fileName)
     f.seekg (0, f.end);
     this->size = f.tellg();
     f.seekg (0, f.beg);
-    cout << "File size: " << this->size << endl;
+    cout << "File size: 0x" << hex << this->size << dec << endl;
 
     /* Read the cartridge into a buffer. */
     this->mem = new uint8_t[this->size];

@@ -3,7 +3,7 @@
 
 #include "types.h"
 #include "register.h"
-#include "memory_manager.h"
+#include "mmu.h"
 
 
 const int CPU_FREQUENCY = 1048575; /* Hz */
@@ -24,7 +24,7 @@ enum ConditionFlag
 class Cpu
 {
 public:
-    Cpu(MemoryManager* m);
+    Cpu(Mmu* m);
     ~Cpu();
 
     /* Basic CPU operations. (Running cycles, fetching and executing instructions) */
@@ -39,6 +39,13 @@ public:
     void writeMem(RegID memPointer, U8 data);
 
 private:
+    /* Member variables. */
+    Register reg;
+    Mmu* mmu;
+    bool isRunning;
+    int cyclesCompleted = 0;
+
+
     /* Half-carry and carry test. */
     bool halfCarryTest(int val1, int val2);
     bool halfBorrowTest(int val1, int val2);
@@ -95,12 +102,6 @@ private:
     U8 executeSLA(U8 src);
     U8 executeSRA(U8 src);
     U8 executeSRL(U8 src);
-
-    /* Member variables. */
-    Register reg;
-    MemoryManager* mem;
-    bool isRunning;
-    int cyclesCompleted = 0;
 };
 
 #endif /* CPU_H */

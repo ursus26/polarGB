@@ -3,7 +3,7 @@
 
 #include <string>
 #include "types.h"
-#include "memory_manager.h"
+#include "mmu.h"
 #include "cpu.h"
 
 class Emulator
@@ -18,7 +18,7 @@ public:
     void loadCartridge(std::string fileName);
 
 private:
-    MemoryManager* mem;
+    Mmu* mem;
     Cpu* cpu;
 };
 

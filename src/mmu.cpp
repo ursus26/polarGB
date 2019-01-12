@@ -1,27 +1,30 @@
 #include <iostream>
 #include <stdio.h>
-#include "memory_manager.h"
+#include <stdlib.h>
+#include "mmu.h"
+
 
 using namespace std;
 
-MemoryManager::MemoryManager()
+
+Mmu::Mmu()
 {
     cout << "Initialize memory manager" << endl;
 
     VRAM.size = VRAM_END_ADDR - VRAM_START_ADDR + 1;
-    VRAM.mem = new U8[VRAM.size];
+    VRAM.mem = new U8[VRAM.size]();
 
     ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
-    ERAM.mem = new U8[ERAM.size];
+    ERAM.mem = new U8[ERAM.size]();
 
     WRAM.size = WRAM_END_ADDR - WRAM_START_ADDR + 1;
-    WRAM.mem = new U8[WRAM.size];
+    WRAM.mem = new U8[WRAM.size]();
 
     HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
-    HRAM.mem = new U8[HRAM.size];
+    HRAM.mem = new U8[HRAM.size]();
 }
 
-MemoryManager::~MemoryManager()
+Mmu::~Mmu()
 {
     delete[] VRAM.mem;
     VRAM.mem = nullptr;
@@ -36,7 +39,7 @@ MemoryManager::~MemoryManager()
     HRAM.mem = nullptr;
 }
 
-U8 MemoryManager::fetch(U16 addr)
+U8 Mmu::read(U16 addr)
 {
     // cout << "It should load some memory at address: " << hex << addr << dec << endl;
 
@@ -72,11 +75,11 @@ U8 MemoryManager::fetch(U16 addr)
  * Fetches 16 bits from memory by stitching 2 bytes together. The first byte is the low byte and
  * the second byte is the high byte.
  */
-U16 MemoryManager::fetchU16(U16 addr)
+U16 Mmu::readU16(U16 addr)
 {
     /* Get the low and high U8 of the 16 bit address. */
-    U16 low = fetch(addr);
-    U16 high = fetch(addr + 1);
+    U16 low = read(addr);
+    U16 high = read(addr + 1);
 
     /* Construct the address. */
     U16 word = (high << 8) + low;
@@ -85,15 +88,45 @@ U16 MemoryManager::fetchU16(U16 addr)
 }
 
 
-void MemoryManager::loadRom(string fileName)
+void Mmu::loadRom(string fileName)
 {
     this->rom.loadCartridge(fileName);
 }
 
 
-void MemoryManager::write(U16 addr, U8 data)
+void Mmu::write(U16 addr, U8 data)
 {
-    cout << "WRITE ACTION: 0x" << hex << addr << " <- 0x";
-    printf("%01i", data);
+    cout << "WRITE ACTION: 0x" << hex << addr << " <- ";
+    printf("0x%02x", data);
     cout << dec << endl;
+
+
+    if(addr <= 0x7FFF) /* ROM banks */
+    {
+        cerr << "Error, unsuported write action for cartridge roms" << endl;
+        exit(EXIT_FAILURE);
+    }
+    else if(addr >= 0x8000 && addr <= 0x9FFF) /* VRAM */
+        VRAM.mem[addr - 0x8000] = data;
+    else if(addr >= 0xA000 && addr <= 0xBFFF) /* Switchable external RAM bank */
+        ERAM.mem[addr - 0xA000] = data;
+    else if(addr >= 0xC000 && addr <= 0xCFFF) /* Working RAM bank 0 */
+        WRAM.mem[addr - 0xC000] = data;
+    else if(addr >= 0xD000 && addr <= 0xDFFF) /* Working RAM bank 1 */
+        WRAM.mem[addr - 0xC000] = data;
+    else if(addr >= 0xE000 && addr <= 0xFDFF) /* Echo ram, typically not used. */
+        cerr << "Error, unsuported echo RAM" << endl;
+    else if(addr >= 0xFE00 && addr <= 0xFE9F) /* Sprite attribute table */
+        HRAM.mem[addr - 0xFF00] = data;
+    else if(addr >= 0xFEA0 && addr <= 0xFEFF) /* Not usable */
+        cerr << "Error, write request for unusable memory" << endl;
+    else if(addr >= 0xFF00 && addr <= 0xFF7F) /* I/O Ports */
+        HRAM.mem[addr - 0xFF00] = data;
+    else if(addr >= 0xFF80 && addr <= 0xFFFE) /* High RAM (HRAM) */
+        HRAM.mem[addr - 0xFF00] = data;
+    else if(addr == 0xFFFF) /* Interrupt enable register */
+    {
+        cerr << "Error, unsuported write action for interrupt enable register" << endl;
+        exit(EXIT_FAILURE);
+    }
 }
