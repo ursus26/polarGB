@@ -8,6 +8,7 @@
 
 const int CPU_FREQUENCY = 1048575; /* Hz */
 const int FPS = 60;
+const double FRAME_TIME = 1.0 / (double) FPS;
 const int MAX_INSTRUCTIONS_PER_FRAME = CPU_FREQUENCY / FPS;
 
 enum ConditionFlag
@@ -30,7 +31,8 @@ public:
     void boot();
 
     /* Basic CPU operations. (Running cycles, fetching and executing instructions) */
-    void run(int cycles);
+    void run();
+    void runNCycles(int cycles);
     void runSingleFrame();
     U8 fetchNextInstruction();
     U16 fetchNext16Bits();

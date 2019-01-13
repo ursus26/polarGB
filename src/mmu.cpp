@@ -10,8 +10,6 @@ using namespace std;
 
 Mmu::Mmu()
 {
-    cout << "Initialize Mmu" << endl;
-
     VRAM.size = VRAM_END_ADDR - VRAM_START_ADDR + 1;
     VRAM.mem = new U8[VRAM.size]();
 
@@ -80,6 +78,9 @@ void Mmu::boot()
     this->write(0xff4a, 0x00);   /* WY */
     this->write(0xff4b, 0x00);   /* WX */
     HRAM.mem[0xff] = 0x00;       /* IE, also the only time we allow writing to this location. */
+
+    /* Perform a checksum on the cartridge. */
+    rom.checksum();
 }
 
 
@@ -139,9 +140,9 @@ void Mmu::loadRom(string fileName)
 
 void Mmu::write(U16 addr, U8 data)
 {
-    cout << "WRITE ACTION: 0x" << hex << addr << " <- ";
-    printf("0x%02x", data);
-    cout << dec << endl;
+    // cout << "WRITE ACTION: 0x" << hex << addr << " <- ";
+    // printf("0x%02x", data);
+    // cout << dec << endl;
 
 
     if(addr <= 0x7FFF) /* ROM banks */

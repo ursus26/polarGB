@@ -32,7 +32,7 @@ int Cpu::executeInstruction(U8 opcode)
 
     /* TODO: remove debug code. */
     int op = (int) opcode;
-    std::cout << "Process op code: " << std::hex << op << std::dec << std::endl;
+    // std::cout << "Process op code: " << std::hex << op << std::dec << std::endl;
 
     switch(opcode)
     {

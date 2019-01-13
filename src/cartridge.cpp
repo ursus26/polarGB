@@ -19,7 +19,7 @@ Cartridge::~Cartridge()
 
 bool Cartridge::loadCartridge(string fileName)
 {
-    cout << "Cartridge::loadCartridge | Loading a new cartridge from file: " << fileName << endl;
+    cout << "Loading a new cartridge from file: " << fileName << endl;
 
     /* Open the file that acts as a gameboy cartridge. */
     ifstream f;
@@ -29,7 +29,7 @@ bool Cartridge::loadCartridge(string fileName)
     f.seekg (0, f.end);
     this->size = f.tellg();
     f.seekg (0, f.beg);
-    cout << "File size: 0x" << hex << this->size << dec << endl;
+    // cout << "File size: 0x" << hex << this->size << dec << endl;
 
     /* Read the cartridge into a buffer. */
     this->mem = new uint8_t[this->size];
@@ -87,4 +87,21 @@ void Cartridge::printInfo()
 {
     cout << "Game Title: " << this->gameTitle << endl;
     cout << "Cartridge Type: " << hex << cartridgeType << endl;
+}
+
+
+bool Cartridge::checksum()
+{
+    U8 checksum = 0x19;
+    for(U16 addr = 0x0134; addr <= 0x014d; addr++)
+        checksum += this->read(addr);
+
+    if(checksum != 0)
+    {
+        std::cerr << "Error, checksum on boot failed. Possibly did not use a correct cartridge." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Checksum: PASSED" << std::endl;
+    return true;
 }

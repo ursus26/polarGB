@@ -13,6 +13,7 @@ public:
     bool loadCartridge(std::string fileName);
     void processCartridgeHeader();
     void printInfo();
+    bool checksum();
 
     uint8_t read(unsigned int address);
 

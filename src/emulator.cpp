@@ -7,8 +7,6 @@ using namespace std;
 
 Emulator::Emulator()
 {
-    cout << "Hello Emulator!" << endl;
-
     this->mmu = new Mmu();
     this->cpu = new Cpu(this->mmu);
 }
@@ -28,11 +26,11 @@ void Emulator::run()
     /* First boot up the emulator with the correct values. */
     cpu->boot();
 
-    // cpu->run(10);
+    // cpu->runNCycles(10);
     // cpu->runSingleFrame();
 
-    while(true)
-        cpu->runSingleFrame();
+    /* Run the emulator. */
+    cpu->run();
 }
 
 

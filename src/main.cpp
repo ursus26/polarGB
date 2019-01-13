@@ -26,7 +26,7 @@ void printHelp()
 
 int main(int argc, char* argv[])
 {
-    string cartridgePath = "./rom/DMG_ROM.bin";
+    string cartridgePath = "./rom/tetris.gb";
 
     /* Parse command line arguments and options. */
     try

@@ -1,14 +1,13 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
 #include "cpu.h"
 #include "log.h"
 
 
 Cpu::Cpu(Mmu* m)
 {
-    std::cout << "Initialize CPU" << std::endl;
-
     /* Initialize the memory manager. */
     mmu = m;
     isRunning = true;
@@ -35,24 +34,43 @@ void Cpu::boot()
     /* Initialize the memory. */
     this->mmu->boot();
 
-    /* Perform checksum. */
-    U8 checksum = 0x19;
-    for(U16 addr = 0x0134; addr <= 0x014d; addr++)
-        checksum += this->mmu->read(addr);
-
-    if(checksum != 0)
-    {
-        std::cerr << "Error, checksum on boot failed. Possibly did not use a correct cartridge." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    std::cout << "Checksum: PASSED" << std::endl;
-
     /* Finish the boot sequence by setting the pc counter to 0x100. */
     this->reg.setProgramCounter(0x100);
+    std::cout << std::endl;
 }
 
-void Cpu::run(int cycles)
+
+void Cpu::run()
+{
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
+    std::chrono::duration<double> elapsed_time;
+
+    /* Delta time takes into account that the elapsed_time > FRAME_TIME. If we reset the start time
+     * of the frame we can loose a little bit of time. This variable calculates this difference
+     * and helps make our timing function more accurate. */
+    double delta_time = 0.0;
+    start = std::chrono::high_resolution_clock::now();
+
+    while(true)
+    {
+        /* Measure the elapsed time. */
+        end = std::chrono::high_resolution_clock::now();
+        elapsed_time = end - start;
+
+        if(elapsed_time.count() + delta_time >= FRAME_TIME)
+        {
+            /* Reset the timer and calculate the time we lost sleeping. */
+            start = std::chrono::high_resolution_clock::now();
+            delta_time = elapsed_time.count() + delta_time - FRAME_TIME;
+
+            /* Run the instructions for the next frame. */
+            runSingleFrame();
+        }
+    }
+}
+
+
+void Cpu::runNCycles(int cycles)
 {
     for(int i = 0; i < cycles; i++)
     {
@@ -88,7 +106,7 @@ U8 Cpu::fetchNextInstruction()
 {
     /* Get the program counter. */
     U16 pc = reg.getProgramCounter();
-    printf("PC: 0x%04x\n", pc);
+    // printf("PC: 0x%04x\n", pc);
 
     /* Fetch the next instruction from memory. */
     U8 opcode = mmu->read(pc);
@@ -462,12 +480,6 @@ int Cpu::executeJR(int conditionFlag)
     bool carry = reg.getFlagCarry();
     U8 tmp = fetchNextInstruction();
     I8 step = (static_cast<I8> (tmp));
-
-    int a = (int) tmp;
-    int b = (int) step;
-
-    // TODO: REMOVE
-    std::cout << "==> JR Step: " << b << ", Original: " << a << " Zero: " << zero << std::endl;
 
     /* Get the jump location and check if the condition is true or does not exist. */
     if(conditionFlag == COND_NONE
