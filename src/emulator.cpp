@@ -9,10 +9,15 @@ Emulator::Emulator()
 {
     this->mmu = new Mmu();
     this->cpu = new Cpu(this->mmu);
+    this->video = new Video();
+    this->video->initialise();
 }
 
 Emulator::~Emulator()
 {
+    delete this->video;
+    this->video = nullptr;
+
     delete this->cpu;
     this->cpu = nullptr;
 

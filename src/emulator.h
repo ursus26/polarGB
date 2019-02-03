@@ -5,6 +5,8 @@
 #include "types.h"
 #include "mmu.h"
 #include "cpu.h"
+#include "video/video.h"
+
 
 class Emulator
 {
@@ -20,6 +22,7 @@ public:
 private:
     Mmu* mmu;
     Cpu* cpu;
+    Video* video;
 };
 
 #endif /* EMULATOR_H */
