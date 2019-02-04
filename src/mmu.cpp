@@ -106,10 +106,13 @@ U8 Mmu::read(U16 addr)
         cerr << "Error, request for Unusable memory" << endl;
     else if(addr >= 0xFF00 && addr <= 0xFF7F) /* I/O Ports */
         data = HRAM.mem[addr - 0xFF00];
-    else if(addr >= 0xFF80 && addr <= 0xFFFE) /* High RAM (HRAM) */
+    else if(addr >= 0xFF80 && addr <= 0xFFFF) /* High RAM (HRAM) */
         data = HRAM.mem[addr - 0xFF00];
-    else if(addr == 0xFFFF) /* Interrupt enable register */
-        data = 0;
+    // else if(addr == 0xFFFF) /* Interrupt enable register */
+    // {
+    //     cerr << "Error, only interrupt controller has access to IE register" << endl;
+    //     data = 0;
+    // }
 
     return data;
 }
@@ -169,11 +172,11 @@ void Mmu::write(U16 addr, U8 data)
         cerr << "Error, write request for unusable memory" << endl;
     else if(addr >= 0xFF00 && addr <= 0xFF7F) /* I/O Ports */
         HRAM.mem[addr - 0xFF00] = data;
-    else if(addr >= 0xFF80 && addr <= 0xFFFE) /* High RAM (HRAM) */
+    else if(addr >= 0xFF80 && addr <= 0xFFFF) /* High RAM (HRAM) */
         HRAM.mem[addr - 0xFF00] = data;
-    else if(addr == 0xFFFF) /* Interrupt enable register */
-    {
-        cerr << "Error, unsuported write action for interrupt enable register" << endl;
-        exit(EXIT_FAILURE);
-    }
+    // else if(addr == 0xFFFF) /* Interrupt enable register */
+    // {
+    //     cerr << "Error, unsuported write action for interrupt enable register" << endl;
+    //     exit(EXIT_FAILURE);
+    // }
 }

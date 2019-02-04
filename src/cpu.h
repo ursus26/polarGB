@@ -4,6 +4,7 @@
 #include "types.h"
 #include "register.h"
 #include "mmu.h"
+#include "interrupt_controller.h"
 
 
 const int CPU_FREQUENCY = 1048575; /* Hz */
@@ -46,6 +47,7 @@ private:
     /* Member variables. */
     Register reg;
     Mmu* mmu;
+    InterruptController interruptController;
     bool isRunning;
     int cyclesCompleted = 0;
 

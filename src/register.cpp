@@ -1,5 +1,6 @@
 #include "register.h"
 #include <stdexcept>
+#include <stdio.h>
 
 
 Register::Register()
@@ -96,10 +97,10 @@ U8 Register::read8(RegID id)
             return AF.single[IDX_HIGH];
 
         case RegID_B:
-            return BC.single[IDX_LOW];
+            return BC.single[IDX_HIGH];
 
         case RegID_C:
-            return BC.single[IDX_HIGH];
+            return BC.single[IDX_LOW];
 
         case RegID_D:
             return DE.single[IDX_HIGH];

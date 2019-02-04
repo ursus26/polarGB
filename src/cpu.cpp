@@ -24,15 +24,18 @@ Cpu::~Cpu()
 
 void Cpu::boot()
 {
-    /* Initialize the registers. */
-    this->reg.write16(RegID_AF, 0x01b0);    /* Initialize AF register. */
-    this->reg.write16(RegID_BC, 0x0013);    /* Initialize BC register. */
-    this->reg.write16(RegID_DE, 0x00d8);    /* Initialize DE register. */
-    this->reg.write16(RegID_HL, 0x014d);    /* Initialize HL register. */
-    this->reg.write16(RegID_SP, 0xfffe);    /* Initialize the stack. */
+    /* Initialise the registers. */
+    this->reg.write16(RegID_AF, 0x01b0);    /* Initialise AF register. */
+    this->reg.write16(RegID_BC, 0x0013);    /* Initialise BC register. */
+    this->reg.write16(RegID_DE, 0x00d8);    /* Initialise DE register. */
+    this->reg.write16(RegID_HL, 0x014d);    /* Initialise HL register. */
+    this->reg.write16(RegID_SP, 0xfffe);    /* Initialise the stack. */
 
-    /* Initialize the memory. */
+    /* Initialise the memory. */
     this->mmu->boot();
+
+    /* Initialise the interrupt controller. */
+    this->interruptController.disableInterrupts();
 
     /* Finish the boot sequence by setting the pc counter to 0x100. */
     this->reg.setProgramCounter(0x100);

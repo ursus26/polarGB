@@ -1352,8 +1352,11 @@ int Cpu::executeInstruction(U8 opcode)
             reg.write8(RegID_A, src);
             cycles = 2;
             break;
-        // case 0xF3:
-        //     break;
+        case 0xF3: /* DI */
+            Log::printVerbose("DI");
+            this->interruptController.disableInterrupts();
+            cycles = 1;
+            break;
         case 0xF4: /* No instruction */
             break;
         case 0xF5: /* PUSH AF */
@@ -1390,8 +1393,11 @@ int Cpu::executeInstruction(U8 opcode)
             reg.write8(RegID_A, src);
             cycles = 4;
             break;
-        // case 0xFB:
-        //     break;
+        case 0xFB: /* EI */
+            Log::printVerbose("EI");
+            this->interruptController.enableInterrupts();
+            cycles = 1;
+            break;
         case 0xFC: /* No instruction */
             break;
         case 0xFD: /* No instruction */
