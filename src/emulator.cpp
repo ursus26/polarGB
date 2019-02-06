@@ -8,18 +8,18 @@ using namespace std;
 Emulator::Emulator()
 {
     this->mmu = new Mmu();
-    this->cpu = new Cpu(this->mmu);
     this->video = new Video();
     this->video->initialise();
+    this->cpu = new Cpu(this->mmu, this->video);
 }
 
 Emulator::~Emulator()
 {
-    delete this->video;
-    this->video = nullptr;
-
     delete this->cpu;
     this->cpu = nullptr;
+
+    delete this->video;
+    this->video = nullptr;
 
     delete this->mmu;
     this->mmu = nullptr;

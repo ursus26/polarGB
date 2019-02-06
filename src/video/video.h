@@ -14,13 +14,15 @@ public:
     void initialise();
     void cleanUp();
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+    void update();
+    bool closeWindow();
+    void processInput(GLFWwindow* w);
 
 private:
     GLFWwindow* window;
     std::string windowName;
     int width;
     int height;
-
 };
 
 

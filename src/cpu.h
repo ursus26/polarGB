@@ -4,6 +4,7 @@
 #include "types.h"
 #include "register.h"
 #include "mmu.h"
+#include "video/video.h"
 #include "interrupt_controller.h"
 
 
@@ -26,7 +27,7 @@ enum ConditionFlag
 class Cpu
 {
 public:
-    Cpu(Mmu* m);
+    Cpu(Mmu* m, Video* vid);
     ~Cpu();
 
     void boot();
@@ -47,6 +48,7 @@ private:
     /* Member variables. */
     Register reg;
     Mmu* mmu;
+    Video* video;
     InterruptController interruptController;
     bool isRunning;
     int cyclesCompleted = 0;

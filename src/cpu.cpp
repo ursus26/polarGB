@@ -6,10 +6,11 @@
 #include "log.h"
 
 
-Cpu::Cpu(Mmu* m)
+Cpu::Cpu(Mmu* m, Video* vid)
 {
     /* Initialize the memory manager. */
     mmu = m;
+    video = vid;
     isRunning = true;
     cyclesCompleted = 0;
 }
@@ -68,6 +69,13 @@ void Cpu::run()
 
             /* Run the instructions for the next frame. */
             runSingleFrame();
+
+            /* Update display. */
+            this->video->update();
+
+            /* Check if we sohuld close our window. */
+            if(this->video->closeWindow())
+                break;
         }
     }
 }
