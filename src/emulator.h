@@ -5,7 +5,7 @@
 #include "types.h"
 #include "mmu.h"
 #include "cpu.h"
-#include "video/video.h"
+#include "video.h"
 
 
 class Emulator

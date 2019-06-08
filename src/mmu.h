@@ -4,25 +4,24 @@
 #include <string>
 #include "types.h"
 #include "cartridge.h"
-#include "bank_manager.h"
 
 
 typedef struct
 {
-    U8* mem;
+    u8* mem;
     unsigned int size;
 } Ram;
 
 
-const U16 ROM_END_ADDR = 0x7FFF;
-const U16 VRAM_START_ADDR = 0x8000;
-const U16 VRAM_END_ADDR = 0x9FFF;
-const U16 ERAM_START_ADDR = 0xA000;
-const U16 ERAM_END_ADDR = 0xBFFF;
-const U16 WRAM_START_ADDR = 0xC000;
-const U16 WRAM_END_ADDR = 0xDFFF;
-const U16 HRAM_START_ADDR = 0xFE00;
-const U16 HRAM_END_ADDR = 0xFFFF;
+const u16 ROM_END_ADDR      = 0x7fff;
+const u16 VRAM_START_ADDR   = 0x8000;
+const u16 VRAM_END_ADDR     = 0x9fff;
+const u16 ERAM_START_ADDR   = 0xa000;
+const u16 ERAM_END_ADDR     = 0xbfff;
+const u16 WRAM_START_ADDR   = 0xc000;
+const u16 WRAM_END_ADDR     = 0xdfff;
+const u16 HRAM_START_ADDR   = 0xfe00;
+const u16 HRAM_END_ADDR     = 0xffff;
 
 
 class Mmu
@@ -35,11 +34,11 @@ public:
     void boot();
 
     /* Read from an address. */
-    U8 read(U16 addr);
-    U16 readU16(U16 addr);
+    u8 read(u16 addr);
+    u16 read16bits(u16 addr);
 
     /* Write data to memory. */
-    void write(U16 addr, U8 data);
+    void write(u16 addr, u8 data);
 
     /* Load a rom file into memory. */
     void loadRom(std::string fileName);
@@ -50,6 +49,8 @@ private:
     Ram ERAM;       /* External RAM */
     Ram WRAM;       /* Working RAM */
     Ram HRAM;       /* High Ram / CPU working RAM */
+
+    void DMATransfer(u8 index);
 };
 
 #endif /* MEMORY_MANAGER_H */

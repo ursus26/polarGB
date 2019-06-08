@@ -5,21 +5,19 @@ TARGET = polarGB
 CXX = g++
 
 # C++ compiler flags
-CXXFLAGS = -g -std=c++11 -Wall -Wextra -pedantic -O3
+CXXFLAGS = -std=c++11 -O2 -Wpedantic -Wall -Wextra -D_FORTIFY_SOURCE=2 -fstack-protector -fPIE
 
 # Linker flags
-LDFLAGS = -g -lboost_program_options -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lpthread
+LDFLAGS = -lboost_program_options -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lpthread
 
 # Project directories
 SRC_DIR = ./src
 BUILD_DIR = ./build
 BIN_DIR = ./bin
+INCLUDE_DIRS = -I./include
 
 # Source modules
 MOD_VIDEO = $(SRC_DIR)/video
-
-# Different include directory
-INCLUDE_DIRS = -I$(SRC_DIR) -I$(MOD_VIDEO)
 
 # Finds the cpp files in the source directory, replaces the source extension with
 # the .o extension. Then strip the source directory prefix and add the build
@@ -28,7 +26,8 @@ _OBJ = $(patsubst $(SRC_DIR)/%, %, $(patsubst %.cpp,%.o,$(wildcard $(SRC_DIR)/*.
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
 _OBJ_VIDEO = $(patsubst $(MOD_VIDEO)/%, %, $(patsubst %.cpp,%.o,$(wildcard $(MOD_VIDEO)/*.cpp)))
-OBJ_VIDEO = $(patsubst %,$(BUILD_DIR)/video/%,$(_OBJ_VIDEO)) $(BUILD_DIR)/video/glad.o
+# OBJ_VIDEO = $(patsubst %,$(BUILD_DIR)/video/%,$(_OBJ_VIDEO)) $(BUILD_DIR)/video/glad.o
+OBJ_VIDEO = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ_VIDEO)) $(BUILD_DIR)/glad.o
 
 OBJ := $(OBJ) $(OBJ_VIDEO)
 
@@ -54,7 +53,7 @@ linking:
 
 # Compiles individual cpp files with its header dependencies.
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c*
-	@echo "Compiling " $< "..."
+	@echo "Compiling" $< "..."
 	@$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS) $(INCLUDE_DIRS)
 
 # Clean the project by deleting the contentents in the bin and build directory.

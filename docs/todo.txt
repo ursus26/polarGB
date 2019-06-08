@@ -1,0 +1,6 @@
+To do:
+
+- Implement interrupts, high priority: V-Blank
+- Transform bits in memory to texture
+- Draw square with OpenGL
+- Write tests for the instruction set.

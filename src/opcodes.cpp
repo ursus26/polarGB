@@ -21,14 +21,14 @@
  * Note: some operation may skip some steps.
  * Return: number of clock cycles used to execute the operation.
  */
-int Cpu::executeInstruction(U8 opcode)
+int Cpu::executeInstruction(u8 opcode)
 {
     int cycles = 0;
-    U8 src = 0;
-    I8 r8 = 0;
-    U16 src16 = 0;
-    U16 dest = 0;
-    U8 result = 0;
+    u8 src = 0;
+    i8 r8 = 0;
+    u16 src16 = 0;
+    u16 dest = 0;
+    u8 result = 0;
 
     /* TODO: remove debug code. */
     int op = (int) opcode;
@@ -86,9 +86,9 @@ int Cpu::executeInstruction(U8 opcode)
             Log::printVerbose("LD a16, SP");
             src16 = reg.getStackPointer();
             dest = fetchNext16Bits();
-            mmu->write(dest, (U8) (src16 & 0xff));
+            mmu->write(dest, (u8) (src16 & 0xff));
             dest++;
-            mmu->write(dest, (U8) (src16 >> 8));
+            mmu->write(dest, (u8) (src16 >> 8));
             cycles = 5;
             break;
         case 0x9: /* ADD HL, BC */
@@ -1304,7 +1304,7 @@ int Cpu::executeInstruction(U8 opcode)
             break;
         case 0xE8: /* ADD SP, r8 */
             Log::printVerbose("ADD SP, r8");
-            r8 = (I8) fetchNextInstruction();
+            r8 = (i8) fetchNextInstruction();
             executeADD16(RegID_HL, r8);
             cycles = 2;
             break;
@@ -1377,7 +1377,7 @@ int Cpu::executeInstruction(U8 opcode)
             break;
         case 0xF8: /* LD HL, SP+r8 */
             Log::printVerbose("LD HL, SP+r8");
-            src = (I8) fetchNextInstruction();
+            src = (i8) fetchNextInstruction();
             src16 = reg.getStackPointer();
             reg.write16(RegID_HL, src16 + src);
             cycles = 3;
@@ -1440,10 +1440,10 @@ int Cpu::executeInstruction(U8 opcode)
 int Cpu::executeCB()
 {
     /* Fetch the next instruction and initialize a variable for the clock cycles. */
-    U8 opcode = fetchNextInstruction();
+    u8 opcode = fetchNextInstruction();
     int cycles = 0;
-    U8 src;
-    U8 result;
+    u8 src;
+    u8 result;
 
     /* TODO: Remove debug print. */
     int op = (int) opcode;

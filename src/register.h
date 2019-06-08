@@ -52,8 +52,8 @@ typedef enum RegID
 
 union RegPair
 {
-    U8 single[2];
-    U16 pair;
+    u8 single[2];
+    u16 pair;
 };
 
 
@@ -63,21 +63,21 @@ public:
     Register();
 
     /* Functions for writing to a register or copying. */
-    void write8(RegID id, U8 val);
-    void write16(RegID id, U16 val);
+    void write8(RegID id, u8 val);
+    void write16(RegID id, u16 val);
     void copy8(RegID dest, RegID src);
 
     /* Functions for loading data from a register. */
-    U8 read8(RegID id);
-    U16 read16(RegID id);
+    u8 read8(RegID id);
+    u16 read16(RegID id);
 
     /* Operations on the program counter. */
-    U16 getProgramCounter() const;
-    void setProgramCounter(U16 val);
+    u16 getProgramCounter() const;
+    void setProgramCounter(u16 val);
     void incProgramCounter();
 
     /* Operations on the stack pointer. */
-    U16 getStackPointer();
+    u16 getStackPointer();
     void incStackPointer();
     void decStackPointer();
 
@@ -103,8 +103,8 @@ private:
     RegPair BC;
     RegPair DE;
     RegPair HL;
-    U16 SP;
-    U16 PC;
+    u16 SP;
+    u16 PC;
 };
 
 

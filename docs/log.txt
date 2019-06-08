@@ -1,0 +1,15 @@
+Project changelog (Note, this log does not have to reflect the git log. I work irregularly on this
+project so it can take quite some time between 2 commits. Due to these large time gaps I tend to
+forget what I was working on. In order to remember what I was working on I will log my progress
+in this file.):
+
+YYYY-MM-DD: Changes
+2019-06-08: - I added DMA-Transfer but I was not executing. It is possible that DMA-Transfers are
+              only triggered by interrupts. Also I renamed some types and functions.
+2019-04-10: - I drew a simple triangle on screen.
+2019-04-09: - Added basic shaders and a shader program.
+2019-03-02: - Created a include file for the OpenGL loading library: Glad.
+            - Improved the makefile to include the './include' folder.
+2019-02-06: - Fixed popup: window not responding
+2019-02-04: - Fixed bug with reading register B and C.
+            - Added opcode support for EI and DI. Interrupts will be handled by ignoring them.

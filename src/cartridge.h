@@ -18,7 +18,7 @@ public:
     uint8_t read(unsigned int address);
 
 private:
-    U8* mem;
+    u8* mem;
     unsigned int size;
 
     /* Cartridge info taken from the cartridge header. Memory location 0x100-0x150 */

@@ -18,7 +18,7 @@ Register::Register()
 /**
  * Writes a byte to a register specified by its id. We can only write to A, B, C, D, E, H and L.
  */
-void Register::write8(RegID id, U8 val)
+void Register::write8(RegID id, u8 val)
 {
     switch(id)
     {
@@ -54,7 +54,7 @@ void Register::write8(RegID id, U8 val)
  * Writes a word to a register specified by its id. We can only write to the register pairs:
  * BC, DE and HL.
  */
-void Register::write16(RegID id, U16 val)
+void Register::write16(RegID id, u16 val)
 {
     switch(id)
     {
@@ -84,12 +84,12 @@ void Register::write16(RegID id, U16 val)
  */
 void Register::copy8(RegID dest, RegID src)
 {
-    U8 srcVal = read8(src);
+    u8 srcVal = read8(src);
     write8(dest, srcVal);
 }
 
 
-U8 Register::read8(RegID id)
+u8 Register::read8(RegID id)
 {
     switch(id)
     {
@@ -123,7 +123,7 @@ U8 Register::read8(RegID id)
 }
 
 
-U16 Register::read16(RegID id)
+u16 Register::read16(RegID id)
 {
     switch(id)
     {
@@ -225,7 +225,7 @@ void Register::setBitFromFlags(int position, bool val)
 /**
  * Returns the value of the program counter.
  */
-U16 Register::getProgramCounter() const
+u16 Register::getProgramCounter() const
 {
     return this->PC;
 }
@@ -234,7 +234,7 @@ U16 Register::getProgramCounter() const
 /**
  * Changes the value of the program counter to a new value.
  */
-void Register::setProgramCounter(U16 val)
+void Register::setProgramCounter(u16 val)
 {
     this->PC = val;
 }
@@ -252,7 +252,7 @@ void Register::incProgramCounter()
 /**
  * Returns the value of the stack pointer.
  */
-U16 Register::getStackPointer()
+u16 Register::getStackPointer()
 {
     return this->SP;
 }

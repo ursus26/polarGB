@@ -11,16 +11,16 @@ using namespace std;
 Mmu::Mmu()
 {
     VRAM.size = VRAM_END_ADDR - VRAM_START_ADDR + 1;
-    VRAM.mem = new U8[VRAM.size]();
+    VRAM.mem = new u8[VRAM.size]();
 
     ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
-    ERAM.mem = new U8[ERAM.size]();
+    ERAM.mem = new u8[ERAM.size]();
 
     WRAM.size = WRAM_END_ADDR - WRAM_START_ADDR + 1;
-    WRAM.mem = new U8[WRAM.size]();
+    WRAM.mem = new u8[WRAM.size]();
 
     HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
-    HRAM.mem = new U8[HRAM.size]();
+    HRAM.mem = new u8[HRAM.size]();
 }
 
 Mmu::~Mmu()
@@ -84,30 +84,30 @@ void Mmu::boot()
 }
 
 
-U8 Mmu::read(U16 addr)
+u8 Mmu::read(u16 addr)
 {
-    U8 data = 0;
+    u8 data = 0;
 
-    if(addr <= 0x7FFF) /* ROM banks */
+    if(addr <= 0x7fff) /* ROM banks */
         data = rom.read(addr);
-    else if(addr >= 0x8000 && addr <= 0x9FFF) /* VRAM */
+    else if(addr >= 0x8000 && addr <= 0x9fff) /* VRAM / LCD Display RAM */
         data = VRAM.mem[addr - 0x8000];
-    else if(addr >= 0xA000 && addr <= 0xBFFF) /* Switchable external RAM bank */
+    else if(addr >= 0xa000 && addr <= 0xbfff) /* Switchable external RAM bank */
         data = ERAM.mem[addr - 0xA000];
-    else if(addr >= 0xC000 && addr <= 0xCFFF) /* Working RAM bank 0 */
+    else if(addr >= 0xc000 && addr <= 0xcfff) /* Working RAM bank 0 */
         data = WRAM.mem[addr - 0xC000];
-    else if(addr >= 0xD000 && addr <= 0xDFFF) /* Working RAM bank 1 */
+    else if(addr >= 0xd000 && addr <= 0xdfff) /* Working RAM bank 1 */
         data = WRAM.mem[addr - 0xC000];
-    else if(addr >= 0xE000 && addr <= 0xFDFF) /* Echo ram, typically not used. */
+    else if(addr >= 0xe000 && addr <= 0xfdff) /* Echo ram, typically not used. */
         cerr << "Error, unsuported echo RAM" << endl;
-    else if(addr >= 0xFE00 && addr <= 0xFE9F) /* Sprite attribute table */
-        data = HRAM.mem[addr - 0xFF00];
-    else if(addr >= 0xFEA0 && addr <= 0xFEFF) /* Not usable */
+    else if(addr >= 0xfe00 && addr <= 0xfe9f) /* Sprite attribute table / OAM (Object Actribute Mem) */
+        data = HRAM.mem[addr - 0xff00];
+    else if(addr >= 0xfea0 && addr <= 0xfeff) /* Not usable */
         cerr << "Error, request for Unusable memory" << endl;
-    else if(addr >= 0xFF00 && addr <= 0xFF7F) /* I/O Ports */
-        data = HRAM.mem[addr - 0xFF00];
-    else if(addr >= 0xFF80 && addr <= 0xFFFF) /* High RAM (HRAM) */
-        data = HRAM.mem[addr - 0xFF00];
+    else if(addr >= 0xff00 && addr <= 0xff7f) /* I/O Ports */
+        data = HRAM.mem[addr - 0xff00];
+    else if(addr >= 0xff80) /* High RAM (HRAM) */
+        data = HRAM.mem[addr - 0xff00];
     // else if(addr == 0xFFFF) /* Interrupt enable register */
     // {
     //     cerr << "Error, only interrupt controller has access to IE register" << endl;
@@ -121,14 +121,14 @@ U8 Mmu::read(U16 addr)
  * Fetches 16 bits from memory by stitching 2 bytes together. The first byte is the low byte and
  * the second byte is the high byte.
  */
-U16 Mmu::readU16(U16 addr)
+u16 Mmu::read16bits(u16 addr)
 {
-    /* Get the low and high U8 of the 16 bit address. */
-    U16 low = read(addr);
-    U16 high = read(addr + 1);
+    /* Get the low and high u8 of the 16 bit address. */
+    u16 low = read(addr);
+    u16 high = read(addr + 1);
 
     /* Construct the address. */
-    U16 word = (high << 8) + low;
+    u16 word = (high << 8) + low;
 
     return word;
 }
@@ -141,42 +141,58 @@ void Mmu::loadRom(string fileName)
 }
 
 
-void Mmu::write(U16 addr, U8 data)
+void Mmu::write(u16 addr, u8 data)
 {
-    // cout << "WRITE ACTION: 0x" << hex << addr << " <- ";
-    // printf("0x%02x", data);
-    // cout << dec << endl;
-
-
-    if(addr <= 0x7FFF) /* ROM banks */
+    if(addr <= 0x7fff) /* ROM banks */
     {
         cerr << "Error, unsuported write action for cartridge roms" << endl;
         exit(EXIT_FAILURE);
     }
-    else if(addr >= 0x8000 && addr <= 0x9FFF) /* VRAM */
+    else if(addr >= 0x8000 && addr <= 0x9fff) /* VRAM */
         VRAM.mem[addr - 0x8000] = data;
-    else if(addr >= 0xA000 && addr <= 0xBFFF) /* Switchable external RAM bank */
-        ERAM.mem[addr - 0xA000] = data;
-    else if(addr >= 0xC000 && addr <= 0xCFFF) /* Working RAM bank 0 */
-        WRAM.mem[addr - 0xC000] = data;
-    else if(addr >= 0xD000 && addr <= 0xDFFF) /* Working RAM bank 1 */
-        WRAM.mem[addr - 0xC000] = data;
-    else if(addr >= 0xE000 && addr <= 0xFDFF) /* Echo ram, typically not used. */
+    else if(addr >= 0xa000 && addr <= 0xbfff) /* Switchable external RAM bank */
+        ERAM.mem[addr - 0xa000] = data;
+    else if(addr >= 0xc000 && addr <= 0xcfff) /* Working RAM bank 0 */
+        WRAM.mem[addr - 0xc000] = data;
+    else if(addr >= 0xd000 && addr <= 0xdfff) /* Working RAM bank 1 */
+        WRAM.mem[addr - 0xc000] = data;
+    else if(addr >= 0xe000 && addr <= 0xfdff) /* Echo ram, typically not used. */
     {
         cerr << "Error, unsuported echo RAM" << endl;
         exit(EXIT_FAILURE);
     }
-    else if(addr >= 0xFE00 && addr <= 0xFE9F) /* Sprite attribute table */
-        HRAM.mem[addr - 0xFF00] = data;
-    else if(addr >= 0xFEA0 && addr <= 0xFEFF) /* Not usable */
+    else if(addr >= 0xfe00 && addr <= 0xfe9f) /* Sprite attribute table */
+        HRAM.mem[addr - 0xff00] = data;
+    else if(addr >= 0xfea0 && addr <= 0xfeff) /* Not usable */
         cerr << "Error, write request for unusable memory" << endl;
-    else if(addr >= 0xFF00 && addr <= 0xFF7F) /* I/O Ports */
-        HRAM.mem[addr - 0xFF00] = data;
-    else if(addr >= 0xFF80 && addr <= 0xFFFF) /* High RAM (HRAM) */
-        HRAM.mem[addr - 0xFF00] = data;
+    else if(addr >= 0xff00 && addr <= 0xff7f) /* I/O Ports */
+    {
+        HRAM.mem[addr - 0xff00] = data;
+        if(addr == 0xff46)
+        {
+            this->DMATransfer(data);
+        }
+    }
+    else if(addr >= 0xff80) /* High RAM (HRAM) */
+        HRAM.mem[addr - 0xff00] = data;
     // else if(addr == 0xFFFF) /* Interrupt enable register */
     // {
     //     cerr << "Error, unsuported write action for interrupt enable register" << endl;
     //     exit(EXIT_FAILURE);
     // }
+}
+
+
+void Mmu::DMATransfer(u8 index)
+{
+    u16 source_address = index << 8;
+    u16 dest_address = 0xfe00;
+    u8 data = 0x0;
+    printf("DMATransfer 0x%x\n", index);
+
+    for(u8 i = 0; i < 0xa0; i++)
+    {
+        data = this->read(source_address + i);
+        this->write(dest_address + i, data);
+    }
 }

@@ -23,6 +23,12 @@ private:
     std::string windowName;
     int width;
     int height;
+
+    /* Shaders */
+    unsigned int shaderProgram;
+
+
+    void initShaders();
 };
 
 

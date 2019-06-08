@@ -4,7 +4,7 @@
 #include "types.h"
 #include "register.h"
 #include "mmu.h"
-#include "video/video.h"
+#include "video.h"
 #include "interrupt_controller.h"
 
 
@@ -36,13 +36,13 @@ public:
     void run();
     void runNCycles(int cycles);
     void runSingleFrame();
-    U8 fetchNextInstruction();
-    U16 fetchNext16Bits();
-    int executeInstruction(U8 opcode);
+    u8 fetchNextInstruction();
+    u16 fetchNext16Bits();
+    int executeInstruction(u8 opcode);
 
     /* Read and write to a memory location specified by a register. */
-    U8 readMem(RegID memPointer);
-    void writeMem(RegID memPointer, U8 data);
+    u8 readMem(RegID memPointer);
+    void writeMem(RegID memPointer, u8 data);
 
 private:
     /* Member variables. */
@@ -64,24 +64,24 @@ private:
     int executeCB();
 
     /* 8 bit load/store/move instructions */
-    void executeLD8(U16 addr, U8 val);
+    void executeLD8(u16 addr, u8 val);
 
     /* 16 bit load/store/move instructions */
     void executeLD16(RegID dest);
-    void executePUSH(U16 val);
-    U16 executePOP();
+    void executePUSH(u16 val);
+    u16 executePOP();
 
     /* 8 bit arithmetic/logical instructions */
-    void executeADD8(U8 val);
-    void executeADC(U8 val);
-    void executeSUB(U8 val);
-    void executeSBC(U8 val);
-    void executeAND(U8 val);
-    void executeXOR(U8 val);
-    void executeOR(U8 val);
-    void executeCP(U8 val);
-    U8 executeINC8(U8 val);
-    U8 executeDEC8(U8 val);
+    void executeADD8(u8 val);
+    void executeADC(u8 val);
+    void executeSUB(u8 val);
+    void executeSBC(u8 val);
+    void executeAND(u8 val);
+    void executeXOR(u8 val);
+    void executeOR(u8 val);
+    void executeCP(u8 val);
+    u8 executeINC8(u8 val);
+    u8 executeDEC8(u8 val);
 
     /* 16 bit arithmetic/logical instructions */
     void executeINC16(RegID dest);
@@ -91,25 +91,25 @@ private:
     /* Jumps/calls */
     int executeJP(int conditionFlag);
     int executeJR(int conditionFlag);
-    int executeCALL(U16 jumpLocation, int conditionFlag);
+    int executeCALL(u16 jumpLocation, int conditionFlag);
     int executeRET(int conditionFlag);
 
     /* 	8 bit rotations/shifts and bit instructions */
-    U8 executeSET(U8 src, int bitNumber);
-    U8 executeRES(U8 src, int bitNumber);
-    void executeBIT(U8 src, int bitNumber);
-    U8 executeSWAP(U8 src);
+    u8 executeSET(u8 src, int bitNumber);
+    u8 executeRES(u8 src, int bitNumber);
+    void executeBIT(u8 src, int bitNumber);
+    u8 executeSWAP(u8 src);
     void executeRLA();
     void executeRRA();
-    U8 executeRL(U8 src);
-    U8 executeRR(U8 src);
+    u8 executeRL(u8 src);
+    u8 executeRR(u8 src);
     void executeRLCA();
     void executeRRCA();
-    U8 executeRLC(U8 src);
-    U8 executeRRC(U8 src);
-    U8 executeSLA(U8 src);
-    U8 executeSRA(U8 src);
-    U8 executeSRL(U8 src);
+    u8 executeRLC(u8 src);
+    u8 executeRRC(u8 src);
+    u8 executeSLA(u8 src);
+    u8 executeSRA(u8 src);
+    u8 executeSRL(u8 src);
 };
 
 #endif /* CPU_H */

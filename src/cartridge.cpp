@@ -63,7 +63,7 @@ void Cartridge::processCartridgeHeader()
     this->gameTitle = "";
     for(int i = 0x134; i < 0x144; i++)
     {
-        U8 character = this->read(i);
+        u8 character = this->read(i);
         if(character == 0)
             break;
 
@@ -92,8 +92,8 @@ void Cartridge::printInfo()
 
 bool Cartridge::checksum()
 {
-    U8 checksum = 0x19;
-    for(U16 addr = 0x0134; addr <= 0x014d; addr++)
+    u8 checksum = 0x19;
+    for(u16 addr = 0x0134; addr <= 0x014d; addr++)
         checksum += this->read(addr);
 
     if(checksum != 0)

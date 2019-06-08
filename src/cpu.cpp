@@ -6,6 +6,8 @@
 #include "log.h"
 
 
+using namespace std;
+
 Cpu::Cpu(Mmu* m, Video* vid)
 {
     /* Initialize the memory manager. */
@@ -40,37 +42,40 @@ void Cpu::boot()
 
     /* Finish the boot sequence by setting the pc counter to 0x100. */
     this->reg.setProgramCounter(0x100);
-    std::cout << std::endl;
+    cout << endl;
 }
 
 
 void Cpu::run()
 {
-    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
-    std::chrono::duration<double> elapsed_time;
+    chrono::time_point<chrono::high_resolution_clock> start, end;
+    chrono::duration<double> elapsed_time;
 
     /* Delta time takes into account that the elapsed_time > FRAME_TIME. If we reset the start time
      * of the frame we can loose a little bit of time. This variable calculates this difference
      * and helps make our timing function more accurate. */
     double delta_time = 0.0;
-    start = std::chrono::high_resolution_clock::now();
+    start = chrono::high_resolution_clock::now();
 
     while(true)
     {
         /* Measure the elapsed time. */
-        end = std::chrono::high_resolution_clock::now();
+        end = chrono::high_resolution_clock::now();
         elapsed_time = end - start;
 
         if(elapsed_time.count() + delta_time >= FRAME_TIME)
         {
             /* Reset the timer and calculate the time we lost sleeping. */
-            start = std::chrono::high_resolution_clock::now();
+            start = chrono::high_resolution_clock::now();
             delta_time = elapsed_time.count() + delta_time - FRAME_TIME;
 
             /* Run the instructions for the next frame. */
             runSingleFrame();
 
             /* Update display. */
+            // u8 lcdc = this->mmu->read(0xff40);
+            // printf("Use BG Display Data %d\n", (lcdc & 0x8) + 1);
+
             this->video->update();
 
             /* Check if we sohuld close our window. */
@@ -86,7 +91,7 @@ void Cpu::runNCycles(int cycles)
     for(int i = 0; i < cycles; i++)
     {
         /* Fetch the next instruction. */
-        U8 opcode = fetchNextInstruction();
+        u8 opcode = fetchNextInstruction();
 
         /* Execute the instruction. */
         executeInstruction(opcode);
@@ -99,7 +104,7 @@ void Cpu::runSingleFrame()
     while(cyclesCompleted < MAX_INSTRUCTIONS_PER_FRAME)
     {
         /* Fetch the next instruction. */
-        U8 opcode = fetchNextInstruction();
+        u8 opcode = fetchNextInstruction();
 
         /* Execute the instruction. */
         cyclesCompleted += executeInstruction(opcode);
@@ -113,14 +118,14 @@ void Cpu::runSingleFrame()
  * This function fetches the next instruction from memory pointed by the program counter. Then it
  * increments the program counter and returns the opcode.
  */
-U8 Cpu::fetchNextInstruction()
+u8 Cpu::fetchNextInstruction()
 {
     /* Get the program counter. */
-    U16 pc = reg.getProgramCounter();
+    u16 pc = reg.getProgramCounter();
     // printf("PC: 0x%04x\n", pc);
 
     /* Fetch the next instruction from memory. */
-    U8 opcode = mmu->read(pc);
+    u8 opcode = mmu->read(pc);
 
     /* Increase the program counter by 1 and return the instruction code. */
     reg.incProgramCounter();
@@ -131,14 +136,14 @@ U8 Cpu::fetchNextInstruction()
  * Fetches 16 bits from memory by stitching 2 bytes together. The first byte is the low byte and
  * the second byte is the high byte.
  */
-U16 Cpu::fetchNext16Bits()
+u16 Cpu::fetchNext16Bits()
 {
-    /* Get the low and high U8 of the 16 bit address. */
-    U16 low = fetchNextInstruction();
-    U16 high = fetchNextInstruction();
+    /* Get the low and high u8 of the 16 bit address. */
+    u16 low = fetchNextInstruction();
+    u16 high = fetchNextInstruction();
 
     /* Construct the address. */
-    U16 word = (high << 8) + low;
+    u16 word = (high << 8) + low;
 
     return word;
 }
@@ -146,10 +151,10 @@ U16 Cpu::fetchNext16Bits()
 /**
  * Read some data from memory specified by an address in a register.
  */
-U8 Cpu::readMem(RegID memPointer)
+u8 Cpu::readMem(RegID memPointer)
 {
     /* Get the memory location. */
-    U16 memLocation = reg.read16(memPointer);
+    u16 memLocation = reg.read16(memPointer);
 
     /* Get and return the data from memory. */
     return (mmu->read(memLocation));
@@ -159,10 +164,10 @@ U8 Cpu::readMem(RegID memPointer)
 /**
  * Writes some data to memory specified by an address in a register.
  */
-void Cpu::writeMem(RegID memPointer, U8 data)
+void Cpu::writeMem(RegID memPointer, u8 data)
 {
     /* Get the memory location. */
-    U16 memLocation = reg.read16(memPointer);
+    u16 memLocation = reg.read16(memPointer);
 
     /* Get and return the data from memory. */
     mmu->write(memLocation, data);
@@ -172,7 +177,7 @@ void Cpu::writeMem(RegID memPointer, U8 data)
 /**
  * Writes a value to a memory address.
  */
-void Cpu::executeLD8(U16 addr, U8 val)
+void Cpu::executeLD8(u16 addr, u8 val)
 {
     mmu->write(addr, val);
 }
@@ -190,12 +195,12 @@ void Cpu::executeLD16(RegID dest)
 /**
  * Pushes the contents of a register pair to the stack.
  */
-void Cpu::executePUSH(U16 val)
+void Cpu::executePUSH(u16 val)
 {
     /* Get the high and low byte. */
-    U8 low = val & 0xff;
-    U8 high = (val >> 8) & 0xff;
-    U16 sp = reg.getStackPointer();
+    u8 low = val & 0xff;
+    u8 high = (val >> 8) & 0xff;
+    u16 sp = reg.getStackPointer();
 
     /* Write the value to the stack. */
     mmu->write(sp - 1, high);
@@ -210,10 +215,10 @@ void Cpu::executePUSH(U16 val)
 /**
  * Pops 2 bytes from the stack.
  */
-U16 Cpu::executePOP()
+u16 Cpu::executePOP()
 {
     /* Get 2 bytes from the stack. */
-    U8 val = mmu->readU16(reg.getStackPointer());
+    u8 val = mmu->read16bits(reg.getStackPointer());
 
     /* Increases the stack pointer by two. */
     reg.incStackPointer();
@@ -226,10 +231,10 @@ U16 Cpu::executePOP()
 /**
  * Adds a value to the contents of register A and store it in register A.
  */
-void Cpu::executeADD8(U8 val)
+void Cpu::executeADD8(u8 val)
 {
     /* Add the value of register 2 to register 1. */
-    U8 result = reg.read8(RegID_A) + val;
+    u8 result = reg.read8(RegID_A) + val;
     int val1 = (int) reg.read8(RegID_A);
     int val2 = (int) val;
 
@@ -246,19 +251,19 @@ void Cpu::executeADD8(U8 val)
 /**
  * Adds a value and the carry bit to the contents of register A and stores it in register A.
  */
-void Cpu::executeADC(U8 val)
+void Cpu::executeADC(u8 val)
 {
     /* Add the value of register 2 to register 1. */
     int val1 = (int) reg.read8(RegID_A);
     int val2 = (int) val;
 
-    U8 carry;
+    u8 carry;
     if(reg.getFlagCarry())
         carry = 1;
     else
         carry = 0;
 
-    U8 result = reg.read8(RegID_A) + val + carry;
+    u8 result = reg.read8(RegID_A) + val + carry;
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
@@ -273,12 +278,12 @@ void Cpu::executeADC(U8 val)
 /**
  * Subtracts a value from register A.
  */
-void Cpu::executeSUB(U8 val)
+void Cpu::executeSUB(u8 val)
 {
     /* Add the value of register 2 to register 1. */
     int val1 = (int) reg.read8(RegID_A);
     int val2 = (int) val;
-    U8 result = reg.read8(RegID_A) - val;
+    u8 result = reg.read8(RegID_A) - val;
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
@@ -293,19 +298,19 @@ void Cpu::executeSUB(U8 val)
 /**
  * Subtracts a value and the carry bit from register A.
  */
-void Cpu::executeSBC(U8 val)
+void Cpu::executeSBC(u8 val)
 {
     /* Add the value of register 2 to register 1. */
     int val1 = (int) reg.read8(RegID_A);
     int val2 = (int) val;
 
-    U8 carry;
+    u8 carry;
     if(reg.getFlagCarry())
         carry = 1;
     else
         carry = 0;
 
-    U8 result = reg.read8(RegID_A) - val - carry;
+    u8 result = reg.read8(RegID_A) - val - carry;
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
@@ -321,10 +326,10 @@ void Cpu::executeSBC(U8 val)
 /**
  * Bitwise AND of a value with register A. Then store the result in register A.
  */
-void Cpu::executeAND(U8 val)
+void Cpu::executeAND(u8 val)
 {
     /* Bitwise AND. */
-    U8 result = reg.read8(RegID_A) & val;
+    u8 result = reg.read8(RegID_A) & val;
 
     /* Set or reset the flags. */
     reg.setFlagZero(reg.read8(RegID_A) == 0);
@@ -340,10 +345,10 @@ void Cpu::executeAND(U8 val)
 /**
  * Bitwise XOR of a value with register A. Then store the result in register A.
  */
-void Cpu::executeXOR(U8 val)
+void Cpu::executeXOR(u8 val)
 {
     /* Bitwise xor. */
-    U8 result = reg.read8(RegID_A) ^ val;
+    u8 result = reg.read8(RegID_A) ^ val;
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0);
@@ -359,10 +364,10 @@ void Cpu::executeXOR(U8 val)
 /**
  * Bitwise OR of a value with register A. Then store the result in register A.
  */
-void Cpu::executeOR(U8 val)
+void Cpu::executeOR(u8 val)
 {
     /* Bitwise or. */
-    U8 result = reg.read8(RegID_A) | val;
+    u8 result = reg.read8(RegID_A) | val;
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0);
@@ -378,9 +383,9 @@ void Cpu::executeOR(U8 val)
 /**
  * Execute the CP instruction and set the flags based on the result.
  */
-void Cpu::executeCP(U8 val)
+void Cpu::executeCP(u8 val)
 {
-    U8 src = reg.read8(RegID_A);
+    u8 src = reg.read8(RegID_A);
 
     reg.setFlagZero(src == val);
     reg.setFlagHalfCarry(src > val);
@@ -389,9 +394,9 @@ void Cpu::executeCP(U8 val)
 }
 
 
-U8 Cpu::executeINC8(U8 val)
+u8 Cpu::executeINC8(u8 val)
 {
-    U8 result = val + 1;
+    u8 result = val + 1;
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
@@ -401,9 +406,9 @@ U8 Cpu::executeINC8(U8 val)
 }
 
 
-U8 Cpu::executeDEC8(U8 val)
+u8 Cpu::executeDEC8(u8 val)
 {
-    U8 result = val - 1;
+    u8 result = val - 1;
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(true);
@@ -416,14 +421,14 @@ U8 Cpu::executeDEC8(U8 val)
 
 void Cpu::executeINC16(RegID dest)
 {
-    U16 result = reg.read16(dest) + 1;
+    u16 result = reg.read16(dest) + 1;
     reg.write16(dest, result);
 }
 
 
 void Cpu::executeDEC16(RegID dest)
 {
-    U16 result = reg.read16(dest) - 1;
+    u16 result = reg.read16(dest) - 1;
     reg.write16(dest, result);
 }
 
@@ -431,8 +436,8 @@ void Cpu::executeDEC16(RegID dest)
 void Cpu::executeADD16(RegID dest, int val)
 {
     /* Get the values from the registers and do the addition. */
-    U16 destVal = reg.read16(dest);
-    U16 result = val + destVal;
+    u16 destVal = reg.read16(dest);
+    u16 result = val + destVal;
 
     /* Set the flags. */
     reg.setFlagSub(false);
@@ -468,7 +473,7 @@ int Cpu::executeJP(int conditionFlag)
     }
 
     /* Get the jump location and check if the condition is true or does not exist. */
-    U16 jumpLocation = fetchNext16Bits();
+    u16 jumpLocation = fetchNext16Bits();
     if(conditionFlag == COND_NONE
     ||(conditionFlag == COND_NZ && zero == false)
     ||(conditionFlag == COND_Z  && zero == true)
@@ -489,8 +494,8 @@ int Cpu::executeJR(int conditionFlag)
     int cycles = 2;
     bool zero = reg.getFlagZero();
     bool carry = reg.getFlagCarry();
-    U8 tmp = fetchNextInstruction();
-    I8 step = (static_cast<I8> (tmp));
+    u8 tmp = fetchNextInstruction();
+    i8 step = (static_cast<i8> (tmp));
 
     /* Get the jump location and check if the condition is true or does not exist. */
     if(conditionFlag == COND_NONE
@@ -499,7 +504,7 @@ int Cpu::executeJR(int conditionFlag)
     ||(conditionFlag == COND_NC && carry == false)
     ||(conditionFlag == COND_C  && carry == true))
     {
-        U16 newPC = reg.getProgramCounter() + step;
+        u16 newPC = reg.getProgramCounter() + step;
         reg.setProgramCounter(newPC);
         cycles = 3;
     }
@@ -511,12 +516,12 @@ int Cpu::executeJR(int conditionFlag)
 /**
  * Push the program counter on the stack and adjust the program counter.
  */
-int Cpu::executeCALL(U16 jumpLocation, int conditionFlag)
+int Cpu::executeCALL(u16 jumpLocation, int conditionFlag)
 {
     int cycles = 3;
     bool zero = reg.getFlagZero();
     bool carry = reg.getFlagCarry();
-    U16 pc = reg.getProgramCounter();
+    u16 pc = reg.getProgramCounter();
 
     /* Write the program counter to the stack if the condition matches. */
     if(conditionFlag == COND_NONE
@@ -552,7 +557,7 @@ int Cpu::executeRET(int conditionFlag)
     ||(conditionFlag == COND_NC && carry == false)
     ||(conditionFlag == COND_C  && carry == true))
     {
-        U16 val = this->executePOP();
+        u16 val = this->executePOP();
         reg.setProgramCounter(val);
         cycles = 4;
 
@@ -571,7 +576,7 @@ int Cpu::executeRET(int conditionFlag)
 /**
  * Set a specific bit in a byte to 1.
  */
-U8 Cpu::executeSET(U8 src, int bitNumber)
+u8 Cpu::executeSET(u8 src, int bitNumber)
 {
     return (src | (1 <<bitNumber));
 }
@@ -580,7 +585,7 @@ U8 Cpu::executeSET(U8 src, int bitNumber)
 /**
  * Set a specific bit in a byte to 0.
  */
-U8 Cpu::executeRES(U8 src, int bitNumber)
+u8 Cpu::executeRES(u8 src, int bitNumber)
 {
     return (src & ~(1 << bitNumber));
 }
@@ -590,7 +595,7 @@ U8 Cpu::executeRES(U8 src, int bitNumber)
  * Get the bit value of a specific bit in a byte and set the zero flag as the complement of
  * this bit.
  */
-void Cpu::executeBIT(U8 src, int bitNumber)
+void Cpu::executeBIT(u8 src, int bitNumber)
 {
     bool bitValue = (src >> bitNumber) & 0x1;
 
@@ -604,9 +609,9 @@ void Cpu::executeBIT(U8 src, int bitNumber)
  * Swaps the first 4 bits with the last 4 bits in a byte. For example 0xAF will result in 0xFA and
  * 0x10 will result in 0x1.
  */
-U8 Cpu::executeSWAP(U8 src)
+u8 Cpu::executeSWAP(u8 src)
 {
-    U8 result = (src << 4) + (src >> 4);
+    u8 result = (src << 4) + (src >> 4);
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
@@ -620,10 +625,10 @@ U8 Cpu::executeSWAP(U8 src)
 /**
  * Shifts the byte to the left. Note: Bit 7 goes to the carry flag and the carry flag to bit 0.
  */
-U8 Cpu::executeRL(U8 src)
+u8 Cpu::executeRL(u8 src)
 {
-    U8 carry = (U8) reg.getFlagCarry();
-    U8 result = (src << 1) | carry;
+    u8 carry = (u8) reg.getFlagCarry();
+    u8 result = (src << 1) | carry;
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
@@ -637,10 +642,10 @@ U8 Cpu::executeRL(U8 src)
 /**
  * Shifts the byte to the right. Note: Bit 0 goes to the carry flag and the carry flag to bit 7.
  */
-U8 Cpu::executeRR(U8 src)
+u8 Cpu::executeRR(u8 src)
 {
-    U8 carry = ((U8) reg.getFlagCarry()) << 7;
-    U8 result = (src >> 1) | carry;
+    u8 carry = ((u8) reg.getFlagCarry()) << 7;
+    u8 result = (src >> 1) | carry;
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
@@ -654,9 +659,9 @@ U8 Cpu::executeRR(U8 src)
 /**
  * Shifts the byte to the left. Note: Bit 7 goes to both the carry flag and bit 0.
  */
-U8 Cpu::executeRLC(U8 src)
+u8 Cpu::executeRLC(u8 src)
 {
-    U8 result = (src << 1) | (src >> 7);
+    u8 result = (src << 1) | (src >> 7);
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
@@ -670,9 +675,9 @@ U8 Cpu::executeRLC(U8 src)
 /**
  * Shifts the byte to the right. Note: Bit 0 goes to both the carry flag and bit 7.
  */
-U8 Cpu::executeRRC(U8 src)
+u8 Cpu::executeRRC(u8 src)
 {
-    U8 result = (src << 7) | (src >> 1);
+    u8 result = (src << 7) | (src >> 1);
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
@@ -688,8 +693,8 @@ U8 Cpu::executeRRC(U8 src)
  */
 void Cpu::executeRLA()
 {
-    U8 src = reg.read8(RegID_A);
-    U8 result = executeRL(src);
+    u8 src = reg.read8(RegID_A);
+    u8 result = executeRL(src);
     reg.write8(RegID_A, result);
     reg.setFlagZero(false);
 }
@@ -700,8 +705,8 @@ void Cpu::executeRLA()
  */
 void Cpu::executeRRA()
 {
-    U8 src = reg.read8(RegID_A);
-    U8 result = executeRR(src);
+    u8 src = reg.read8(RegID_A);
+    u8 result = executeRR(src);
     reg.write8(RegID_A, result);
     reg.setFlagZero(false);
 }
@@ -712,8 +717,8 @@ void Cpu::executeRRA()
  */
 void Cpu::executeRLCA()
 {
-    U8 src = reg.read8(RegID_A);
-    U8 result = executeRLC(src);
+    u8 src = reg.read8(RegID_A);
+    u8 result = executeRLC(src);
     reg.write8(RegID_A, result);
     reg.setFlagZero(false);
 }
@@ -724,8 +729,8 @@ void Cpu::executeRLCA()
  */
 void Cpu::executeRRCA()
 {
-    U8 src = reg.read8(RegID_A);
-    U8 result = executeRRC(src);
+    u8 src = reg.read8(RegID_A);
+    u8 result = executeRRC(src);
     reg.write8(RegID_A, result);
     reg.setFlagZero(false);
 }
@@ -735,10 +740,10 @@ void Cpu::executeRRCA()
  * Execite SLA on a byte. It shifts the contents 1 bit to the left and bit 7 is stored in the
  * carry flag.
  */
-U8 Cpu::executeSLA(U8 src)
+u8 Cpu::executeSLA(u8 src)
 {
     bool carry = (src & 0x80) == 0x80;
-    U8 result = src << 1;
+    u8 result = src << 1;
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
@@ -753,10 +758,10 @@ U8 Cpu::executeSLA(U8 src)
  * Execite SRA on a byte. It shifts the contents 1 bit to the right. Bit 7 goes to itself and
  * bit 6 and bit 0 goes to the carry flag.
  */
-U8 Cpu::executeSRA(U8 src)
+u8 Cpu::executeSRA(u8 src)
 {
     bool carry = (src & 0x1) == 0x1;
-    U8 result = (src & 0x80) | (src >> 1);
+    u8 result = (src & 0x80) | (src >> 1);
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
@@ -771,10 +776,10 @@ U8 Cpu::executeSRA(U8 src)
  * Execite SRA on a byte. It shifts the contents 1 bit to the right. Bit 7 goes to itself and
  * bit 6 and bit 0 goes to the carry flag.
  */
-U8 Cpu::executeSRL(U8 src)
+u8 Cpu::executeSRL(u8 src)
 {
     bool carry = (src & 0x1) == 0x1;
-    U8 result = src >> 1;;
+    u8 result = src >> 1;;
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
