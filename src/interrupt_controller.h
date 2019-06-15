@@ -3,6 +3,7 @@
 
 #include <bitset>
 #include "types.h"
+#include "mmu.h"
 
 
 const size_t INTERRUPT_VERTICAL_BLANKING            = 0x1;
@@ -24,13 +25,37 @@ public:
     InterruptController();
     ~InterruptController();
 
+    void initialise(Mmu* mmuInstanceCopy);
+
     void disableInterrupts();
-    void enableInterrupts();
+    void enableInterrupts(bool delayed_enable);
+
+    u16 checkForInterrupts();
 
 private:
+    Mmu* mmu;
     bool ime;   /* Interrupt Master Enable. 0: disable all interrupts, 1: enable all interrupts. */
-    const u16 ieAddr = 0xffff; /* Interrupt Enable register address. */
-    const u16 ifAddr = 0xff0f; /* Interrupt Flag register address. */
+    bool delayed_enable;
+    const u16 interruptEnableRegister = 0xffff; /* Interrupt Enable register address. */
+    const u16 interruptFlagsRegister = 0xff0f;  /* Interrupt Flag register address. */
+
+    bool verticalBlankRequested;
+    bool verticalBlankEnabled;
+
+    bool LCDCRequested;
+    bool LCDCEnabled;
+
+    bool timerOverflowRequested;
+    bool timerOverflowEnabled;
+
+    bool serialRequested;
+    bool serialEnabled;
+
+    bool joypadRequested;
+    bool joypadEnabled;
+
+    void processInterruptRegister();
+    void handleInterrupt(size_t interruptJumpAddress);
 };
 
 

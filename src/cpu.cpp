@@ -11,10 +11,11 @@ using namespace std;
 Cpu::Cpu(Mmu* m, Video* vid)
 {
     /* Initialize the memory manager. */
-    mmu = m;
-    video = vid;
-    isRunning = true;
-    cyclesCompleted = 0;
+    this->mmu = m;
+    this->video = vid;
+    this->isRunning = true;
+    this->cyclesCompleted = 0;
+    this->interruptController.initialise(this->mmu);
 }
 
 Cpu::~Cpu()
@@ -73,12 +74,9 @@ void Cpu::run()
             runSingleFrame();
 
             /* Update display. */
-            // u8 lcdc = this->mmu->read(0xff40);
-            // printf("Use BG Display Data %d\n", (lcdc & 0x8) + 1);
-
             this->video->update();
 
-            /* Check if we sohuld close our window. */
+            /* Check if we should close our window. */
             if(this->video->closeWindow())
                 break;
         }
@@ -101,10 +99,15 @@ void Cpu::runNCycles(int cycles)
 
 void Cpu::runSingleFrame()
 {
+    u8 opcode = 0x0;
     while(cyclesCompleted < MAX_INSTRUCTIONS_PER_FRAME)
     {
+        /* Check for interrupts before fetching the next instruction. This possibly changes the
+         * program counter in order to execute a signal. */
+        this->checkSignals();
+
         /* Fetch the next instruction. */
-        u8 opcode = fetchNextInstruction();
+        opcode = fetchNextInstruction();
 
         /* Execute the instruction. */
         cyclesCompleted += executeInstruction(opcode);
@@ -122,7 +125,6 @@ u8 Cpu::fetchNextInstruction()
 {
     /* Get the program counter. */
     u16 pc = reg.getProgramCounter();
-    // printf("PC: 0x%04x\n", pc);
 
     /* Fetch the next instruction from memory. */
     u8 opcode = mmu->read(pc);
@@ -171,6 +173,30 @@ void Cpu::writeMem(RegID memPointer, u8 data)
 
     /* Get and return the data from memory. */
     mmu->write(memLocation, data);
+}
+
+
+void Cpu::checkSignals()
+{
+    /* Check for an interrupt signal. */
+    u16 interruptSignal = this->interruptController.checkForInterrupts();
+    if(interruptSignal == 0x0)
+        return;
+    else
+        setupSignalExecution(interruptSignal);
+}
+
+
+/**
+ * Pushes the current program counter on the stack and updates the program counter to the signal
+ * address.
+ */
+void Cpu::setupSignalExecution(u16 interruptSignalAddress)
+{
+    printf("Signal: 0x%x\n", interruptSignalAddress);
+    interruptController.disableInterrupts();
+    executePUSH(reg.read16(RegID_PC));
+    reg.write16(RegID_PC, interruptSignalAddress);
 }
 
 

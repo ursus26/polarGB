@@ -1,6 +1,8 @@
 #include "cartridge.h"
+#include <stdlib.h>
 #include <iostream>
 #include <fstream>
+
 
 using namespace std;
 
@@ -25,15 +27,25 @@ bool Cartridge::loadCartridge(string fileName)
     ifstream f;
     f.open(fileName, ios::in | ios::binary);
 
-    /* Get the length of the file. */
-    f.seekg (0, f.end);
-    this->size = f.tellg();
-    f.seekg (0, f.beg);
+    if(!f.is_open())
+    {
+        cout << "Error, could not open \"" << fileName << "\"" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if(f.good())
+    {
+        /* Get the length of the file. */
+        f.seekg (0, f.end);
+        this->size = f.tellg();
+        f.seekg (0, f.beg);
+    }
+
     // cout << "File size: 0x" << hex << this->size << dec << endl;
 
     /* Read the cartridge into a buffer. */
     this->mem = new uint8_t[this->size];
-    for(unsigned int i = 0; i < this->size; i++)
+    for(unsigned int i = 0; i < this->size && f.good(); i++)
         this->mem[i] = (uint8_t) f.get();
 
     /* Close the file. */

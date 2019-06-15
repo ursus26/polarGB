@@ -1237,8 +1237,11 @@ int Cpu::executeInstruction(u8 opcode)
             Log::printVerbose("RET C");
             cycles = executeRET(COND_C);
             break;
-        // case 0xD9:
-        //     break;
+        case 0xD9:
+            Log::printVerbose("RETI");
+            cycles = executeRET(COND_NONE);
+            this->interruptController.enableInterrupts(false);
+            break;
         case 0xDA: /* JP C, a16 */
             Log::printVerbose("JP C, a16");
             cycles = executeJP(COND_C);
@@ -1395,7 +1398,7 @@ int Cpu::executeInstruction(u8 opcode)
             break;
         case 0xFB: /* EI */
             Log::printVerbose("EI");
-            this->interruptController.enableInterrupts();
+            this->interruptController.enableInterrupts(true);
             cycles = 1;
             break;
         case 0xFC: /* No instruction */

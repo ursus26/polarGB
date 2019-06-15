@@ -53,6 +53,9 @@ private:
     bool isRunning;
     int cyclesCompleted = 0;
 
+    /* Signal handling. */
+    void checkSignals();
+    void setupSignalExecution(u16 interruptSignal);
 
     /* Half-carry and carry test. */
     bool halfCarryTest(int val1, int val2);

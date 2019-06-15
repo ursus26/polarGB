@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
     }
     catch(exception& e)
     {
-        cout << e.what() << "\nTry 'gamecub --help' for more information." << endl;
+        cout << e.what() << "\nTry 'polarGB --help' for more information." << endl;
         return EXIT_FAILURE;
     }
 

@@ -5,13 +5,13 @@
 
 Register::Register()
 {
-    /* Initialize the registers to 0. */
-    this->AF.pair = 0;
-    this->BC.pair = 0;
-    this->DE.pair = 0;
-    this->HL.pair = 0;
+    /* Initialize the registers. */
+    this->AF.pair = 0x01b0;
+    this->BC.pair = 0x0013;
+    this->DE.pair = 0x00d8;
+    this->HL.pair = 0x014d;
     this->SP = 0xfffe;
-    this->PC = 0;
+    this->PC = 0x0100;
 }
 
 
