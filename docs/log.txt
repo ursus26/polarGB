@@ -4,6 +4,10 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2019-06-17: - I added the copyright notice at the top of every source file I created and also added
+              an option to print the version of the emulator.
+2019-06-16: - I found that Tetris enters an endless loop early on in execution. This is most likely
+              due to a bug. I must start writing tests.
 2019-06-15: - I let the cpu class check for an interrupt in the InterruptController class and
               process the signal in the Cpu class. Unfortunately I did not test the handling of
               interrupts since my test roms did not encounter the EI instruction which triggers

@@ -1,3 +1,20 @@
+/**
+ * Copyright (C) 2018 Bart de Haan
+ *
+ * polarGB is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * polarGB is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include <stdlib.h>
 #include <iostream>
 #include <vector>
@@ -9,15 +26,29 @@
 using namespace std;
 
 
+const size_t MAJOR_VERSION = 0;
+const size_t MINOR_VERSION = 0;
+
+
 void printHelp()
 {
     cout << "Usage: polarGB [OPTION] [FILE]\n"
          << "Emulates the Game Boy to play FILE.\n"
          << "\n"
          << "Options:\n"
-         << "  -h, --help       display this help and exit\n"
-         << "  --input-file     input gameboy rom file\n"
-         << "  -v, --verbose    verbose printing"
+         << "  -h, --help           Display this help information\n"
+         << "      --input-file     Input gameboy rom file\n"
+         << "  -v, --verbose        Verbose printing\n"
+         << "      --version        Display emulator version information"
+         << endl;
+
+    exit(EXIT_SUCCESS);
+}
+
+
+void printVersion()
+{
+    cout << "polarGB version " << MAJOR_VERSION << "." << MINOR_VERSION
          << endl;
 
     exit(EXIT_SUCCESS);
@@ -34,9 +65,10 @@ int main(int argc, char* argv[])
         namespace po = boost::program_options;
         po::options_description description("Allowed options");
         description.add_options()
-            ("help,h", "Display this help message")
+            ("help,h", "Display this help information")
             ("input-file", po::value<vector<string>>(), "Input gameboy rom file")
-            ("verbose,v", "Verbose printing");
+            ("verbose,v", "Verbose printing")
+            ("version", "Display emulator version information");
 
         po::positional_options_description p;
         p.add("input-file", -1);
@@ -46,11 +78,10 @@ int main(int argc, char* argv[])
                   vm);
         po::notify(vm);
 
-        /* Print the program description and quit. */
         if(vm.count("help"))
-        {
             printHelp();
-        }
+        else if(vm.count("version"))
+            printVersion();
 
         /* Get the input rom file. */
         if(vm.count("input-file"))
