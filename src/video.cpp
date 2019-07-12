@@ -15,9 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "video.h"
 #include <iostream>
 #include <stdlib.h>
+#include "polarGB/video.h"
 
 
 const char *vertexShaderSrc = R"(

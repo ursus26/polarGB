@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "interrupt_controller.h"
+#include "polarGB/interrupt_controller.h"
 
 
 InterruptController::InterruptController()

@@ -16,7 +16,7 @@
  */
 
 #include <iostream>
-#include "log.h"
+#include "polarGB/log.h"
 
 
 bool Log::isVerbose = false;

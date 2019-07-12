@@ -61,6 +61,8 @@ public:
     u8 readMem(RegID memPointer);
     void writeMem(RegID memPointer, u8 data);
 
+    void executeADD8(u8 val);
+
 private:
     /* Member variables. */
     Register reg;
@@ -92,7 +94,7 @@ private:
     u16 executePOP();
 
     /* 8 bit arithmetic/logical instructions */
-    void executeADD8(u8 val);
+    // void executeADD8(u8 val);
     void executeADC(u8 val);
     void executeSUB(u8 val);
     void executeSBC(u8 val);

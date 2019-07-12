@@ -15,10 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "emulator.h"
 #include <iostream>
 #include <stdio.h>
 #include <fstream>
+#include "polarGB/emulator.h"
 
 using namespace std;
 

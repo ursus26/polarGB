@@ -18,8 +18,8 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include "cpu.h"
-#include "log.h"
+#include "polarGB/cpu.h"
+#include "polarGB/log.h"
 
 
 /**

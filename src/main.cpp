@@ -19,8 +19,8 @@
 #include <iostream>
 #include <vector>
 #include <boost/program_options.hpp>
-#include "emulator.h"
-#include "log.h"
+#include "polarGB/emulator.h"
+#include "polarGB/log.h"
 
 
 using namespace std;

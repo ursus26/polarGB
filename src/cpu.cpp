@@ -19,8 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
-#include "cpu.h"
-#include "log.h"
+#include "polarGB/cpu.h"
+#include "polarGB/log.h"
 
 
 using namespace std;
