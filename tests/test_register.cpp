@@ -4,7 +4,17 @@
 #include "polarGB/register.h"
 
 
-TEST(RegisterTest, Write8)
+/**
+ * Notes about the register class:
+ * The register has multiple pairs: AF, BC, DE, HL
+ * Special registers: SP, PC    (Always 16 bits)
+ * Individual registers: A, F, B, C, D, E, H and L
+ * The first letter of a register pair is the high byte while the last letter is the low byte.
+ * For example storing the number 0x45bf in register BC will store B<-0x45 and C<-0xbf.
+ */
+
+
+TEST(RegisterTest, WriteAndRead8bits)
 {
     Register reg;
     u8 testByte = 0x81;
@@ -45,7 +55,7 @@ TEST(RegisterTest, Write8)
 }
 
 
-TEST(RegisterTest, Write16)
+TEST(RegisterTest, WriteAndRead16bits)
 {
     Register reg;
 
@@ -53,11 +63,10 @@ TEST(RegisterTest, Write16)
     u16 testNumber = 0x561c;
     reg.write16(RegID_AF, testNumber);
     EXPECT_EQ(reg.read16(RegID_AF), testNumber);
-    EXPECT_EQ(reg.read8(RegID_A), testNumber & 0xff00 >> 8);
+    EXPECT_EQ(reg.read8(RegID_A), (testNumber >> 8) & 0xff);
 
     /* Register BC */
     testNumber = 0xc074;
-    printf("Testbyte: 0x%x, high: 0x%x, low: 0x%x\n", testNumber, (testNumber >> 8) & 0xff, testNumber & 0xff);
     reg.write16(RegID_BC, testNumber);
     EXPECT_EQ(reg.read16(RegID_BC), testNumber);
     EXPECT_EQ(reg.read8(RegID_B), (testNumber >> 8) & 0xff);
@@ -65,7 +74,6 @@ TEST(RegisterTest, Write16)
 
     /* Register DE */
     testNumber = 0xb624;
-    printf("Testbyte: 0x%x, high: 0x%x, low: 0x%x\n", testNumber, (testNumber >> 8) & 0xff, testNumber & 0xff);
     reg.write16(RegID_DE, testNumber);
     EXPECT_EQ(reg.read16(RegID_DE), testNumber);
     EXPECT_EQ(reg.read8(RegID_D), (testNumber >> 8) & 0xff);
@@ -73,7 +81,6 @@ TEST(RegisterTest, Write16)
 
     /* Register HL */
     testNumber = 0x46fc;
-    printf("Testbyte: 0x%x, high: 0x%x, low: 0x%x\n", testNumber, (testNumber >> 8) & 0xff, testNumber & 0xff);
     reg.write16(RegID_HL, testNumber);
     EXPECT_EQ(reg.read16(RegID_HL), testNumber);
     EXPECT_EQ(reg.read8(RegID_H), (testNumber >> 8) & 0xff);

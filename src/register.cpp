@@ -23,10 +23,10 @@
 Register::Register()
 {
     /* Initialize the registers. */
-    this->AF.pair = 0x01b0;
-    this->BC.pair = 0x0013;
-    this->DE.pair = 0x00d8;
-    this->HL.pair = 0x014d;
+    write16(RegID_AF, 0x01b0);
+    write16(RegID_BC, 0x0013);
+    write16(RegID_DE, 0x00d8);
+    write16(RegID_HL, 0x014d);
     this->SP = 0xfffe;
     this->PC = 0x0100;
 }
@@ -40,25 +40,25 @@ void Register::write8(RegID id, u8 val)
     switch(id)
     {
         case RegID_A:
-            AF.single[IDX_HIGH] = val;
+            AF.high = val;
             break;
         case RegID_B:
-            BC.single[IDX_HIGH] = val;
+            BC.high = val;
             break;
         case RegID_C:
-            BC.single[IDX_LOW] = val;
+            BC.low = val;
             break;
         case RegID_D:
-            DE.single[IDX_HIGH] = val;
+            DE.high = val;
             break;
         case RegID_E:
-            DE.single[IDX_LOW] = val;
+            DE.low = val;
             break;
         case RegID_H:
-            HL.single[IDX_HIGH] = val;
+            HL.high = val;
             break;
         case RegID_L:
-            HL.single[IDX_LOW] = val;
+            HL.low = val;
             break;
         default:
             throw std::invalid_argument("Cannot write a byte becasue register id was invalid.");
@@ -69,23 +69,27 @@ void Register::write8(RegID id, u8 val)
 
 /**
  * Writes a word to a register specified by its id. We can only write to the register pairs:
- * BC, DE and HL.
+ * AF, BC, DE and HL.
  */
 void Register::write16(RegID id, u16 val)
 {
     switch(id)
     {
         case RegID_AF:
-            AF.pair = val;
+            write8(RegID_A, (val >> 8) & 0xff);
+            AF.low = 0xff & val;
             break;
         case RegID_BC:
-            BC.pair = val;
+            write8(RegID_B, (val >> 8) & 0xff);
+            write8(RegID_C, val & 0xff);
             break;
         case RegID_DE:
-            DE.pair = val;
+            write8(RegID_D, (val >> 8) & 0xff);
+            write8(RegID_E, val & 0xff);
             break;
         case RegID_HL:
-            HL.pair = val;
+            write8(RegID_H, (val >> 8) & 0xff);
+            write8(RegID_L, val & 0xff);
             break;
         case RegID_SP:
             SP = val;
@@ -111,25 +115,25 @@ u8 Register::read8(RegID id)
     switch(id)
     {
         case RegID_A:
-            return AF.single[IDX_HIGH];
+            return AF.high;
 
         case RegID_B:
-            return BC.single[IDX_HIGH];
+            return BC.high;
 
         case RegID_C:
-            return BC.single[IDX_LOW];
+            return BC.low;
 
         case RegID_D:
-            return DE.single[IDX_HIGH];
+            return DE.high;
 
         case RegID_E:
-            return DE.single[IDX_LOW];
+            return DE.low;
 
         case RegID_H:
-            return HL.single[IDX_HIGH];
+            return HL.high;
 
         case RegID_L:
-            return HL.single[IDX_LOW];
+            return HL.low;
 
         default:
             throw std::invalid_argument("Cannot load byte from register.");
@@ -142,32 +146,39 @@ u8 Register::read8(RegID id)
 
 u16 Register::read16(RegID id)
 {
+    u16 returnValue = 0x0;
     switch(id)
     {
         case RegID_AF:
-            return AF.pair;
+            returnValue = (read8(RegID_A) << 8) + AF.low;
+            break;
 
         case RegID_BC:
-            return BC.pair;
+            returnValue = (read8(RegID_B) << 8) + read8(RegID_C);
+            break;
 
         case RegID_DE:
-            return DE.pair;
+            returnValue = (read8(RegID_D) << 8) + read8(RegID_E);
+            break;
 
         case RegID_HL:
-            return HL.pair;
+            returnValue = (read8(RegID_H) << 8) + read8(RegID_L);
+            break;
 
         case RegID_SP:
-            return SP;
+            returnValue = SP;
+            break;
 
         case RegID_PC:
-            return PC;
+            returnValue = PC;
+            break;
 
         default:
             throw std::invalid_argument("Cannot write a word becasue register id was invalid.");
             break;
     }
 
-    return 0;
+    return returnValue;
 }
 
 
@@ -199,7 +210,7 @@ bool Register::getFlagCarry() const
  */
 bool Register::getBitFromFlags(int position) const
 {
-    return (this->AF.single[IDX_LOW] >> position) & 0x1;
+    return (this->AF.low >> position) & 0x1;
 }
 
 
@@ -233,9 +244,7 @@ void Register::setBitFromFlags(int position, bool val)
 
     /* If the current value is not the desired value then flip the bit. Otherwise do nothing. */
     if(currentVal != val)
-        this->AF.single[IDX_LOW] ^= (1 << position);
-
-        // reg.regAF.single.Lo = reg.regAF.single.Lo ^ (1 << position);
+        this->AF.low ^= (1 << position);
 }
 
 

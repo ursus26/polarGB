@@ -4,6 +4,11 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2019-07-16: - I am afraid that I messed up the endianness of the Gameboy in my code. The Gameboy
+              is little-endian. I have to now check if I have implemented this correctly everywhere.
+              What is extra weird is that the registers feel like they have the opposite but that
+              is due to the naming. For instance register pair BC has the most significant byte in
+              register B and the least significant byte in register C.
 2019-07-15: - I added in an ad hoc way google test framework to my project and started writing
               some tests for the register class. I found that there was a bug with writing 2 bytes
               to a register pair. The high and low order of the bytes are not correctly handled and

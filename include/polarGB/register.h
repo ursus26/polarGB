@@ -26,7 +26,7 @@
  *
  * Register map:
  *
- * 0        8        16 bits
+ * 16       8         0 bits
  * -------------------
  * |   A    |   F    |
  * -------------------
@@ -67,10 +67,10 @@ typedef enum RegID
 } RegID;
 
 
-union RegPair
+struct RegPair
 {
-    u8 single[2];
-    u16 pair;
+    u8 high;
+    u8 low;
 };
 
 
