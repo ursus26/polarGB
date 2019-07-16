@@ -1,5 +1,3 @@
-polarGB
-!include/polarGB/
 bin/*
 build/*
 rom/*

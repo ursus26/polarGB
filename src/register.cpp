@@ -171,25 +171,25 @@ u16 Register::read16(RegID id)
 }
 
 
-bool Register::getFlagZero()
+bool Register::getFlagZero() const
 {
     return getBitFromFlags(7);
 }
 
 
-bool Register::getFlagSub()
+bool Register::getFlagSub() const
 {
     return getBitFromFlags(6);
 }
 
 
-bool Register::getFlagHalfCarry()
+bool Register::getFlagHalfCarry() const
 {
     return getBitFromFlags(5);
 }
 
 
-bool Register::getFlagCarry()
+bool Register::getFlagCarry() const
 {
     return getBitFromFlags(4);
 }
@@ -197,7 +197,7 @@ bool Register::getFlagCarry()
 /**
  * Return the bit value of a flag in the flags register.
  */
-bool Register::getBitFromFlags(int position)
+bool Register::getBitFromFlags(int position) const
 {
     return (this->AF.single[IDX_LOW] >> position) & 0x1;
 }
@@ -269,7 +269,7 @@ void Register::incProgramCounter()
 /**
  * Returns the value of the stack pointer.
  */
-u16 Register::getStackPointer()
+u16 Register::getStackPointer() const
 {
     return this->SP;
 }

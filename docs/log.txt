@@ -4,6 +4,11 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2019-07-15: - I added in an ad hoc way google test framework to my project and started writing
+              some tests for the register class. I found that there was a bug with writing 2 bytes
+              to a register pair. The high and low order of the bytes are not correctly handled and
+              as such reading the individual components will result in reading the wrong values.
+2019-07-14: - Added compiler options and improved the CMake script.
 2019-07-12: - After yesterdays failure I removed my changes and picked up the CMake build system.
               I thought this change would be horribly difficult but with a few lines my project
               compiles the same way as it used to.

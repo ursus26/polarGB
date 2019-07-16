@@ -94,15 +94,15 @@ public:
     void incProgramCounter();
 
     /* Operations on the stack pointer. */
-    u16 getStackPointer();
+    u16 getStackPointer() const;
     void incStackPointer();
     void decStackPointer();
 
     /* Functions for getting the flags from register F. */
-    bool getFlagZero();
-    bool getFlagSub();
-    bool getFlagHalfCarry();
-    bool getFlagCarry();
+    bool getFlagZero() const;
+    bool getFlagSub() const;
+    bool getFlagHalfCarry() const;
+    bool getFlagCarry() const;
 
     /* Functions for setting the flags from register F. */
     void setFlagZero(bool val);
@@ -112,7 +112,7 @@ public:
 
 private:
     /* Bit flag operations. */
-    bool getBitFromFlags(int position);
+    bool getBitFromFlags(int position) const;
     void setBitFromFlags(int position, bool val);
 
     /* Register variables. */
