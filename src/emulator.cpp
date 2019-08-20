@@ -48,7 +48,8 @@ void Emulator::run()
     /* First boot up the emulator with the correct values. */
     cpu->boot();
 
-    // cpu->runNCycles(10);
+    // cpu->runNCycles(15);
+    // cpu->runSingleFrame();
     // cpu->runSingleFrame();
 
     /* Run the emulator. */

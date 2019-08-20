@@ -18,7 +18,7 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include <string.h>
+#include <string>
 
 using namespace std;
 

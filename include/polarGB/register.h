@@ -49,6 +49,7 @@ const int IDX_LOW = 1;
 
 typedef enum RegID
 {
+    RegID_NONE,
     RegID_A,
     RegID_F,
     RegID_B,

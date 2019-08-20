@@ -24,44 +24,70 @@
 #include "video.h"
 #include "interrupt_controller.h"
 
+class Cpu;
 
 const int CPU_FREQUENCY = 1048575; /* Hz */
 const int FPS = 60;
 const double FRAME_TIME = 1.0 / (double) FPS;
 const int MAX_INSTRUCTIONS_PER_FRAME = CPU_FREQUENCY / FPS;
 
+
 enum ConditionFlag
 {
-    COND_HL = -2,
-    COND_NONE = -1,
-    COND_NZ = 0,
-    COND_Z = 1,
-    COND_NC = 2,
-    COND_C = 3
+    COND_NONE = 0,
+    COND_HL = 1,
+    COND_NZ = 2,
+    COND_Z = 3,
+    COND_NC = 4,
+    COND_C = 5
 };
+
+
+enum OperandType
+{
+    OP_NONE = 0,
+    OP_IMM = 1,
+    OP_REG = 2,
+    OP_MEM = 4
+};
+
+
+typedef struct Operand
+{
+    u8 type;
+    u16 immediate;
+    RegID reg;
+    RegID memPtr;
+} Operand;
 
 
 class Cpu
 {
 public:
+    typedef struct Instruction
+    {
+        u16 memoryLocation;                             /* Location of the instruction */
+        u8 opcode;                                      /* Opcode on the memory location */
+        u8 instructionLength;                           /* Length of the instruction */
+        char mnemonic[16];                              /* Mnemonic of the instruction, used for debugging */
+        Operand operandSrc;                             /* Source operand of the instruction */
+        Operand operandDst;                             /* Destination operand of the instruction */
+        u8 cycleCost;                                   /* Cost of the instruction in clock cycles */
+        u8 extraInfo;                                   /* Additional info used for some execution function */
+        void (Cpu::*executionFunction)(Instruction *);  /* Funtion that can execute this instruction. */
+    } instruction_t;
+
+    /* Constructer and destructor. */
     Cpu(Mmu* m, Video* vid);
     ~Cpu();
 
+    /* Initialise the cpu. */
     void boot();
 
-    /* Basic CPU operations. (Running cycles, fetching and executing instructions) */
+    /* Main loop function of the cpu. */
     void run();
     void runNCycles(int cycles);
     void runSingleFrame();
-    u8 fetchNextInstruction();
-    u16 fetchNext16Bits();
-    int executeInstruction(u8 opcode);
-
-    /* Read and write to a memory location specified by a register. */
-    u8 readMem(RegID memPointer);
-    void writeMem(RegID memPointer, u8 data);
-
-    void executeADD8(u8 val);
 
 private:
     /* Member variables. */
@@ -76,17 +102,63 @@ private:
     void checkSignals();
     void setupSignalExecution(u16 interruptSignal);
 
+    /* old functions TODO: delete  */
+    u8 fetchNextInstruction();
+    u16 fetchNext16Bits();
+    int executeInstruction(u8 opcode);
+
+    instruction_t* fetchDecode();
+    void decodeOpcode(instruction_t *instr, u8 opcode);
+    void printInstructionInfo(instruction_t *instr);
+
+    /* Read and write to a memory location specified by a register. */
+    u8 readMem(RegID memPointer);   /* <-- Outdated, TODO: delete */
+    u8 readMemFromPointer(RegID memPointer);
+    u8 readMem8bits(u16 memPointer);
+    u16 readMem16bitsFromPointer(RegID memPointer);
+    u16 readMem16bits(u16 memPointer);
+    void writeMem(RegID memPointer, u8 data);
+    void writeMem16bits(RegID memPointer, u16 data);
+
     /* Half-carry and carry test. */
     bool halfCarryTest(int val1, int val2);
     bool halfBorrowTest(int val1, int val2);
     bool carryTest(int val1, int val2);
     bool borrowTest(int val1, int val2);
 
+    /* Instruction helper functions. */
+    u8 loadOperand8bits(Operand* instr);
+    u16 loadOperand16bits(Operand* instr);
+    void storeOperand8bits(Operand* instr, u8 value);
+    void storeOperand16bits(Operand* instr, u16 value);
+
+    /* Instruction functions. */
+    void executeNOP(instruction_t* instr);
+    void executeLD8(instruction_t* instr);
+    void executeLD8Inc(instruction_t* instr);
+    void executeLD8Dec(instruction_t* instr);
+    void executeLD16(instruction_t* instr);
+    void executeJP(instruction_t* instr);
+    void executeJR(instruction_t* instr);
+    void executeXOR(instruction_t* instr);
+    void executeINC8(instruction_t* instr);
+    void executeDEC8(instruction_t* instr);
+
+    void executeINC16(instruction_t* instr);
+    void executeDEC16(instruction_t* instr);
+
+    void executeDI(instruction_t* instr);
+
+
+
+
+
+
+
+
+
     /* Execute the extended instruction set. */
     int executeCB();
-
-    /* 8 bit load/store/move instructions */
-    void executeLD8(u16 addr, u8 val);
 
     /* 16 bit load/store/move instructions */
     void executeLD16(RegID dest);
@@ -94,7 +166,7 @@ private:
     u16 executePOP();
 
     /* 8 bit arithmetic/logical instructions */
-    // void executeADD8(u8 val);
+    void executeADD8(u8 val);
     void executeADC(u8 val);
     void executeSUB(u8 val);
     void executeSBC(u8 val);

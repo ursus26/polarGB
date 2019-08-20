@@ -4,11 +4,28 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2019-08-20: - Today I started working on implementing the execution handlers for a quarter of the
+              instruction set. The other 3/4 are currently unavailable and must be re-implemented.
+            - Improved printing of the instruction stream and it now roughly follows the same
+              format as objdump.
+            - Fixed a bug where the instruction 'DEC E' actually executes 'DEC D'.
+2019-08-18: - Continuation of yesterdays work. I implemented some helper and loading functions for
+              executing the instruction set. Now, most of the work will be to transform the handling
+              of the current implementation to my newly created implementation.
+2019-08-17: - To improve the logging I am changing the way the instructions are interpreted. I now
+              create a struct that stores information about an instruction. This info struct makes
+              it much easier to log about the executed instructions. This change does have a huge
+              impact on the source code because a large portion has to be rewritten to fit the new
+              system. The changes will mainly affect the Cpu class.
+2019-08-16: - I wanted to work on the graphics side but I was not satisfied with my interpreter.
+              I therefore set out to work on improving the logging of the instruction stream.
 2019-07-16: - I am afraid that I messed up the endianness of the Gameboy in my code. The Gameboy
               is little-endian. I have to now check if I have implemented this correctly everywhere.
               What is extra weird is that the registers feel like they have the opposite but that
               is due to the naming. For instance register pair BC has the most significant byte in
               register B and the least significant byte in register C.
+            - A bit later on I found that the return value of the pop instruction returns in my
+              code a single byte instead of 2 bytes.
 2019-07-15: - I added in an ad hoc way google test framework to my project and started writing
               some tests for the register class. I found that there was a bug with writing 2 bytes
               to a register pair. The high and low order of the bytes are not correctly handled and

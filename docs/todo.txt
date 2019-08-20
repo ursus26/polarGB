@@ -1,7 +1,6 @@
 To do:
 
-- Test if interrupts are handled correctly. When it was written my test roms did not yet execute
-  the EI instruction.
+- Continue the rewrite of instruction handling (high priority)
 - Transform bits in memory to texture
 - Draw square with OpenGL
 - Write tests for the instruction set.
@@ -9,3 +8,6 @@ To do:
   great but it is C and not C++ however the usability is fantastic. Iostream is the c++ way but it
   is horrible to use and you have to type a lot of characters. Maybe look at the library "fmt".
 - Remove boost.program_options. It is a very bloated library but it does the job fine.
+- Implement keyboard input
+- Implement controller input (xbox 360)
+- Research audio (Low priority)

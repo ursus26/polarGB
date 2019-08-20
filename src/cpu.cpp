@@ -105,33 +105,401 @@ void Cpu::runNCycles(int cycles)
 {
     for(int i = 0; i < cycles; i++)
     {
-        /* Fetch the next instruction. */
-        u8 opcode = fetchNextInstruction();
+        /* TESTING */
+        Instruction* instr = fetchDecode();
 
-        /* Execute the instruction. */
-        executeInstruction(opcode);
+        /* Increase the program counter. */
+        reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
+
+        /* Execute the instruction handler. */
+        (this->*(instr->executionFunction))(instr);
+
+        /* Print information about the instruction. */
+        printInstructionInfo(instr);
+
+        /* Instruction clean up. */
+        delete instr;
+
+        /* Fetch the next instruction. */
+        // u8 opcode = fetchNextInstruction();
+        //
+        // /* Execute the instruction. */
+        // executeInstruction(opcode);
+
     }
 }
 
 
 void Cpu::runSingleFrame()
 {
-    u8 opcode = 0x0;
+    // u8 opcode = 0x0;
     while(cyclesCompleted < MAX_INSTRUCTIONS_PER_FRAME)
     {
         /* Check for interrupts before fetching the next instruction. This possibly changes the
          * program counter in order to execute a signal. */
         this->checkSignals();
 
-        /* Fetch the next instruction. */
-        opcode = fetchNextInstruction();
+        Instruction* instr = fetchDecode();
 
-        /* Execute the instruction. */
-        cyclesCompleted += executeInstruction(opcode);
+        /* Increase the program counter. */
+        reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
+
+        /* Execute the instruction handler. */
+        (this->*(instr->executionFunction))(instr);
+
+        /* Print information about the instruction. */
+        printInstructionInfo(instr);
+
+        /* Instruction clean up. */
+        delete instr;
+
+
+
+        // /* Fetch the next instruction. */
+        // opcode = fetchNextInstruction();
+        //
+        // /* Execute the instruction. */
+        // cyclesCompleted += executeInstruction(opcode);
     }
 
     cyclesCompleted -= MAX_INSTRUCTIONS_PER_FRAME;
 }
+
+
+Cpu::instruction_t * Cpu::fetchDecode()
+{
+    instruction_t* instr = new instruction_t;
+
+    /* Get the program counter. */
+    u16 pc = reg.getProgramCounter();
+
+    /* Fetch the next instruction from memory. */
+    u8 opcode = mmu->read(pc);
+
+    instr->memoryLocation = pc;
+    instr->opcode = opcode;
+    decodeOpcode(instr, opcode);
+    // instr->opcode = 0x0;
+
+    return instr;
+}
+
+
+void Cpu::printInstructionInfo(instruction_t *instr)
+{
+    printf("%04x:\t", instr->memoryLocation);
+    printf("%02x", instr->opcode);
+
+    if(instr->instructionLength == 3)
+    {
+        u16 data = instr->operandSrc.immediate;
+        printf(" %02x %02x    ", data & 0xff, data >> 8);
+    }
+    else if(instr->instructionLength == 2)
+    {
+        u16 data = instr->operandSrc.immediate;
+        printf(" %02x         ", data & 0xff);
+    }
+    else
+    {
+        /* Padding for allignment. */
+        printf("%-10s", " ");
+    }
+
+    printf("\t%s\n", instr->mnemonic);
+}
+
+
+u8 Cpu::loadOperand8bits(Operand* operand)
+{
+    switch(operand->type)
+    {
+        case OP_IMM:
+            return operand->immediate;
+        case OP_REG:
+            return reg.read8(operand->reg);
+        case OP_MEM:
+            return readMem(operand->memPtr);
+        case OP_NONE:
+        default:
+            return 0;
+    }
+}
+
+
+u16 Cpu::loadOperand16bits(Operand* operand)
+{
+    switch(operand->type)
+    {
+        case OP_IMM:
+            return operand->immediate;
+        case OP_REG:
+            return reg.read16(operand->reg);
+        case OP_MEM:
+            return readMem16bitsFromPointer(operand->memPtr);
+        case OP_NONE:
+        default:
+            return 0;
+    }
+}
+
+
+void Cpu::storeOperand8bits(Operand* operand, u8 value)
+{
+    switch(operand->type)
+    {
+        case OP_REG:
+            reg.write8(operand->reg, value);
+            break;
+        case OP_MEM:
+            writeMem(operand->memPtr, value);
+            break;
+        case OP_IMM:
+        case OP_NONE:
+        default:
+            printf("Unexpected store 8 bits location, operand = %d\n", operand->type);
+            break;
+    }
+}
+
+
+void Cpu::storeOperand16bits(Operand* operand, u16 value)
+{
+    switch(operand->type)
+    {
+        case OP_REG:
+            reg.write16(operand->reg, value);
+            break;
+        case OP_MEM:
+            writeMem16bits(operand->memPtr, value);
+            break;
+        case OP_IMM:
+        case OP_NONE:
+        default:
+            printf("Unexpected store 16 bits location, operand = %d\n", operand->type);
+            break;
+    }
+}
+
+
+void Cpu::executeNOP(instruction_t* instr)
+{
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeLD8(instruction_t* instr)
+{
+    /* Load and store 1 byte of information. */
+    u8 value = loadOperand8bits(&(instr->operandSrc));
+    storeOperand8bits(&(instr->operandDst), value);
+
+    /* Add the amount of cycles used. */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeLD8Inc(instruction_t* instr)
+{
+    /* Load and store 1 byte of information. */
+    u8 value = loadOperand8bits(&(instr->operandSrc));
+    storeOperand8bits(&(instr->operandDst), value);
+
+    /* Incrementing the HL register. */
+    u16 result = reg.read16(RegID_HL) + 1;
+    reg.write16(RegID_HL, result);
+
+    /* Add the amount of cycles used. */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeLD8Dec(instruction_t* instr)
+{
+    /* Load and store 1 byte of information. */
+    u8 value = loadOperand8bits(&(instr->operandSrc));
+    storeOperand8bits(&(instr->operandDst), value);
+
+    /* Incrementing the HL register. */
+    u16 result = reg.read16(RegID_HL) - 1;
+    reg.write16(RegID_HL, result);
+
+    /* Add the amount of cycles used. */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeLD16(instruction_t* instr)
+{
+    /* Load and store 2 byte of information. */
+    u16 value = loadOperand16bits(&(instr->operandSrc));
+    storeOperand16bits(&(instr->operandDst), value);
+
+    /* Add the amount of cycles used. */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeJP(instruction_t* instr)
+{
+    bool zero = reg.getFlagZero();
+    bool carry = reg.getFlagCarry();
+    u8 conditionFlag = instr->extraInfo;
+
+    /* Code execution for: JP (HL) */
+    if(conditionFlag == COND_HL)
+    {
+        reg.setProgramCounter(reg.read16(RegID_HL));
+        this->cyclesCompleted += instr->cycleCost;
+    }
+    else
+    {
+        /* Get the jump location and check if the condition is true or does not exist. */
+        u16 jumpLocation = instr->operandSrc.immediate;
+        if(conditionFlag == COND_NONE
+        ||(conditionFlag == COND_NZ && zero == false)
+        ||(conditionFlag == COND_Z  && zero == true)
+        ||(conditionFlag == COND_NC && carry == false)
+        ||(conditionFlag == COND_C  && carry == true))
+        {
+            reg.setProgramCounter(jumpLocation);
+            this->cyclesCompleted += instr->cycleCost;
+        }
+        else
+        {
+            this->cyclesCompleted += 3;
+        }
+    }
+}
+
+
+void Cpu::executeJR(instruction_t* instr)
+{
+    bool zero = reg.getFlagZero();
+    bool carry = reg.getFlagCarry();
+    u8 tmp = instr->operandSrc.immediate;
+    i8 step = (static_cast<i8> (tmp));
+    u8 conditionFlag = instr->extraInfo;
+
+    /* Get the jump location and check if the condition is true or does not exist. */
+    if(conditionFlag == COND_NONE
+    ||(conditionFlag == COND_NZ && zero == false)
+    ||(conditionFlag == COND_Z  && zero == true)
+    ||(conditionFlag == COND_NC && carry == false)
+    ||(conditionFlag == COND_C  && carry == true))
+    {
+        u16 newPC = reg.getProgramCounter() + step;
+        reg.setProgramCounter(newPC);
+        this->cyclesCompleted += instr->cycleCost;
+    }
+    else
+    {
+        this->cyclesCompleted += 2;
+    }
+}
+
+
+/**
+ * Bitwise XOR of a value with register A. Then store the result in register A.
+ */
+void Cpu::executeXOR(instruction_t* instr)
+{
+    /* Bitwise xor. */
+    u8 result = reg.read8(RegID_A) ^ loadOperand8bits(&(instr->operandSrc));
+
+    /* Set or reset the flags. */
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry(false);
+
+    /* Store the result. */
+    reg.write8(RegID_A, result);
+
+    /* Clock cycles */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeINC8(instruction_t* instr)
+{
+    u8 original = loadOperand8bits(&(instr->operandDst));
+    u8 result = original + 1;
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(halfCarryTest(original, 1));
+
+    storeOperand8bits(&(instr->operandDst), result);
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeDEC8(instruction_t* instr)
+{
+    u8 original = loadOperand8bits(&(instr->operandDst));
+    u8 result = original - 1;
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(true);
+    reg.setFlagHalfCarry(halfBorrowTest(original, 1));
+
+    storeOperand8bits(&(instr->operandDst), result);
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeINC16(instruction_t* instr)
+{
+    u16 result = reg.read16(instr->operandDst.reg) + 1;
+    reg.write16(instr->operandDst.reg, result);
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeDEC16(instruction_t* instr)
+{
+    u16 result = reg.read16(instr->operandDst.reg) - 1;
+    reg.write16(instr->operandDst.reg, result);
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeDI(instruction_t* instr)
+{
+    this->interruptController.disableInterrupts();
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**
@@ -170,6 +538,19 @@ u16 Cpu::fetchNext16Bits()
 /**
  * Read some data from memory specified by an address in a register.
  */
+u8 Cpu::readMemFromPointer(RegID memPointer)
+{
+    /* Get the memory location. */
+    u16 memLocation = reg.read16(memPointer);
+
+    /* Get and return the data from memory. */
+    return (mmu->read(memLocation));
+}
+
+/**
+ * TODO: DELETE BECAUSE OUTDATED.
+ * Read some data from memory specified by an address in a register.
+ */
 u8 Cpu::readMem(RegID memPointer)
 {
     /* Get the memory location. */
@@ -177,6 +558,34 @@ u8 Cpu::readMem(RegID memPointer)
 
     /* Get and return the data from memory. */
     return (mmu->read(memLocation));
+}
+
+
+/**
+ * Read some data from memory specified by an address in a register.
+ */
+u8 Cpu::readMem8bits(u16 memPointer)
+{
+    /* Get and return the data from memory. */
+    return (mmu->read(memPointer));
+}
+
+
+/**
+ * Read some data from memory specified by an address in a register.
+ */
+u16 Cpu::readMem16bitsFromPointer(RegID memPointer)
+{
+    u16 memLocation = reg.read16(memPointer);
+    u16 word = mmu->read16bits(memLocation);
+    return word;
+}
+
+
+u16 Cpu::readMem16bits(u16 memPointer)
+{
+    u16 word = mmu->read16bits(memPointer);
+    return word;
 }
 
 
@@ -190,6 +599,23 @@ void Cpu::writeMem(RegID memPointer, u8 data)
 
     /* Get and return the data from memory. */
     mmu->write(memLocation, data);
+}
+
+
+/**
+ * Writes some data to memory specified by an address in a register.
+ */
+void Cpu::writeMem16bits(RegID memPointer, u16 data)
+{
+    /* Get the memory location. */
+    u16 memLocation = reg.read16(memPointer);
+
+    u8 low = (u8) (data & 0xff);
+    u8 high = (u8) (data >> 8);
+
+    /* Get and return the data from memory. */
+    mmu->write(memLocation, low);
+    mmu->write(memLocation + 1, high);
 }
 
 
@@ -214,15 +640,6 @@ void Cpu::setupSignalExecution(u16 interruptSignalAddress)
     interruptController.disableInterrupts();
     executePUSH(reg.read16(RegID_PC));
     reg.write16(RegID_PC, interruptSignalAddress);
-}
-
-
-/**
- * Writes a value to a memory address.
- */
-void Cpu::executeLD8(u16 addr, u8 val)
-{
-    mmu->write(addr, val);
 }
 
 
@@ -261,7 +678,7 @@ void Cpu::executePUSH(u16 val)
 u16 Cpu::executePOP()
 {
     /* Get 2 bytes from the stack. */
-    u8 val = mmu->read16bits(reg.getStackPointer());
+    u16 val = mmu->read16bits(reg.getStackPointer());
 
     /* Increases the stack pointer by two. */
     reg.incStackPointer();
@@ -523,7 +940,6 @@ int Cpu::executeJP(int conditionFlag)
     ||(conditionFlag == COND_NC && carry == false)
     ||(conditionFlag == COND_C  && carry == true))
     {
-        printf("PC <- 0x%04x\n", jumpLocation);
         reg.setProgramCounter(jumpLocation);
         cycles = 4;
     }

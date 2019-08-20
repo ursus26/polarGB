@@ -76,7 +76,7 @@ void Video::initialise()
     this->window = glfwCreateWindow(this->width, this->height, this->windowName.c_str(), NULL, NULL);
     if (this->window == NULL)
     {
-        std::cout << "Failed to create GLFW window" << std::endl;
+        std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -88,7 +88,7 @@ void Video::initialise()
      */
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+        std::cerr << "Failed to initialize GLAD" << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -123,7 +123,7 @@ void Video::initShaders()
     if(!success)
     {
         glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
     /**
@@ -137,7 +137,7 @@ void Video::initShaders()
     if(!success)
     {
         glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+        std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
     /**
@@ -151,7 +151,7 @@ void Video::initShaders()
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if(!success) {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER_PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+        std::cerr << "ERROR::SHADER_PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
 
     glUseProgram(this->shaderProgram);
@@ -212,12 +212,6 @@ void Video::update()
     // 1. then set the vertex attributes pointers
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
-    // 2. use our shader program when we want to render an object
-    glUseProgram(shaderProgram);
-    glBindVertexArray(VAO);
-
-    // 3. now draw the object
 
     /* Handle input. */
     processInput(this->window);
