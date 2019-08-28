@@ -111,6 +111,8 @@ public:
     void setFlagHalfCarry(bool val);
     void setFlagCarry(bool val);
 
+    void printRegister();
+
 private:
     /* Bit flag operations. */
     bool getBitFromFlags(int position) const;

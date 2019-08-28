@@ -300,3 +300,12 @@ void Register::decStackPointer()
 {
     this->SP--;
 }
+
+
+void Register::printRegister()
+{
+    printf("AF: 0x%04x\n", read16(RegID_AF));
+    printf("BC: 0x%04x\n", read16(RegID_BC));
+    printf("DE: 0x%04x\n", read16(RegID_DE));
+    printf("HL: 0x%04x\n", read16(RegID_HL));
+}

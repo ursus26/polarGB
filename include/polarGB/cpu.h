@@ -132,30 +132,55 @@ private:
     void storeOperand8bits(Operand* instr, u8 value);
     void storeOperand16bits(Operand* instr, u16 value);
 
-    /* Instruction functions. */
-    void executeNOP(instruction_t* instr);
+
+    /**
+     * Instruction functions
+     */
+
+    /* 8-bit load instructions */
     void executeLD8(instruction_t* instr);
     void executeLD8Inc(instruction_t* instr);
     void executeLD8Dec(instruction_t* instr);
+    void executeLD8InternalRam(instruction_t* instr);
+
+    /* 16-bit load instructions */
     void executeLD16(instruction_t* instr);
+
+    /* Jump/call instructions */
     void executeJP(instruction_t* instr);
     void executeJR(instruction_t* instr);
+
+    /* 8-bit arithmetic/logical instructions */
+    void executeADD8(instruction_t* instr);
+    void executeADC(instruction_t* instr);
+    void executeSUB(instruction_t* instr);
+    void executeSBC(instruction_t* instr);
+    void executeAND(instruction_t* instr);
     void executeXOR(instruction_t* instr);
+    void executeOR(instruction_t* instr);
+    void executeCP(instruction_t* instr);
     void executeINC8(instruction_t* instr);
     void executeDEC8(instruction_t* instr);
 
+    /* 16-bit arithmetic/logical instructions */
     void executeINC16(instruction_t* instr);
     void executeDEC16(instruction_t* instr);
 
+    /* Misc/control instructions */
+    void executeNOP(instruction_t* instr);
     void executeDI(instruction_t* instr);
+    void executeEI(instruction_t* instr);
+
+    /* 8-bit shift, rotate and bit instructions */
 
 
 
 
 
 
-
-
+    /**
+     * OUTDATED instruction functions
+     */
 
     /* Execute the extended instruction set. */
     int executeCB();

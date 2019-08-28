@@ -1,9 +1,12 @@
 To do:
 
 - Continue the rewrite of instruction handling (high priority)
+- Handle display updates to memory
+- Make a README
 - Transform bits in memory to texture
 - Draw square with OpenGL
 - Write tests for the instruction set.
+- Re-implement logging
 - Use a standardized printing library. Currently the project uses printf and iostream. Printf is
   great but it is C and not C++ however the usability is fantastic. Iostream is the c++ way but it
   is horrible to use and you have to type a lot of characters. Maybe look at the library "fmt".

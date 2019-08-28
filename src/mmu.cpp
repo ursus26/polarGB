@@ -162,7 +162,7 @@ void Mmu::write(u16 addr, u8 data)
 {
     if(addr <= 0x7fff) /* ROM banks */
     {
-        cerr << "Error, unsuported write action for cartridge roms" << endl;
+        cerr << "Error, unsupported write action for cartridge roms" << endl;
         exit(EXIT_FAILURE);
     }
     else if(addr >= 0x8000 && addr <= 0x9fff) /* VRAM */
@@ -175,7 +175,7 @@ void Mmu::write(u16 addr, u8 data)
         WRAM.mem[addr - 0xc000] = data;
     else if(addr >= 0xe000 && addr <= 0xfdff) /* Echo ram, typically not used. */
     {
-        cerr << "Error, unsuported echo RAM" << endl;
+        cerr << "Error, unsupported echo RAM" << endl;
         exit(EXIT_FAILURE);
     }
     else if(addr >= 0xfe00 && addr <= 0xfe9f) /* Sprite attribute table */
@@ -194,7 +194,7 @@ void Mmu::write(u16 addr, u8 data)
         HRAM.mem[addr - 0xff00] = data;
     // else if(addr == 0xFFFF) /* Interrupt enable register */
     // {
-    //     cerr << "Error, unsuported write action for interrupt enable register" << endl;
+    //     cerr << "Error, unsupported write action for interrupt enable register" << endl;
     //     exit(EXIT_FAILURE);
     // }
 }

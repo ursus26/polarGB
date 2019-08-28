@@ -4,6 +4,18 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2019-08-28: - Instead of addressing yesterdays issue I continued working on implementing more
+              instructions.
+2019-08-27: - After some research into the documentation I found out that the display writes some
+              information to memory so the cpu can poll the state of the display. Currently the
+              cpu is stuck in an infinite loop because the it checks if the display has finished
+              drawing all the display lines. Unfortunately the display does not update the memory
+              and so nothing will happen.
+2019-08-21: - Added a few more instructions. Tetris is now stuck in an infinite loop as before the
+              big rewrite. I might have traced a bit of the problem. It has to do with the LCD
+              control register that updates the LY register. In other gameboy emulators this value
+              is updated but mine does not. I have to investigate if the LCD runs independently from
+              the cpu.
 2019-08-20: - Today I started working on implementing the execution handlers for a quarter of the
               instruction set. The other 3/4 are currently unavailable and must be re-implemented.
             - Improved printing of the instruction stream and it now roughly follows the same

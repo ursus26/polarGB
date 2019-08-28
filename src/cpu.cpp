@@ -39,7 +39,8 @@ Cpu::~Cpu()
 {
     /* Remove the reference to the memory manager but don't delete it since this object did not
      * create the memory manager. */
-    mmu = nullptr;
+    this->mmu = nullptr;
+    this->video = nullptr;
 }
 
 
@@ -153,8 +154,6 @@ void Cpu::runSingleFrame()
         /* Instruction clean up. */
         delete instr;
 
-
-
         // /* Fetch the next instruction. */
         // opcode = fetchNextInstruction();
         //
@@ -179,7 +178,6 @@ Cpu::instruction_t * Cpu::fetchDecode()
     instr->memoryLocation = pc;
     instr->opcode = opcode;
     decodeOpcode(instr, opcode);
-    // instr->opcode = 0x0;
 
     return instr;
 }
@@ -190,14 +188,21 @@ void Cpu::printInstructionInfo(instruction_t *instr)
     printf("%04x:\t", instr->memoryLocation);
     printf("%02x", instr->opcode);
 
+    u16 data = 0;
     if(instr->instructionLength == 3)
     {
-        u16 data = instr->operandSrc.immediate;
+        if(instr->operandSrc.type == OP_IMM)
+            data = instr->operandSrc.immediate;
+        else
+            data = instr->operandDst.immediate;
         printf(" %02x %02x    ", data & 0xff, data >> 8);
     }
     else if(instr->instructionLength == 2)
     {
-        u16 data = instr->operandSrc.immediate;
+        if(instr->operandSrc.type == OP_IMM)
+            data = instr->operandSrc.immediate;
+        else
+            data = instr->operandDst.immediate;
         printf(" %02x         ", data & 0xff);
     }
     else
@@ -329,6 +334,31 @@ void Cpu::executeLD8Dec(instruction_t* instr)
 }
 
 
+void Cpu::executeLD8InternalRam(instruction_t* instr)
+{
+    if(instr->operandSrc.type == OP_REG)
+    {
+        u16 destAddr = 0xff00;
+        if(instr->operandDst.type == OP_IMM)
+            destAddr += instr->operandDst.immediate;
+        else
+            destAddr += reg.read8(instr->operandDst.memPtr);
+        mmu->write(destAddr, reg.read8(instr->operandSrc.reg));
+    }
+    else
+    {
+        u16 srcAddr = 0xff00;
+        if(instr->operandSrc.type == OP_IMM)
+            srcAddr += instr->operandSrc.immediate;
+        else
+            srcAddr += reg.read8(instr->operandSrc.memPtr);
+        reg.write8(RegID_A, mmu->read(srcAddr));
+    }
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
 void Cpu::executeLD16(instruction_t* instr)
 {
     /* Load and store 2 byte of information. */
@@ -400,6 +430,138 @@ void Cpu::executeJR(instruction_t* instr)
 
 
 /**
+ * Adds a value to the contents of register A and store it in register A.
+ */
+void Cpu::executeADD8(instruction_t* instr)
+{
+    /* Add the value of the source to the destination. */
+    u8 result = loadOperand8bits(&(instr->operandSrc)) + loadOperand8bits(&(instr->operandDst));
+    int val1 = (int) loadOperand8bits(&(instr->operandSrc));
+    int val2 = (int) loadOperand8bits(&(instr->operandDst));
+
+    /* Set or reset the flags. */
+    reg.setFlagZero(result == 0);                       /* Set flag if the result equals 0. */
+    reg.setFlagSub(false);                              /* Always reset the Sub flag. */
+    reg.setFlagHalfCarry(halfCarryTest(val1, val2));
+    reg.setFlagCarry(carryTest(val1, val2));
+
+    /* Store the addition. */
+    storeOperand8bits(&(instr->operandDst), result);
+
+    /* Clock cycles */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Adds a value and the carry bit to the contents of register A and stores it in register A.
+ */
+void Cpu::executeADC(instruction_t* instr)
+{
+    /* Add the value of register 2 to register 1. */
+    int val1 = (int) loadOperand8bits(&(instr->operandSrc));
+    int val2 = (int) loadOperand8bits(&(instr->operandDst));
+
+    u8 carry;
+    if(reg.getFlagCarry())
+        carry = 1;
+    else
+        carry = 0;
+
+    u8 result = loadOperand8bits(&(instr->operandSrc)) + loadOperand8bits(&(instr->operandDst));
+
+    /* Set or reset the flags. */
+    reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
+    reg.setFlagSub(false);               /* Always reset the Sub flag. */
+    reg.setFlagHalfCarry(halfCarryTest(val1, val2 + carry));
+    reg.setFlagCarry(carryTest(val1, val2 + carry));
+
+    /* Store the addition. */
+    storeOperand8bits(&(instr->operandDst), result);
+
+    /* Clock cycles */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Subtracts a value from register A.
+ */
+void Cpu::executeSUB(instruction_t* instr)
+{
+    /* Add the value of register 2 to register 1. */
+    int val1 = (int) reg.read8(RegID_A);
+    int val2 = (int) loadOperand8bits(&(instr->operandSrc));
+    u8 result = reg.read8(RegID_A) - loadOperand8bits(&(instr->operandSrc));
+
+    /* Set or reset the flags. */
+    reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
+    reg.setFlagSub(true);               /* Always set the Sub flag. */
+    reg.setFlagHalfCarry(halfBorrowTest(val1, val2));
+    reg.setFlagCarry(borrowTest(val1, val2));
+
+    /* Store the addition. */
+    reg.write8(RegID_A, result);
+
+    /* Clock cycles */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Subtracts a value and the carry bit from register A.
+ */
+void Cpu::executeSBC(instruction_t* instr)
+{
+    /* Add the value of register 2 to register 1. */
+    int val1 = (int) loadOperand8bits(&(instr->operandSrc));
+    int val2 = (int) loadOperand8bits(&(instr->operandDst));
+
+    u8 carry;
+    if(reg.getFlagCarry())
+        carry = 1;
+    else
+        carry = 0;
+
+    u8 result = loadOperand8bits(&(instr->operandSrc)) - loadOperand8bits(&(instr->operandDst)) - carry;
+
+    /* Set or reset the flags. */
+    reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
+    reg.setFlagSub(true);               /* Always set the Sub flag. */
+    reg.setFlagHalfCarry(halfBorrowTest(val1, val2 - carry));
+    reg.setFlagCarry(borrowTest(val1, val2 - carry));
+
+    /* Store the addition. */
+    storeOperand8bits(&(instr->operandDst), result);
+
+    /* Clock cycles */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Bitwise AND of a value with register A. Then store the result in register A.
+ */
+void Cpu::executeAND(instruction_t* instr)
+{
+    /* Bitwise AND. */
+    u8 result = loadOperand8bits(&(instr->operandSrc)) & reg.read8(RegID_A);
+
+    /* Set or reset the flags. */
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(true);
+    reg.setFlagCarry(false);
+
+    /* Store the result. */
+    reg.write8(RegID_A, result);
+
+    /* Clock cycles */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
  * Bitwise XOR of a value with register A. Then store the result in register A.
  */
 void Cpu::executeXOR(instruction_t* instr)
@@ -417,6 +579,46 @@ void Cpu::executeXOR(instruction_t* instr)
     reg.write8(RegID_A, result);
 
     /* Clock cycles */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Bitwise OR of a value with register A. Then store the result in register A.
+ */
+void Cpu::executeOR(instruction_t* instr)
+{
+    /* Bitwise or. */
+    u8 result = reg.read8(RegID_A) | loadOperand8bits(&(instr->operandSrc));
+
+    /* Set or reset the flags. */
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry(false);
+
+    /* Store the result. */
+    reg.write8(RegID_A, result);
+
+    /* Clock cycles */
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Execute the CP instruction and set the flags based on the result.
+ */
+void Cpu::executeCP(instruction_t* instr)
+{
+    /* Input values. */
+    u8 val = loadOperand8bits(&(instr->operandSrc));
+    u8 registerA = reg.read8(RegID_A);
+
+    reg.setFlagZero(registerA == val);
+    reg.setFlagHalfCarry(registerA > val);
+    reg.setFlagCarry(registerA < val);
+    reg.setFlagSub(true);
+
     this->cyclesCompleted += instr->cycleCost;
 }
 
@@ -468,6 +670,13 @@ void Cpu::executeDEC16(instruction_t* instr)
 void Cpu::executeDI(instruction_t* instr)
 {
     this->interruptController.disableInterrupts();
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeEI(instruction_t* instr)
+{
+    this->interruptController.enableInterrupts(true);
     this->cyclesCompleted += instr->cycleCost;
 }
 
