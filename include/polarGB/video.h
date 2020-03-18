@@ -30,8 +30,12 @@ public:
 
     void initialise();
     void cleanUp();
-    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+
     void update();
+
+    void drawFrame();
+
+    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
     bool closeWindow();
     void processInput(GLFWwindow* w);
 
