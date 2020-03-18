@@ -1,5 +1,7 @@
 To do:
 
+- Move timing to master class and call the cpu periodically to process x amount of cycles. Here in
+  the master class I can also add the update the behaviour of the screen periodically.
 - Continue the rewrite of instruction handling (high priority)
 - Handle display updates to memory
 - Make a README

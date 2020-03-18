@@ -42,7 +42,8 @@ public:
     InterruptController();
     ~InterruptController();
 
-    void initialise(Mmu* mmuInstanceCopy);
+    void startUp(Mmu* mmuInstanceCopy);
+    void shutDown();
 
     void disableInterrupts();
     void enableInterrupts(bool delayed_enable);

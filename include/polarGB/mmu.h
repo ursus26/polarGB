@@ -48,7 +48,8 @@ public:
     ~Mmu();
 
     /* Small boot program for the mmu. */
-    void boot();
+    void startUp();
+    void shutDown();
 
     /* Read from an address. */
     u8 read(u16 addr);

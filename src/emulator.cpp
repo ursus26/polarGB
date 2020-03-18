@@ -18,26 +18,63 @@
 #include <iostream>
 #include <stdio.h>
 #include <fstream>
+#include <chrono>
 #include "polarGB/emulator.h"
+
 
 using namespace std;
 
+
 Emulator::Emulator()
 {
-    this->mmu = new Mmu();
-    this->video = new Video();
-    this->video->initialise();
-    this->cpu = new Cpu(this->mmu, this->video);
 }
 
 Emulator::~Emulator()
 {
+}
+
+
+int Emulator::start(string cartridgePath)
+{
+    /* Initialise all the subsystems of the gameboy emulator. */
+    this->startUp();
+
+    /* Load the game cartridge. */
+    this->mmu->loadRom(cartridgePath);
+
+    /* Enter the emulator loop. */
+    this->run();
+
+    /* Shut down the gameboy emulator. */
+    this->shutDown();
+    return 0;
+}
+
+
+void Emulator::startUp()
+{
+    this->mmu = new Mmu();
+    this->mmu->startUp();
+
+    this->video = new Video();
+    this->video->startUp();
+
+    this->cpu = new Cpu();
+    this->cpu->startUp(this->mmu, this->video);
+}
+
+
+void Emulator::shutDown()
+{
+    this->cpu->shutDown();
     delete this->cpu;
     this->cpu = nullptr;
 
+    this->video->shutDown();
     delete this->video;
     this->video = nullptr;
 
+    this->mmu->shutDown();
     delete this->mmu;
     this->mmu = nullptr;
 }
@@ -45,22 +82,10 @@ Emulator::~Emulator()
 
 void Emulator::run()
 {
-    /* First boot up the emulator with the correct values. */
-    cpu->boot();
-
     // cpu->runNCycles(15);
     // cpu->runSingleFrame();
     // cpu->runSingleFrame();
 
     /* Run the emulator. */
     cpu->run();
-}
-
-
-/**
- * Load a file that acts as a gameboy rom into the memory using the memory manager.
- */
-void Emulator::loadCartridge(string fileName)
-{
-    this->mmu->loadRom(fileName);
 }

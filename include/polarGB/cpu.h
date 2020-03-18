@@ -76,12 +76,11 @@ public:
         void (Cpu::*executionFunction)(Instruction *);  /* Funtion that can execute this instruction. */
     } instruction_t;
 
-    /* Constructer and destructor. */
-    Cpu(Mmu* m, Video* vid);
+    Cpu();
     ~Cpu();
 
-    /* Initialise the cpu. */
-    void boot();
+    void startUp(Mmu* m, Video* vid);
+    void shutDown();
 
     /* Main loop function of the cpu. */
     void run();
@@ -174,6 +173,7 @@ private:
 
     /* Stack functions */
     void executePUSH(instruction_t* instr);
+    void _executePUSH(u16 value);   /* Convenient function for the push instr and starting interrupts. */
     void executePOP(instruction_t* instr);
 
 

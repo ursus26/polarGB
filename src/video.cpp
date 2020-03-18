@@ -43,16 +43,11 @@ const char *fragmentShaderSrc = R"(
 
 Video::Video()
 {
-    this->window = nullptr;
-    this->windowName = "polarGB";
-    this->width = 800;
-    this->height = 600;
 }
 
 
 Video::~Video()
 {
-    this->cleanUp();
 }
 
 
@@ -60,8 +55,13 @@ Video::~Video()
  * Initialise GLFW and GLAD. This initialises OpenGL. We also create a Window on which we can draw
  * graphics.
  */
-void Video::initialise()
+void Video::startUp()
 {
+    this->window = nullptr;
+    this->windowName = "polarGB";
+    this->width = 800;
+    this->height = 600;
+
     /**
      * Initialise GLFW for OpenGL. Use version 3.3 with the core profile.
      */
@@ -101,6 +101,17 @@ void Video::initialise()
     /* Setup shaders. */
     initShaders();
 }
+
+
+/**
+ * Destroy the window and clean up GLFW.
+ */
+void Video::shutDown()
+{
+    glfwTerminate();
+    this->window = nullptr;
+}
+
 
 /**
  * Initialise the shaders used rendering.
@@ -163,16 +174,6 @@ void Video::initShaders()
 
 
 /**
- * Destroy the window and clean up GLFW.
- */
-void Video::cleanUp()
-{
-    glfwTerminate();
-    this->window = nullptr;
-}
-
-
-/**
  * This function is called when the window is resized. We update the viewport so everything scales
  * with the resize of the window.
  */
@@ -189,6 +190,7 @@ void Video::update()
 {
     processInput(this->window);
     glfwPollEvents();
+    drawFrame();
 }
 
 

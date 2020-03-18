@@ -27,6 +27,19 @@ using namespace std;
 
 Mmu::Mmu()
 {
+}
+
+Mmu::~Mmu()
+{
+}
+
+
+/**
+ * Small boot program that initializes specific memory locations.
+ */
+void Mmu::startUp()
+{
+    /* Allocate the memory area. */
     VRAM.size = VRAM_END_ADDR - VRAM_START_ADDR + 1;
     VRAM.mem = new u8[VRAM.size]();
 
@@ -38,28 +51,9 @@ Mmu::Mmu()
 
     HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
     HRAM.mem = new u8[HRAM.size]();
-}
 
-Mmu::~Mmu()
-{
-    delete[] VRAM.mem;
-    VRAM.mem = nullptr;
+    this->rom.startUp();
 
-    delete[] ERAM.mem;
-    ERAM.mem = nullptr;
-
-    delete[] WRAM.mem;
-    WRAM.mem = nullptr;
-
-    delete[] HRAM.mem;
-    HRAM.mem = nullptr;
-}
-
-/**
- * Small boot program that initializes specific memory locations.
- */
-void Mmu::boot()
-{
     /* First clear vram. */
     memset(VRAM.mem, 0, sizeof(VRAM.size));
 
@@ -95,9 +89,27 @@ void Mmu::boot()
     this->write(0xff4a, 0x00);   /* WY */
     this->write(0xff4b, 0x00);   /* WX */
     HRAM.mem[0xff] = 0x00;       /* IE, also the only time we allow writing to this location. */
+}
 
-    /* Perform a checksum on the cartridge. */
-    rom.checksum();
+
+/**
+ * Clean up all the memory allocated for the gameboy.
+ */
+void Mmu::shutDown()
+{
+    this->rom.shutDown();
+
+    delete[] VRAM.mem;
+    VRAM.mem = nullptr;
+
+    delete[] ERAM.mem;
+    ERAM.mem = nullptr;
+
+    delete[] WRAM.mem;
+    WRAM.mem = nullptr;
+
+    delete[] HRAM.mem;
+    HRAM.mem = nullptr;
 }
 
 

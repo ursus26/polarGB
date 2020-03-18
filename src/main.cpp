@@ -108,8 +108,7 @@ int main(int argc, char* argv[])
 
     /* Start the emulator and load the cartridge. */
     Emulator* emu = new Emulator();
-    emu->loadCartridge(cartridgePath);
-    emu->run();
+    emu->start(cartridgePath);
 
     /* Clean up. */
     delete emu;

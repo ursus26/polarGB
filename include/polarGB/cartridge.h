@@ -27,6 +27,9 @@ public:
     Cartridge();
     ~Cartridge();
 
+    void startUp();
+    void shutDown();
+
     bool loadCartridge(std::string fileName);
     void processCartridgeHeader();
     void printInfo();

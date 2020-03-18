@@ -25,27 +25,24 @@
 
 using namespace std;
 
-Cpu::Cpu(Mmu* m, Video* vid)
+Cpu::Cpu()
 {
-    /* Initialize the memory manager. */
-    this->mmu = m;
-    this->video = vid;
-    this->isRunning = true;
-    this->cyclesCompleted = 0;
-    this->interruptController.initialise(this->mmu);
 }
 
 Cpu::~Cpu()
 {
-    /* Remove the reference to the memory manager but don't delete it since this object did not
-     * create the memory manager. */
-    this->mmu = nullptr;
-    this->video = nullptr;
 }
 
 
-void Cpu::boot()
+void Cpu::startUp(Mmu* m, Video* vid)
 {
+    this->mmu = m;
+    this->video = vid;
+    this->isRunning = true;
+    this->cyclesCompleted = 0;
+    this->interruptController.startUp(this->mmu);
+    this->interruptController.disableInterrupts();
+
     /* Initialise the registers. */
     this->reg.write16(RegID_AF, 0x01b0);    /* Initialise AF register. */
     this->reg.write16(RegID_BC, 0x0013);    /* Initialise BC register. */
@@ -53,15 +50,18 @@ void Cpu::boot()
     this->reg.write16(RegID_HL, 0x014d);    /* Initialise HL register. */
     this->reg.write16(RegID_SP, 0xfffe);    /* Initialise the stack. */
 
-    /* Initialise the memory. */
-    this->mmu->boot();
-
-    /* Initialise the interrupt controller. */
-    this->interruptController.disableInterrupts();
-
     /* Finish the boot sequence by setting the pc counter to 0x100. */
     this->reg.setProgramCounter(0x100);
-    cout << endl;
+}
+
+
+void Cpu::shutDown()
+{
+    /* Remove the reference to the memory manager but don't delete it since this object did not
+     * create the memory manager. */
+    this->interruptController.shutDown();
+    this->mmu = nullptr;
+    this->video = nullptr;
 }
 
 
@@ -138,7 +138,7 @@ void Cpu::runSingleFrame()
     {
         /* Check for interrupts before fetching the next instruction. This possibly changes the
          * program counter in order to execute a signal. */
-        // this->checkSignals();
+        this->checkSignals();
 
         Instruction* instr = fetchDecode();
 
@@ -178,6 +178,10 @@ Cpu::instruction_t * Cpu::fetchDecode()
     instr->memoryLocation = pc;
     instr->opcode = opcode;
     decodeOpcode(instr, opcode);
+
+    // if(pc == 0x02b6) {
+    //     exit(0);
+    // }
 
     return instr;
 }
@@ -682,9 +686,18 @@ void Cpu::executeEI(instruction_t* instr)
 
 
 /**
- * Pushes the contents of a register pair to the stack. The stack grows down.
+ * Entry point for push instruction.
  */
 void Cpu::executePUSH(instruction_t* instr)
+{
+    _executePUSH(reg.read16(instr->operandSrc.reg));
+}
+
+
+/**
+ * Pushes the contents of a register pair to the stack. The stack grows down.
+ */
+void Cpu::_executePUSH(u16 val)
 {
     /* Fetch stack pointer and check for stack overflow. */
     u16 sp = reg.getStackPointer();
@@ -696,7 +709,6 @@ void Cpu::executePUSH(instruction_t* instr)
     }
 
     /* Get the high and low byte. */
-    u16 val = reg.read16(instr->operandSrc.reg);
     u8 low = val & 0xff;
     u8 high = (val >> 8) & 0xff;
 
@@ -864,32 +876,33 @@ void Cpu::writeMem16bits(RegID memPointer, u16 data)
     mmu->write(memLocation, low);
     mmu->write(memLocation + 1, high);
 }
-//
-//
-// void Cpu::checkSignals()
-// {
-//     /* Check for an interrupt signal. */
-//     u16 interruptSignal = this->interruptController.checkForInterrupts();
-//     if(interruptSignal == 0x0)
-//         return;
-//     else
-//         setupSignalExecution(interruptSignal);
-// }
-//
-//
-// /**
-//  * Pushes the current program counter on the stack and updates the program counter to the signal
-//  * address.
-//  */
-// void Cpu::setupSignalExecution(u16 interruptSignalAddress)
-// {
-//     printf("Signal: 0x%x\n", interruptSignalAddress);
-//     interruptController.disableInterrupts();
-//     executePUSH(reg.read16(RegID_PC));
-//     reg.write16(RegID_PC, interruptSignalAddress);
-// }
-//
-//
+
+
+void Cpu::checkSignals()
+{
+    /* Check for an interrupt signal. */
+    u16 interruptSignal = this->interruptController.checkForInterrupts();
+    // printf("InterruptSignal: 0x%x\n", interruptSignal);
+    if(interruptSignal == 0x0)
+        return;
+    else
+        setupSignalExecution(interruptSignal);
+}
+
+
+/**
+ * Pushes the current program counter on the stack and updates the program counter to the signal
+ * address.
+ */
+void Cpu::setupSignalExecution(u16 interruptSignalAddress)
+{
+    printf("Signal: 0x%x\n", interruptSignalAddress);
+    interruptController.disableInterrupts();
+    _executePUSH(reg.read16(RegID_PC));
+    reg.write16(RegID_PC, interruptSignalAddress);
+}
+
+
 // /**
 //  * Fetches 16 bits pointed by the program counter and stores it in a register pair.
 //  */

@@ -23,18 +23,30 @@
 
 using namespace std;
 
+
 Cartridge::Cartridge()
+{
+}
+
+Cartridge::~Cartridge()
+{
+}
+
+
+void Cartridge::startUp()
 {
     this->mem = nullptr;
     this->size = 0;
 }
 
-Cartridge::~Cartridge()
+
+void Cartridge::shutDown()
 {
     delete[] this->mem;
     this->mem = nullptr;
     this->size = 0;
 }
+
 
 bool Cartridge::loadCartridge(string fileName)
 {
@@ -76,7 +88,7 @@ bool Cartridge::loadCartridge(string fileName)
 
 uint8_t Cartridge::read(unsigned int address)
 {
-    if(address > size)
+    if(address > this->size || this->mem == nullptr)
         return 0;
 
     return mem[address];
@@ -109,6 +121,7 @@ void Cartridge::processCartridgeHeader()
     romSize = this->read(0x148);
     ramSize = this->read(0x149);
     destinationCode = this->read(0x14a);
+    this->checksum();
 }
 
 

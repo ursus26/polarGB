@@ -28,8 +28,8 @@ public:
     Video();
     ~Video();
 
-    void initialise();
-    void cleanUp();
+    void startUp();
+    void shutDown();
 
     void update();
 

@@ -4,6 +4,12 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2020-03-18: - Forgot what happened the last 7 months.
+            - Added stack support by re-adding push and pop.
+            - Re-enabled interrupts. They are still not triggered due to the screen not updating and
+              my test rom waits till the screen is drawn.
+            - Code clean up, improved starting and shutting down the emulator by explicitly
+              describing when to take those actions. 
 2019-08-28: - Instead of addressing yesterdays issue I continued working on implementing more
               instructions.
 2019-08-27: - After some research into the documentation I found out that the display writes some

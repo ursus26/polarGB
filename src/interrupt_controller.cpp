@@ -20,21 +20,27 @@
 
 InterruptController::InterruptController()
 {
-    this->ime = false;
-    this->delayed_enable = false;
 }
 
 
 InterruptController::~InterruptController()
 {
+}
+
+
+void InterruptController::startUp(Mmu* mmuInstanceCopy)
+{
+    this->ime = false;
+    this->delayed_enable = false;
+    this->mmu = mmuInstanceCopy;
+}
+
+
+void InterruptController::shutDown()
+{
     this->mmu = nullptr;
 }
 
-
-void InterruptController::initialise(Mmu* mmuInstanceCopy)
-{
-    this->mmu = mmuInstanceCopy;
-}
 
 /**
  * Disable the Interrupt Master Enable (IME) flag when called by the DI instruction or when an

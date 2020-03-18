@@ -31,15 +31,16 @@ public:
     Emulator();
     ~Emulator();
 
-    void run();
-
-    /* Load a file that represents a gameboy cartridge into memory. */
-    void loadCartridge(std::string fileName);
+    int start(std::string cartridgePath);
 
 private:
     Mmu* mmu;
     Cpu* cpu;
     Video* video;
+
+    void startUp();
+    void shutDown();
+    void run();
 };
 
 #endif /* EMULATOR_H */
