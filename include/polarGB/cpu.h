@@ -172,7 +172,9 @@ private:
     /* 8-bit shift, rotate and bit instructions */
 
 
-
+    /* Stack functions */
+    void executePUSH(instruction_t* instr);
+    void executePOP(instruction_t* instr);
 
 
 

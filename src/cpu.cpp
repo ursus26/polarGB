@@ -95,7 +95,7 @@ void Cpu::run()
             this->video->update();
 
             /* Check if we should close our window. */
-            if(this->video->closeWindow())
+            if(this->video->closeWindow() || this->isRunning == false)
                 break;
         }
     }
@@ -681,8 +681,59 @@ void Cpu::executeEI(instruction_t* instr)
 }
 
 
+/**
+ * Pushes the contents of a register pair to the stack. The stack grows down.
+ */
+void Cpu::executePUSH(instruction_t* instr)
+{
+    /* Fetch stack pointer and check for stack overflow. */
+    u16 sp = reg.getStackPointer();
+    if(sp - 2 < HRAM_START_ADDR)
+    {
+        Log::printError("Error, stack overflow!");
+        this->isRunning = false;
+        return;
+    }
+
+    /* Get the high and low byte. */
+    u16 val = reg.read16(instr->operandSrc.reg);
+    u8 low = val & 0xff;
+    u8 high = (val >> 8) & 0xff;
+
+    /* Write the value to the stack. */
+    mmu->write(sp - 1, high);
+    mmu->write(sp - 2, low);
+
+    /* Decrease the stack pointer by two. */
+    reg.decStackPointer();
+    reg.decStackPointer();
+}
 
 
+/**
+ * Pops 2 bytes from the stack. The stack grows down.
+ */
+void Cpu::executePOP(instruction_t* instr)
+{
+    /* Get 2 bytes from the stack and check if we can pop at least 2 bytes from the stack. */
+    u16 sp = reg.getStackPointer();
+    if(sp >= 0xfffe - 1)
+    {
+        Log::printError("Error, stack underflow!");
+        this->isRunning = false;
+        return;
+    }
+
+    /* Pop value from stack. */
+    u16 val = mmu->read16bits(sp);
+
+    /* Increases the stack pointer by two. */
+    reg.incStackPointer();
+    reg.incStackPointer();
+
+    /* Store result in register. */
+    reg.write16(instr->operandDst.reg, val);
+}
 
 
 
