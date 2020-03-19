@@ -3732,7 +3732,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->operandSrc.type = OP_NONE;
             instr->operandSrc.memPtr = RegID_NONE;
             instr->operandDst.type = OP_MEM;
-            instr->operandDst.reg = RegID_HL;
+            instr->operandDst.memPtr = RegID_HL;
             instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeINC8;
             strcpy(instr->mnemonic, "INC (HL)");
@@ -3752,7 +3752,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->operandSrc.type = OP_IMM;
             instr->operandSrc.immediate = readMem8bits(reg.getProgramCounter() + 1);
             instr->operandDst.type = OP_MEM;
-            instr->operandDst.reg = RegID_HL;
+            instr->operandDst.memPtr = RegID_HL;
             instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD (HL), d8");
@@ -5027,16 +5027,19 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeCP;
             strcpy(instr->mnemonic, "CP A");
             break;
-        // case 0xC0: /* RET NZ */
-        //     Log::printVerbose("RET NZ");
-        //     cycles = executeRET(COND_NZ);
-        //     break;
+        case 0xC0: /* RET NZ */
+            instr->instructionLength = 1;
+            instr->cycleCost = 5;
+            instr->executionFunction = &Cpu::executeRET;
+            instr->extraInfo = COND_NZ;
+            strcpy(instr->mnemonic, "RET NZ");
+            break;
         case 0xC1: /* POP BC */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_MEM;
-            instr->operandSrc.reg = RegID_SP;
+            instr->operandSrc.memPtr = RegID_SP;
             instr->operandDst.type = OP_REG;
-            instr->operandDst.memPtr = RegID_BC;
+            instr->operandDst.reg = RegID_BC;
             instr->cycleCost = 3;
             instr->extraInfo = COND_NONE;
             instr->executionFunction = &Cpu::executePOP;
@@ -5055,11 +5058,16 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeJP;
             strcpy(instr->mnemonic, "JP a16");
             break;
-        // case 0xC4: /* CALL NZ, a16 */
-        //     Log::printVerbose("CALL NZ, a16");
-        //     src = fetchNext16Bits();
-        //     cycles = executeCALL(src, COND_NZ);
-        //     break;
+        case 0xC4: /* CALL NZ, a16 */
+            instr->instructionLength = 3;
+            instr->operandSrc.type = OP_IMM;
+            instr->operandSrc.immediate = this->mmu->read16bits(reg.getProgramCounter() + 1);
+            instr->operandDst.type = OP_NONE;
+            instr->cycleCost = 6;
+            instr->extraInfo = COND_NZ;
+            instr->executionFunction = &Cpu::executeCALL;
+            strcpy(instr->mnemonic, "CALL NZ, a16");
+            break;
         case 0xC5: /* PUSH BC */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_REG;
@@ -5081,14 +5089,19 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         //     executeCALL(0x00, COND_NONE);
         //     cycles = 4;
         //     break;
-        // case 0xC8: /* RET Z */
-        //     Log::printVerbose("RET Z");
-        //     cycles = executeRET(COND_Z);
-        //     break;
-        // case 0xC9: /* RET */
-        //     Log::printVerbose("RET");
-        //     cycles = executeRET(COND_NONE);
-        //     break;
+        case 0xC8: /* RET Z */
+            instr->instructionLength = 1;
+            instr->cycleCost = 5;
+            instr->executionFunction = &Cpu::executeRET;
+            instr->extraInfo = COND_Z;
+            strcpy(instr->mnemonic, "RET Z");
+            break;
+        case 0xC9: /* RET */
+            instr->instructionLength = 1;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeRET;
+            strcpy(instr->mnemonic, "RET");
+            break;
         // case 0xCA: /* JP Z, a16 */
         //     Log::printVerbose("JP Z, a16");
         //     cycles = executeJP(COND_Z);
@@ -5096,16 +5109,26 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         // case 0xCB: /* PREFIX CB */
         //     cycles = executeCB();
         //     break;
-        // case 0xCC: /* CALL Z, a16 */
-        //     Log::printVerbose("CALL Z, a16");
-        //     src = fetchNext16Bits();
-        //     cycles = executeCALL(src, COND_Z);
-        //     break;
-        // case 0xCD: /* CALL a16 */
-        //     Log::printVerbose("CALL a16");
-        //     src = fetchNext16Bits();
-        //     cycles = executeCALL(src, COND_NONE);
-        //     break;
+        case 0xCC: /* CALL Z, a16 */
+            instr->instructionLength = 3;
+            instr->operandSrc.type = OP_IMM;
+            instr->operandSrc.immediate = this->mmu->read16bits(reg.getProgramCounter() + 1);
+            instr->operandDst.type = OP_NONE;
+            instr->cycleCost = 6;
+            instr->extraInfo = COND_Z;
+            instr->executionFunction = &Cpu::executeCALL;
+            strcpy(instr->mnemonic, "CALL Z, a16");
+            break;
+        case 0xCD: /* CALL a16 */
+            instr->instructionLength = 3;
+            instr->operandSrc.type = OP_IMM;
+            instr->operandSrc.immediate = this->mmu->read16bits(reg.getProgramCounter() + 1);
+            instr->operandDst.type = OP_NONE;
+            instr->cycleCost = 6;
+            instr->extraInfo = COND_NONE;
+            instr->executionFunction = &Cpu::executeCALL;
+            strcpy(instr->mnemonic, "CALL a16");
+            break;
         // case 0xCE: /* ADC A, d8 */
         //     Log::printVerbose("ADC d8");
         //     executeADC(fetchNextInstruction());
@@ -5116,16 +5139,19 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         //     executeCALL(0x8, COND_NONE);
         //     cycles = 4;
         //     break;
-        // case 0xD0: /* RET NC */
-        //     Log::printVerbose("RET NC");
-        //     cycles = executeRET(COND_NC);
-        //     break;
+        case 0xD0: /* RET NC */
+            instr->instructionLength = 1;
+            instr->cycleCost = 5;
+            instr->executionFunction = &Cpu::executeRET;
+            instr->extraInfo = COND_NC;
+            strcpy(instr->mnemonic, "RET NC");
+            break;
         case 0xD1: /* POP DE */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_MEM;
-            instr->operandSrc.reg = RegID_SP;
+            instr->operandSrc.memPtr = RegID_SP;
             instr->operandDst.type = OP_REG;
-            instr->operandDst.memPtr = RegID_DE;
+            instr->operandDst.reg = RegID_DE;
             instr->cycleCost = 3;
             instr->extraInfo = COND_NONE;
             instr->executionFunction = &Cpu::executePOP;
@@ -5137,11 +5163,15 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         //     break;
         // case 0xD3: /* No instruction */
         //     break;
-        // case 0xD4: /* CALL NC, a16 */
-        //     Log::printVerbose("CALL NC, a16");
-        //     src = fetchNext16Bits();
-        //     cycles = executeCALL(src, COND_NC);
-        //     break;
+        case 0xD4: /* CALL NC, a16 */
+            instr->instructionLength = 3;
+            instr->operandSrc.type = OP_IMM;
+            instr->operandSrc.immediate = this->mmu->read16bits(reg.getProgramCounter() + 1);
+            instr->cycleCost = 6;
+            instr->extraInfo = COND_NC;
+            instr->executionFunction = &Cpu::executeCALL;
+            strcpy(instr->mnemonic, "CALL NC, a16");
+            break;
         case 0xD5: /* PUSH DE */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_REG;
@@ -5163,26 +5193,35 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         //     executeCALL(0x10, COND_NONE);
         //     cycles = 4;
         //     break;
-        // case 0xD8: /* RET C */
-        //     Log::printVerbose("RET C");
-        //     cycles = executeRET(COND_C);
-        //     break;
-        // case 0xD9:
-        //     Log::printVerbose("RETI");
-        //     cycles = executeRET(COND_NONE);
-        //     this->interruptController.enableInterrupts(false);
-        //     break;
+        case 0xD8: /* RET C */
+            instr->instructionLength = 1;
+            instr->cycleCost = 5;
+            instr->executionFunction = &Cpu::executeRET;
+            instr->extraInfo = COND_C;
+            strcpy(instr->mnemonic, "RET C");
+            break;
+        case 0xD9:
+            instr->instructionLength = 1;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeRET;
+            instr->extraInfo = COND_IE;
+            strcpy(instr->mnemonic, "RETI");
+            break;
         // case 0xDA: /* JP C, a16 */
         //     Log::printVerbose("JP C, a16");
         //     cycles = executeJP(COND_C);
         //     break;
         // case 0xDB: /* No instruction */
         //     break;
-        // case 0xDC: /* CALL C, a16 */
-        //     Log::printVerbose("CALL C, a16");
-        //     src = fetchNext16Bits();
-        //     cycles = executeCALL(src, COND_C);
-        //     break;
+        case 0xDC: /* CALL C, a16 */
+            instr->instructionLength = 3;
+            instr->operandSrc.type = OP_IMM;
+            instr->operandSrc.immediate = this->mmu->read16bits(reg.getProgramCounter() + 1);
+            instr->cycleCost = 6;
+            instr->extraInfo = COND_C;
+            instr->executionFunction = &Cpu::executeCALL;
+            strcpy(instr->mnemonic, "CALL C, a16");
+            break;
         // case 0xDD: /* No instruction */
         //     break;
         // case 0xDE: /* SBC A, d8 */
@@ -5208,9 +5247,9 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xE1: /* POP HL */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_MEM;
-            instr->operandSrc.reg = RegID_SP;
+            instr->operandSrc.memPtr = RegID_SP;
             instr->operandDst.type = OP_REG;
-            instr->operandDst.memPtr = RegID_HL;
+            instr->operandDst.reg = RegID_HL;
             instr->cycleCost = 3;
             instr->extraInfo = COND_NONE;
             instr->executionFunction = &Cpu::executePOP;
@@ -5221,7 +5260,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_A;
             instr->operandDst.type = OP_MEM;
-            instr->operandDst.reg = RegID_C;
+            instr->operandDst.memPtr = RegID_C;
             instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeLD8InternalRam;
             strcpy(instr->mnemonic, "LD (C), A");
@@ -5261,12 +5300,17 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         //     Log::printVerbose("JP (HL)");
         //     cycles = executeJP(COND_HL);
         //     break;
-        // case 0xEA: /* LD a16, A */
-        //     Log::printVerbose("LD a16, A");
-        //     src = reg.read8(RegID_A);
-        //     mmu->write(fetchNext16Bits(), src);
-        //     cycles = 4;
-        //     break;
+        case 0xEA: /* LD a16, A */
+            instr->instructionLength = 3;
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_IMM_PTR;
+            instr->operandDst.immediate = mmu->read16bits(reg.getProgramCounter() + 1);
+            instr->cycleCost = 4;
+            instr->extraInfo = COND_NONE;
+            instr->executionFunction = &Cpu::executeLD8;
+            strcpy(instr->mnemonic, "LD (a16), A");
+            break;
         // case 0xEB: /* No instruction */
         //     break;
         // case 0xEC: /* No instruction */
@@ -5296,9 +5340,9 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xF1: /* POP AF */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_MEM;
-            instr->operandSrc.reg = RegID_SP;
+            instr->operandSrc.memPtr = RegID_SP;
             instr->operandDst.type = OP_REG;
-            instr->operandDst.memPtr = RegID_AF;
+            instr->operandDst.reg = RegID_AF;
             instr->cycleCost = 3;
             instr->extraInfo = COND_NONE;
             instr->executionFunction = &Cpu::executePOP;
@@ -5355,12 +5399,17 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         //     src16 = reg.read16(RegID_HL);
         //     reg.write16(RegID_SP, src16);
         //     break;
-        // case 0xFA: /* LD A, a16 */
-        //     Log::printVerbose("LD A, a16");
-        //     src = mmu->read(fetchNext16Bits());
-        //     reg.write8(RegID_A, src);
-        //     cycles = 4;
-        //     break;
+        case 0xFA: /* LD A, a16 */
+            instr->instructionLength = 3;
+            instr->operandSrc.type = OP_IMM_PTR;
+            instr->operandSrc.immediate = mmu->read16bits(reg.getProgramCounter() + 1);
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->cycleCost = 4;
+            instr->extraInfo = COND_NONE;
+            instr->executionFunction = &Cpu::executeLD8;
+            strcpy(instr->mnemonic, "LD A, (a16)");
+            break;
         case 0xFB: /* EI */
             instr->instructionLength = 1;
             instr->cycleCost = 1;

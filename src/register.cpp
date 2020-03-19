@@ -94,8 +94,10 @@ void Register::write16(RegID id, u16 val)
         case RegID_SP:
             SP = val;
             break;
+        case RegID_PC:
+            PC = val;
+            break;
         default:
-            printf("write16 | RegID: 0x%x, val: 0x%x\n", id, val);
             throw std::invalid_argument("Cannot write a word becasue register id was invalid.");
             break;
     }

@@ -77,17 +77,11 @@ u8 Cpu::step()
     Instruction* instr = fetchDecode();
     reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
 
+    printInstructionInfo(instr);
+
     /* Execute the instruction handler. */
     (this->*(instr->executionFunction))(instr);
-
-    /* Get output information from executed instruction. */
-    printInstructionInfo(instr);
     u8 cycleCost = instr->cycleCost;
-
-    // if(instr->memoryLocation == 0x02b6)
-    // {
-    //     exit(1);
-    // }
 
     /* Instruction clean up. */
     delete instr;
@@ -156,6 +150,8 @@ u8 Cpu::loadOperand8bits(Operand* operand)
     {
         case OP_IMM:
             return operand->immediate;
+        case OP_IMM_PTR:
+            return mmu->read(operand->immediate);
         case OP_REG:
             return reg.read8(operand->reg);
         case OP_MEM:
@@ -178,6 +174,7 @@ u16 Cpu::loadOperand16bits(Operand* operand)
         case OP_MEM:
             return readMem16bitsFromPointer(operand->memPtr);
         case OP_NONE:
+        case OP_IMM_PTR:
         default:
             return 0;
     }
@@ -194,8 +191,9 @@ void Cpu::storeOperand8bits(Operand* operand, u8 value)
         case OP_MEM:
             writeMem(operand->memPtr, value);
             break;
-        case OP_IMM:
-        case OP_NONE:
+        case OP_IMM_PTR:
+            mmu->write(operand->immediate, value);
+            break;
         default:
             printf("Unexpected store 8 bits location, operand = %d\n", operand->type);
             break;
@@ -205,6 +203,8 @@ void Cpu::storeOperand8bits(Operand* operand, u8 value)
 
 void Cpu::storeOperand16bits(Operand* operand, u16 value)
 {
+    u8 low, high;
+
     switch(operand->type)
     {
         case OP_REG:
@@ -213,8 +213,14 @@ void Cpu::storeOperand16bits(Operand* operand, u16 value)
         case OP_MEM:
             writeMem16bits(operand->memPtr, value);
             break;
-        case OP_IMM:
-        case OP_NONE:
+        case OP_IMM_PTR:
+            low = (value & 0xff);
+            high = (value >> 8);
+
+            /* Get and return the data from memory. */
+            mmu->write(operand->immediate, low);
+            mmu->write(operand->immediate + 1, high);
+            break;
         default:
             printf("Unexpected store 16 bits location, operand = %d\n", operand->type);
             break;
@@ -361,6 +367,73 @@ void Cpu::executeJR(instruction_t* instr)
     {
         this->cyclesCompleted += 2;
     }
+}
+
+
+void Cpu::executeCALL(instruction_t* instr)
+{
+    bool zero = reg.getFlagZero();
+    bool carry = reg.getFlagCarry();
+    u16 callLocation = instr->operandSrc.immediate;
+    u8 conditionFlag = instr->extraInfo;
+
+    /* Execute the call instruction by pushing the PC to the stack and setting a new PC. */
+    if(conditionFlag == COND_NONE
+    ||(conditionFlag == COND_NZ && zero == false)
+    ||(conditionFlag == COND_Z  && zero == true)
+    ||(conditionFlag == COND_NC && carry == false)
+    ||(conditionFlag == COND_C  && carry == true))
+    {
+        _executePUSH(reg.getProgramCounter());
+
+        reg.setProgramCounter(callLocation);
+        this->cyclesCompleted += instr->cycleCost;
+    }
+    else
+    {
+        instr->cycleCost = 3;
+        this->cyclesCompleted += 2;
+    }
+}
+
+
+void Cpu::executeRET(instruction_t* instr)
+{
+    bool zero = reg.getFlagZero();
+    bool carry = reg.getFlagCarry();
+    u8 conditionFlag = instr->extraInfo;
+
+    /* Write the program counter to the stack if the condition matches. */
+    if(conditionFlag == COND_NONE
+    ||(conditionFlag == COND_IE)
+    ||(conditionFlag == COND_NZ && zero == false)
+    ||(conditionFlag == COND_Z  && zero == true)
+    ||(conditionFlag == COND_NC && carry == false)
+    ||(conditionFlag == COND_C  && carry == true))
+    {
+        instr->operandDst.type = OP_REG;
+        instr->operandDst.reg = RegID_PC;
+
+        this->executePOP(instr);
+        // reg.setProgramCounter(val);
+
+        // /* Adjust the stack pointer. */
+        // reg.incStackPointer();
+        // reg.incStackPointer();
+
+        if(conditionFlag != COND_NONE && conditionFlag != COND_IE)
+            instr->cycleCost = 5;
+
+        if(conditionFlag == COND_IE)
+            interruptController.enableInterrupts(false);
+    }
+    else
+    {
+        instr->cycleCost = 2;
+    }
+
+
+
 }
 
 
@@ -633,12 +706,14 @@ void Cpu::_executePUSH(u16 val)
 {
     /* Fetch stack pointer and check for stack overflow. */
     u16 sp = reg.getStackPointer();
-    if(sp - 2 < HRAM_START_ADDR)
-    {
-        Log::printError("Error, stack overflow!");
-        this->isRunning = false;
-        return;
-    }
+    // if(sp - 2 < HRAM_START_ADDR)
+    // {
+    //     printf("SP: 0x%x\n", sp);
+    //     Log::printError("Error, stack overflow!");
+    //     this->isRunning = false;
+    //     exit(1);
+    //     return;
+    // }
 
     /* Get the high and low byte. */
     u8 low = val & 0xff;
@@ -661,12 +736,12 @@ void Cpu::executePOP(instruction_t* instr)
 {
     /* Get 2 bytes from the stack and check if we can pop at least 2 bytes from the stack. */
     u16 sp = reg.getStackPointer();
-    if(sp >= 0xfffe - 1)
-    {
-        Log::printError("Error, stack underflow!");
-        this->isRunning = false;
-        return;
-    }
+    // if(sp >= 0xfffe - 1)
+    // {
+    //     Log::printError("Error, stack underflow!");
+    //     this->isRunning = false;
+    //     return;
+    // }
 
     /* Pop value from stack. */
     u16 val = mmu->read16bits(sp);

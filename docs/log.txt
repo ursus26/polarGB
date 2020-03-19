@@ -7,6 +7,8 @@ YYYY-MM-DD: Changes
 2020-03-19: - Refactored emulator loop and moved it from the CPU class to the emulator class.
             - Added LCD Status register logic. The emulator progresses further with the Tetris ROM
               for the first time since a year?? It now crashes 10 instructions further.
+            - Managed to fix some instruction bugs and added call and return instructions. Now
+              Tetris does not halt due to unimplemented instructions.
 2020-03-18: - Forgot what happened the last 7 months.
             - Added stack support by re-adding push and pop.
             - Re-enabled interrupts. They are still not triggered due to the screen not updating and

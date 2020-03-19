@@ -175,7 +175,7 @@ void Mmu::write(u16 addr, u8 data)
     if(addr <= 0x7fff) /* ROM banks */
     {
         cerr << "Error, unsupported write action for cartridge roms" << endl;
-        exit(EXIT_FAILURE);
+        // exit(EXIT_FAILURE);
     }
     else if(addr >= 0x8000 && addr <= 0x9fff) /* VRAM */
         VRAM.mem[addr - 0x8000] = data;
@@ -193,7 +193,10 @@ void Mmu::write(u16 addr, u8 data)
     else if(addr >= 0xfe00 && addr <= 0xfe9f) /* Sprite attribute table */
         HRAM.mem[addr - 0xff00] = data;
     else if(addr >= 0xfea0 && addr <= 0xfeff) /* Not usable */
+    {
+        printf("Addr: 0x%x, data: 0x%x\n", addr, data);
         cerr << "Error, write request for unusable memory" << endl;
+    }
     else if(addr >= 0xff00 && addr <= 0xff7f) /* I/O Ports */
     {
         HRAM.mem[addr - 0xff00] = data;

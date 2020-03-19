@@ -37,16 +37,18 @@ enum ConditionFlag
     COND_NZ = 2,
     COND_Z = 3,
     COND_NC = 4,
-    COND_C = 5
+    COND_C = 5,
+    COND_IE = 6 /* Used for RETI instruction. */
 };
 
 
 enum OperandType
 {
     OP_NONE = 0,
-    OP_IMM = 1,
-    OP_REG = 2,
-    OP_MEM = 4
+    OP_IMM,
+    OP_IMM_PTR,
+    OP_REG,
+    OP_MEM
 };
 
 
@@ -141,6 +143,8 @@ private:
     /* Jump/call instructions */
     void executeJP(instruction_t* instr);
     void executeJR(instruction_t* instr);
+    void executeCALL(instruction_t* instr);
+    void executeRET(instruction_t* instr);
 
     /* 8-bit arithmetic/logical instructions */
     void executeADD8(instruction_t* instr);
