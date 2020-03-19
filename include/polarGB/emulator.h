@@ -25,6 +25,12 @@
 #include "video.h"
 
 
+const int FPS = 60;
+const double FRAME_TIME = 1.0 / (double) FPS;
+const int CPU_FREQUENCY = 1048575; /* Hz */
+const int MAX_INSTRUCTIONS_PER_FRAME = CPU_FREQUENCY / FPS;
+
+
 class Emulator
 {
 public:
@@ -34,6 +40,8 @@ public:
     int start(std::string cartridgePath);
 
 private:
+    bool isRunning;
+    u64 cyclesCompleted;
     Mmu* mmu;
     Cpu* cpu;
     Video* video;
@@ -41,6 +49,7 @@ private:
     void startUp();
     void shutDown();
     void run();
+    void runFrame();
 };
 
 #endif /* EMULATOR_H */

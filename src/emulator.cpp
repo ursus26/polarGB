@@ -53,6 +53,9 @@ int Emulator::start(string cartridgePath)
 
 void Emulator::startUp()
 {
+    this->isRunning = true;
+    this->cyclesCompleted = 0;
+
     this->mmu = new Mmu();
     this->mmu->startUp();
 
@@ -82,10 +85,54 @@ void Emulator::shutDown()
 
 void Emulator::run()
 {
-    // cpu->runNCycles(15);
-    // cpu->runSingleFrame();
-    // cpu->runSingleFrame();
+    chrono::time_point<chrono::high_resolution_clock> start, end;
+    chrono::duration<double> elapsed_time;
 
-    /* Run the emulator. */
-    cpu->run();
+    /* Delta time takes into account that the elapsed_time > FRAME_TIME. If we reset the start time
+     * of the frame we can lose a little bit of time. This variable calculates this difference
+     * and helps make our timing function more accurate. */
+    double delta_time = 0.0;
+    start = chrono::high_resolution_clock::now();
+
+    while(this->isRunning)
+    {
+        /* Measure the elapsed time. */
+        end = chrono::high_resolution_clock::now();
+        elapsed_time = end - start;
+
+        /* Check if we need to run the gameboy for an entire frame. */
+        if(elapsed_time.count() + delta_time >= FRAME_TIME)
+        {
+            /* Reset the timer and calculate the time we lost sleeping. */
+            start = chrono::high_resolution_clock::now();
+            delta_time = elapsed_time.count() + delta_time - FRAME_TIME;
+
+            runFrame();
+        }
+    }
+}
+
+
+void Emulator::runFrame()
+{
+    u8 cpuCycles = 0;
+
+    while(cyclesCompleted < MAX_INSTRUCTIONS_PER_FRAME)
+    {
+        /* CPU step. */
+        cpuCycles = this->cpu->step();
+        cyclesCompleted += cpuCycles;
+
+        /* Update the screen with the same amount of cycles. */
+        // this->video->
+    }
+
+    /* Update display. */
+    this->video->update();
+
+    /* Check if we should close our window. */
+    if(this->video->closeWindow())
+        this->isRunning = false;
+
+    cyclesCompleted -= MAX_INSTRUCTIONS_PER_FRAME;
 }

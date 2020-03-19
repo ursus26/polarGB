@@ -65,103 +65,31 @@ void Cpu::shutDown()
 }
 
 
-void Cpu::run()
+/**
+ * Executes a single instruction and returns the amount of CPU cycles used for executing the
+ * instruction.
+ */
+u8 Cpu::step()
 {
-    chrono::time_point<chrono::high_resolution_clock> start, end;
-    chrono::duration<double> elapsed_time;
+    /* Check for interrupts before fetching the next instruction. This possibly changes the
+     * program counter in order to execute a signal. */
+    this->checkSignals();
 
-    /* Delta time takes into account that the elapsed_time > FRAME_TIME. If we reset the start time
-     * of the frame we can loose a little bit of time. This variable calculates this difference
-     * and helps make our timing function more accurate. */
-    double delta_time = 0.0;
-    start = chrono::high_resolution_clock::now();
+    /* Fetch the next instruction. */
+    Instruction* instr = fetchDecode();
+    reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
 
-    while(true)
-    {
-        /* Measure the elapsed time. */
-        end = chrono::high_resolution_clock::now();
-        elapsed_time = end - start;
+    /* Execute the instruction handler. */
+    (this->*(instr->executionFunction))(instr);
 
-        if(elapsed_time.count() + delta_time >= FRAME_TIME)
-        {
-            /* Reset the timer and calculate the time we lost sleeping. */
-            start = chrono::high_resolution_clock::now();
-            delta_time = elapsed_time.count() + delta_time - FRAME_TIME;
+    /* Get output information from executed instruction. */
+    printInstructionInfo(instr);
+    u8 cycleCost = instr->cycleCost;
 
-            /* Run the instructions for the next frame. */
-            runSingleFrame();
+    /* Instruction clean up. */
+    delete instr;
 
-            /* Update display. */
-            this->video->update();
-
-            /* Check if we should close our window. */
-            if(this->video->closeWindow() || this->isRunning == false)
-                break;
-        }
-    }
-}
-
-
-void Cpu::runNCycles(int cycles)
-{
-    for(int i = 0; i < cycles; i++)
-    {
-        /* TESTING */
-        Instruction* instr = fetchDecode();
-
-        /* Increase the program counter. */
-        reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
-
-        /* Execute the instruction handler. */
-        (this->*(instr->executionFunction))(instr);
-
-        /* Print information about the instruction. */
-        printInstructionInfo(instr);
-
-        /* Instruction clean up. */
-        delete instr;
-
-        /* Fetch the next instruction. */
-        // u8 opcode = fetchNextInstruction();
-        //
-        // /* Execute the instruction. */
-        // executeInstruction(opcode);
-
-    }
-}
-
-
-void Cpu::runSingleFrame()
-{
-    // u8 opcode = 0x0;
-    while(cyclesCompleted < MAX_INSTRUCTIONS_PER_FRAME)
-    {
-        /* Check for interrupts before fetching the next instruction. This possibly changes the
-         * program counter in order to execute a signal. */
-        this->checkSignals();
-
-        Instruction* instr = fetchDecode();
-
-        /* Increase the program counter. */
-        reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
-
-        /* Execute the instruction handler. */
-        (this->*(instr->executionFunction))(instr);
-
-        /* Print information about the instruction. */
-        printInstructionInfo(instr);
-
-        /* Instruction clean up. */
-        delete instr;
-
-        // /* Fetch the next instruction. */
-        // opcode = fetchNextInstruction();
-        //
-        // /* Execute the instruction. */
-        // cyclesCompleted += executeInstruction(opcode);
-    }
-
-    cyclesCompleted -= MAX_INSTRUCTIONS_PER_FRAME;
+    return cycleCost;
 }
 
 
@@ -691,6 +619,7 @@ void Cpu::executeEI(instruction_t* instr)
 void Cpu::executePUSH(instruction_t* instr)
 {
     _executePUSH(reg.read16(instr->operandSrc.reg));
+    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -745,6 +674,7 @@ void Cpu::executePOP(instruction_t* instr)
 
     /* Store result in register. */
     reg.write16(instr->operandDst.reg, val);
+    this->cyclesCompleted += instr->cycleCost;
 }
 
 

@@ -25,10 +25,10 @@
 #include "interrupt_controller.h"
 
 
-const int CPU_FREQUENCY = 1048575; /* Hz */
-const int FPS = 60;
-const double FRAME_TIME = 1.0 / (double) FPS;
-const int MAX_INSTRUCTIONS_PER_FRAME = CPU_FREQUENCY / FPS;
+// const int FPS = 60;
+// const double FRAME_TIME = 1.0 / (double) FPS;
+// const int CPU_FREQUENCY = 1048575; /* Hz */
+// const int MAX_INSTRUCTIONS_PER_FRAME = CPU_FREQUENCY / FPS;
 
 
 enum ConditionFlag
@@ -82,10 +82,7 @@ public:
     void startUp(Mmu* m, Video* vid);
     void shutDown();
 
-    /* Main loop function of the cpu. */
-    void run();
-    void runNCycles(int cycles);
-    void runSingleFrame();
+    u8 step();
 
 private:
     /* Member variables. */
