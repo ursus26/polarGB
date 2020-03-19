@@ -60,10 +60,10 @@ void Emulator::startUp()
     this->mmu->startUp();
 
     this->video = new Video();
-    this->video->startUp();
+    this->video->startUp(this->mmu);
 
     this->cpu = new Cpu();
-    this->cpu->startUp(this->mmu, this->video);
+    this->cpu->startUp(this->mmu);
 }
 
 
@@ -124,11 +124,11 @@ void Emulator::runFrame()
         cyclesCompleted += cpuCycles;
 
         /* Update the screen with the same amount of cycles. */
-        // this->video->
+        this->video->update(cpuCycles);
     }
 
-    /* Update display. */
-    this->video->update();
+    // /* Update display. */
+    // this->video->update();
 
     /* Check if we should close our window. */
     if(this->video->closeWindow())

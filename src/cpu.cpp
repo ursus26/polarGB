@@ -34,10 +34,9 @@ Cpu::~Cpu()
 }
 
 
-void Cpu::startUp(Mmu* m, Video* vid)
+void Cpu::startUp(Mmu* m)
 {
     this->mmu = m;
-    this->video = vid;
     this->isRunning = true;
     this->cyclesCompleted = 0;
     this->interruptController.startUp(this->mmu);
@@ -61,7 +60,6 @@ void Cpu::shutDown()
      * create the memory manager. */
     this->interruptController.shutDown();
     this->mmu = nullptr;
-    this->video = nullptr;
 }
 
 
@@ -85,6 +83,11 @@ u8 Cpu::step()
     /* Get output information from executed instruction. */
     printInstructionInfo(instr);
     u8 cycleCost = instr->cycleCost;
+
+    // if(instr->memoryLocation == 0x02b6)
+    // {
+    //     exit(1);
+    // }
 
     /* Instruction clean up. */
     delete instr;

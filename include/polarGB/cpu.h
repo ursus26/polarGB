@@ -21,7 +21,6 @@
 #include "types.h"
 #include "register.h"
 #include "mmu.h"
-#include "video.h"
 #include "interrupt_controller.h"
 
 
@@ -79,7 +78,7 @@ public:
     Cpu();
     ~Cpu();
 
-    void startUp(Mmu* m, Video* vid);
+    void startUp(Mmu* m);
     void shutDown();
 
     u8 step();
@@ -88,7 +87,6 @@ private:
     /* Member variables. */
     Register reg;
     Mmu* mmu;
-    Video* video;
     InterruptController interruptController;
     bool isRunning;
     int cyclesCompleted = 0;

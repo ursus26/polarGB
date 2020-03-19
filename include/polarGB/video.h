@@ -21,6 +21,8 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <string>
+#include "types.h"
+#include "mmu.h"
 
 class Video
 {
@@ -28,10 +30,11 @@ public:
     Video();
     ~Video();
 
-    void startUp();
+    void startUp(Mmu* m);
     void shutDown();
 
     void update();
+    void update(u8 cycles);
 
     void drawFrame();
 
@@ -40,6 +43,12 @@ public:
     void processInput(GLFWwindow* w);
 
 private:
+    u8 scanline;
+    u8 mode;
+    u64 modeCycles;
+
+    Mmu* mmu;
+
     GLFWwindow* window;
     std::string windowName;
     int width;
@@ -48,8 +57,11 @@ private:
     /* Shaders */
     unsigned int shaderProgram;
 
-
     void initShaders();
+    int getCurrentMode();
+    void setCurrentMode(u8 newMode);
+    // int getCurrentScanline();
+    void setCurrentScanline(u8 lineIdx);
 };
 
 

@@ -55,8 +55,13 @@ Video::~Video()
  * Initialise GLFW and GLAD. This initialises OpenGL. We also create a Window on which we can draw
  * graphics.
  */
-void Video::startUp()
+void Video::startUp(Mmu* m)
 {
+    this->mmu = m;
+    this->scanline = 0;
+    this->mode = 2;
+    this->modeCycles = 0;
+
     this->window = nullptr;
     this->windowName = "polarGB";
     this->width = 800;
@@ -110,6 +115,7 @@ void Video::shutDown()
 {
     glfwTerminate();
     this->window = nullptr;
+    this->mmu = nullptr;
 }
 
 
@@ -193,6 +199,75 @@ void Video::update()
     drawFrame();
 }
 
+/**
+ * Updates the video side of the GB by a given number of cpu cycles.
+ * Inspiration and source: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
+ */
+void Video::update(u8 cycles)
+{
+    modeCycles += cycles;
+
+    switch(this->mode)
+    {
+        /* Horizontal blanking. */
+        case 0:
+            if(modeCycles >= 60)
+            {
+                modeCycles -= 60;
+                setCurrentScanline(scanline + 1);
+
+                /* Check if we enter V-Blank or go to mode 2. */
+                if(scanline == 143)
+                {
+                    setCurrentMode(1);
+
+                    processInput(this->window);
+                    glfwPollEvents();
+                    drawFrame();
+                }
+                else
+                {
+                    setCurrentMode(2);
+                }
+            }
+            break;
+
+        /* Vertical blanking. */
+        case 1:
+            if(modeCycles >= 114)
+            {
+                modeCycles -= 114;
+                setCurrentScanline(scanline + 1);
+
+                if(scanline > 153)
+                {
+                    setCurrentMode(2);
+                    setCurrentScanline(0);
+                }
+
+            }
+            break;
+
+        /* Scanning OAM */
+        case 2:
+            if(modeCycles >= 20)
+            {
+                modeCycles -= 20;
+                setCurrentMode(3);
+            }
+            break;
+
+        /* Reading OAM and VRAM. */
+        case 3:
+            if(modeCycles >= 43)
+            {
+                modeCycles -= 43;
+                setCurrentMode(0);
+            }
+            break;
+    }
+}
+
 
 void Video::drawFrame()
 {
@@ -257,4 +332,34 @@ void Video::processInput(GLFWwindow* window)
 bool Video::closeWindow()
 {
     return glfwWindowShouldClose(this->window);
+}
+
+
+int Video::getCurrentMode()
+{
+    return this->mode;
+}
+
+void Video::setCurrentMode(u8 newMode)
+{
+    if(newMode > 3)
+    {
+        std::cerr << "Video::setCurrentMode | Invalid new mode." << std::endl;
+        return;
+    }
+
+    /* Update the mode locally. */
+    this->mode = newMode;
+
+    /* Update the mode in the STAT register. */
+    u8 statRegister = this->mmu->read(0xff41);
+    u8 newStatRegister = (statRegister & 0xfc) | newMode;
+    this->mmu->write(0xff41, newStatRegister);
+}
+
+
+void Video::setCurrentScanline(u8 lineIdx)
+{
+    this->scanline = lineIdx;
+    this->mmu->write(0xff44, lineIdx);
 }
