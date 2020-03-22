@@ -34,7 +34,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include
 target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIRS})
 
 # Set the link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE boost_program_options glfw GL X11 pthread Xrandr Xi dl)
+target_link_libraries(${PROJECT_NAME} PRIVATE boost_program_options glfw GL X11 pthread Xrandr Xi dl fmt::fmt)
+# target_link_libraries(${PROJECT_NAME} fmt::fmt)
+
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message("Setting build type to 'RelWithDebInfo' as none was specified.")

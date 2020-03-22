@@ -31,11 +31,9 @@ public:
     void shutDown();
 
     bool loadCartridge(std::string fileName);
-    void processCartridgeHeader();
     void printInfo();
-    bool checksum();
 
-    uint8_t read(unsigned int address);
+    u8 read(u16 address);
 
 private:
     u8* mem;
@@ -49,6 +47,9 @@ private:
     int romSize;
     int ramSize;
     int destinationCode;
+
+    void processCartridgeHeader();
+    bool checksum();
 };
 
 #endif /* CARTRIDGE_H */

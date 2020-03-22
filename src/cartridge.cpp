@@ -86,7 +86,7 @@ bool Cartridge::loadCartridge(string fileName)
 }
 
 
-uint8_t Cartridge::read(unsigned int address)
+u8 Cartridge::read(u16 address)
 {
     if(address > this->size || this->mem == nullptr)
         return 0;
