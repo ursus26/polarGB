@@ -150,7 +150,7 @@ u8 Mmu::read(u16 addr)
  * Fetches 16 bits from memory by stitching 2 bytes together. The first byte is the low byte and
  * the second byte is the high byte.
  */
-u16 Mmu::read16bits(u16 addr)
+u16 Mmu::read2Bytes(u16 addr)
 {
     /* Get the low and high u8 of the 16 bit address. */
     u16 low = read(addr);
@@ -160,13 +160,6 @@ u16 Mmu::read16bits(u16 addr)
     u16 word = (high << 8) + low;
 
     return word;
-}
-
-
-void Mmu::loadRom(string fileName)
-{
-    this->rom.loadCartridge(fileName);
-    this->rom.printInfo();
 }
 
 
@@ -212,6 +205,26 @@ void Mmu::write(u16 addr, u8 data)
     //     cerr << "Error, unsupported write action for interrupt enable register" << endl;
     //     exit(EXIT_FAILURE);
     // }
+}
+
+
+/**
+ * Writes two bytes of data to memory.
+ */
+void Mmu::write2Bytes(u16 addr, u16 data)
+{
+    u8 low = data & 0xff;
+    u8 high = (data >> 8) & 0xff;
+
+    this->write(addr, low);
+    this->write(addr + 1, high);
+}
+
+
+void Mmu::loadRom(string fileName)
+{
+    this->rom.loadCartridge(fileName);
+    this->rom.printInfo();
 }
 
 

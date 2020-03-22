@@ -43,11 +43,11 @@ void Cpu::startUp(Mmu* m)
     this->interruptController.disableInterrupts();
 
     /* Initialise the registers. */
-    this->reg.write16(RegID_AF, 0x01b0);    /* Initialise AF register. */
-    this->reg.write16(RegID_BC, 0x0013);    /* Initialise BC register. */
-    this->reg.write16(RegID_DE, 0x00d8);    /* Initialise DE register. */
-    this->reg.write16(RegID_HL, 0x014d);    /* Initialise HL register. */
-    this->reg.write16(RegID_SP, 0xfffe);    /* Initialise the stack. */
+    this->reg.writeDouble(RegID_AF, 0x01b0);    /* Initialise AF register. */
+    this->reg.writeDouble(RegID_BC, 0x0013);    /* Initialise BC register. */
+    this->reg.writeDouble(RegID_DE, 0x00d8);    /* Initialise DE register. */
+    this->reg.writeDouble(RegID_HL, 0x014d);    /* Initialise HL register. */
+    this->reg.writeDouble(RegID_SP, 0xfffe);    /* Initialise the stack. */
 
     /* Finish the boot sequence by setting the pc counter to 0x100. */
     this->reg.setProgramCounter(0x100);
@@ -144,6 +144,34 @@ void Cpu::printInstructionInfo(instruction_t *instr)
 }
 
 
+bool Cpu::halfCarryTest(int val1, int val2)
+{
+    int test = ((val1 & 0xf) + (val2 & 0xf)) & 0x1;
+    return (test == 0x1);
+}
+
+
+bool Cpu::halfBorrowTest(int val1, int val2)
+{
+    int test = ((val1 & 0x1f) - (val2 & 0x1f)) & 0x8;
+    return (test == 0x8);
+}
+
+
+bool Cpu::carryTest(int val1, int val2)
+{
+    int test = ((val1 & 0xff) + (val2 & 0xff)) & 0x10;
+    return (test == 0x10);
+}
+
+
+bool Cpu::borrowTest(int val1, int val2)
+{
+    int test = ((val1 & 0x1ff) + (val2 & 0x1ff)) & 0x80;
+    return (test == 0x80);
+}
+
+
 u8 Cpu::loadOperand8bits(Operand* operand)
 {
     switch(operand->type)
@@ -153,9 +181,9 @@ u8 Cpu::loadOperand8bits(Operand* operand)
         case OP_IMM_PTR:
             return mmu->read(operand->immediate);
         case OP_REG:
-            return reg.read8(operand->reg);
+            return reg.readSingle(operand->reg);
         case OP_MEM:
-            return readMemFromPointer(operand->memPtr);
+            return mmu->read(reg.readDouble(operand->memPtr));
         case OP_NONE:
         default:
             return 0;
@@ -170,9 +198,9 @@ u16 Cpu::loadOperand16bits(Operand* operand)
         case OP_IMM:
             return operand->immediate;
         case OP_REG:
-            return reg.read16(operand->reg);
+            return reg.readDouble(operand->reg);
         case OP_MEM:
-            return readMem16bitsFromPointer(operand->memPtr);
+            return mmu->read2Bytes(reg.readDouble(operand->memPtr));
         case OP_NONE:
         case OP_IMM_PTR:
         default:
@@ -186,10 +214,10 @@ void Cpu::storeOperand8bits(Operand* operand, u8 value)
     switch(operand->type)
     {
         case OP_REG:
-            reg.write8(operand->reg, value);
+            reg.writeSingle(operand->reg, value);
             break;
         case OP_MEM:
-            writeMem(operand->memPtr, value);
+            mmu->write(reg.readDouble(operand->memPtr), value);
             break;
         case OP_IMM_PTR:
             mmu->write(operand->immediate, value);
@@ -203,23 +231,16 @@ void Cpu::storeOperand8bits(Operand* operand, u8 value)
 
 void Cpu::storeOperand16bits(Operand* operand, u16 value)
 {
-    u8 low, high;
-
     switch(operand->type)
     {
         case OP_REG:
-            reg.write16(operand->reg, value);
+            reg.writeDouble(operand->reg, value);
             break;
         case OP_MEM:
-            writeMem16bits(operand->memPtr, value);
+            mmu->write2Bytes(reg.readDouble(operand->memPtr), value);
             break;
         case OP_IMM_PTR:
-            low = (value & 0xff);
-            high = (value >> 8);
-
-            /* Get and return the data from memory. */
-            mmu->write(operand->immediate, low);
-            mmu->write(operand->immediate + 1, high);
+            mmu->write2Bytes(operand->immediate, value);
             break;
         default:
             printf("Unexpected store 16 bits location, operand = %d\n", operand->type);
@@ -252,8 +273,8 @@ void Cpu::executeLD8Inc(instruction_t* instr)
     storeOperand8bits(&(instr->operandDst), value);
 
     /* Incrementing the HL register. */
-    u16 result = reg.read16(RegID_HL) + 1;
-    reg.write16(RegID_HL, result);
+    u16 result = reg.readDouble(RegID_HL) + 1;
+    reg.writeDouble(RegID_HL, result);
 
     /* Add the amount of cycles used. */
     this->cyclesCompleted += instr->cycleCost;
@@ -267,8 +288,8 @@ void Cpu::executeLD8Dec(instruction_t* instr)
     storeOperand8bits(&(instr->operandDst), value);
 
     /* Incrementing the HL register. */
-    u16 result = reg.read16(RegID_HL) - 1;
-    reg.write16(RegID_HL, result);
+    u16 result = reg.readDouble(RegID_HL) - 1;
+    reg.writeDouble(RegID_HL, result);
 
     /* Add the amount of cycles used. */
     this->cyclesCompleted += instr->cycleCost;
@@ -283,8 +304,8 @@ void Cpu::executeLD8InternalRam(instruction_t* instr)
         if(instr->operandDst.type == OP_IMM)
             destAddr += instr->operandDst.immediate;
         else
-            destAddr += reg.read8(instr->operandDst.memPtr);
-        mmu->write(destAddr, reg.read8(instr->operandSrc.reg));
+            destAddr += reg.readSingle(instr->operandDst.memPtr);
+        mmu->write(destAddr, reg.readSingle(instr->operandSrc.reg));
     }
     else
     {
@@ -292,8 +313,8 @@ void Cpu::executeLD8InternalRam(instruction_t* instr)
         if(instr->operandSrc.type == OP_IMM)
             srcAddr += instr->operandSrc.immediate;
         else
-            srcAddr += reg.read8(instr->operandSrc.memPtr);
-        reg.write8(RegID_A, mmu->read(srcAddr));
+            srcAddr += reg.readSingle(instr->operandSrc.memPtr);
+        reg.writeSingle(RegID_A, mmu->read(srcAddr));
     }
 
     this->cyclesCompleted += instr->cycleCost;
@@ -320,7 +341,7 @@ void Cpu::executeJP(instruction_t* instr)
     /* Code execution for: JP (HL) */
     if(conditionFlag == COND_HL)
     {
-        reg.setProgramCounter(reg.read16(RegID_HL));
+        reg.setProgramCounter(reg.readDouble(RegID_HL));
         this->cyclesCompleted += instr->cycleCost;
     }
     else
@@ -498,9 +519,9 @@ void Cpu::executeADC(instruction_t* instr)
 void Cpu::executeSUB(instruction_t* instr)
 {
     /* Add the value of register 2 to register 1. */
-    int val1 = (int) reg.read8(RegID_A);
+    int val1 = (int) reg.readSingle(RegID_A);
     int val2 = (int) loadOperand8bits(&(instr->operandSrc));
-    u8 result = reg.read8(RegID_A) - loadOperand8bits(&(instr->operandSrc));
+    u8 result = reg.readSingle(RegID_A) - loadOperand8bits(&(instr->operandSrc));
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
@@ -509,7 +530,7 @@ void Cpu::executeSUB(instruction_t* instr)
     reg.setFlagCarry(borrowTest(val1, val2));
 
     /* Store the addition. */
-    reg.write8(RegID_A, result);
+    reg.writeSingle(RegID_A, result);
 
     /* Clock cycles */
     this->cyclesCompleted += instr->cycleCost;
@@ -553,7 +574,7 @@ void Cpu::executeSBC(instruction_t* instr)
 void Cpu::executeAND(instruction_t* instr)
 {
     /* Bitwise AND. */
-    u8 result = loadOperand8bits(&(instr->operandSrc)) & reg.read8(RegID_A);
+    u8 result = loadOperand8bits(&(instr->operandSrc)) & reg.readSingle(RegID_A);
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0);
@@ -562,7 +583,7 @@ void Cpu::executeAND(instruction_t* instr)
     reg.setFlagCarry(false);
 
     /* Store the result. */
-    reg.write8(RegID_A, result);
+    reg.writeSingle(RegID_A, result);
 
     /* Clock cycles */
     this->cyclesCompleted += instr->cycleCost;
@@ -575,7 +596,7 @@ void Cpu::executeAND(instruction_t* instr)
 void Cpu::executeXOR(instruction_t* instr)
 {
     /* Bitwise xor. */
-    u8 result = reg.read8(RegID_A) ^ loadOperand8bits(&(instr->operandSrc));
+    u8 result = reg.readSingle(RegID_A) ^ loadOperand8bits(&(instr->operandSrc));
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0);
@@ -584,7 +605,7 @@ void Cpu::executeXOR(instruction_t* instr)
     reg.setFlagCarry(false);
 
     /* Store the result. */
-    reg.write8(RegID_A, result);
+    reg.writeSingle(RegID_A, result);
 
     /* Clock cycles */
     this->cyclesCompleted += instr->cycleCost;
@@ -597,7 +618,7 @@ void Cpu::executeXOR(instruction_t* instr)
 void Cpu::executeOR(instruction_t* instr)
 {
     /* Bitwise or. */
-    u8 result = reg.read8(RegID_A) | loadOperand8bits(&(instr->operandSrc));
+    u8 result = reg.readSingle(RegID_A) | loadOperand8bits(&(instr->operandSrc));
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0);
@@ -606,7 +627,7 @@ void Cpu::executeOR(instruction_t* instr)
     reg.setFlagCarry(false);
 
     /* Store the result. */
-    reg.write8(RegID_A, result);
+    reg.writeSingle(RegID_A, result);
 
     /* Clock cycles */
     this->cyclesCompleted += instr->cycleCost;
@@ -620,7 +641,7 @@ void Cpu::executeCP(instruction_t* instr)
 {
     /* Input values. */
     u8 val = loadOperand8bits(&(instr->operandSrc));
-    u8 registerA = reg.read8(RegID_A);
+    u8 registerA = reg.readSingle(RegID_A);
 
     reg.setFlagZero(registerA == val);
     reg.setFlagHalfCarry(registerA > val);
@@ -661,16 +682,16 @@ void Cpu::executeDEC8(instruction_t* instr)
 
 void Cpu::executeINC16(instruction_t* instr)
 {
-    u16 result = reg.read16(instr->operandDst.reg) + 1;
-    reg.write16(instr->operandDst.reg, result);
+    u16 result = reg.readDouble(instr->operandDst.reg) + 1;
+    reg.writeDouble(instr->operandDst.reg, result);
     this->cyclesCompleted += instr->cycleCost;
 }
 
 
 void Cpu::executeDEC16(instruction_t* instr)
 {
-    u16 result = reg.read16(instr->operandDst.reg) - 1;
-    reg.write16(instr->operandDst.reg, result);
+    u16 result = reg.readDouble(instr->operandDst.reg) - 1;
+    reg.writeDouble(instr->operandDst.reg, result);
     this->cyclesCompleted += instr->cycleCost;
 }
 
@@ -694,7 +715,7 @@ void Cpu::executeEI(instruction_t* instr)
  */
 void Cpu::executePUSH(instruction_t* instr)
 {
-    _executePUSH(reg.read16(instr->operandSrc.reg));
+    _executePUSH(reg.readDouble(instr->operandSrc.reg));
     this->cyclesCompleted += instr->cycleCost;
 }
 
@@ -715,13 +736,8 @@ void Cpu::_executePUSH(u16 val)
     //     return;
     // }
 
-    /* Get the high and low byte. */
-    u8 low = val & 0xff;
-    u8 high = (val >> 8) & 0xff;
-
     /* Write the value to the stack. */
-    mmu->write(sp - 1, high);
-    mmu->write(sp - 2, low);
+    mmu->write2Bytes(sp - 2, val);
 
     /* Decrease the stack pointer by two. */
     reg.decStackPointer();
@@ -744,145 +760,15 @@ void Cpu::executePOP(instruction_t* instr)
     // }
 
     /* Pop value from stack. */
-    u16 val = mmu->read16bits(sp);
+    u16 val = mmu->read2Bytes(sp);
 
     /* Increases the stack pointer by two. */
     reg.incStackPointer();
     reg.incStackPointer();
 
     /* Store result in register. */
-    reg.write16(instr->operandDst.reg, val);
+    reg.writeDouble(instr->operandDst.reg, val);
     this->cyclesCompleted += instr->cycleCost;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-// /**
-//  * This function fetches the next instruction from memory pointed by the program counter. Then it
-//  * increments the program counter and returns the opcode.
-//  */
-// u8 Cpu::fetchNextInstruction()
-// {
-//     /* Get the program counter. */
-//     u16 pc = reg.getProgramCounter();
-//
-//     /* Fetch the next instruction from memory. */
-//     u8 opcode = mmu->read(pc);
-//
-//     /* Increase the program counter by 1 and return the instruction code. */
-//     reg.incProgramCounter();
-//     return opcode;
-// }
-//
-// /**
-//  * Fetches 16 bits from memory by stitching 2 bytes together. The first byte is the low byte and
-//  * the second byte is the high byte.
-//  */
-// u16 Cpu::fetchNext16Bits()
-// {
-//     /* Get the low and high u8 of the 16 bit address. */
-//     u16 low = fetchNextInstruction();
-//     u16 high = fetchNextInstruction();
-//
-//     /* Construct the address. */
-//     u16 word = (high << 8) + low;
-//
-//     return word;
-// }
-
-/**
- * Read some data from memory specified by an address in a register.
- */
-u8 Cpu::readMemFromPointer(RegID memPointer)
-{
-    /* Get the memory location. */
-    u16 memLocation = reg.read16(memPointer);
-
-    /* Get and return the data from memory. */
-    return (mmu->read(memLocation));
-}
-
-
-/**
- * Read some data from memory specified by an address in a register.
- */
-u8 Cpu::readMem8bits(u16 memPointer)
-{
-    /* Get and return the data from memory. */
-    return (mmu->read(memPointer));
-}
-
-
-/**
- * Read some data from memory specified by an address in a register.
- */
-u16 Cpu::readMem16bitsFromPointer(RegID memPointer)
-{
-    u16 memLocation = reg.read16(memPointer);
-    u16 word = mmu->read16bits(memLocation);
-    return word;
-}
-
-
-u16 Cpu::readMem16bits(u16 memPointer)
-{
-    u16 word = mmu->read16bits(memPointer);
-    return word;
-}
-
-
-/**
- * Writes some data to memory specified by an address in a register.
- */
-void Cpu::writeMem(RegID memPointer, u8 data)
-{
-    /* Get the memory location. */
-    u16 memLocation = reg.read16(memPointer);
-
-    /* Get and return the data from memory. */
-    mmu->write(memLocation, data);
-}
-
-
-/**
- * Writes some data to memory specified by an address in a register.
- */
-void Cpu::writeMem16bits(RegID memPointer, u16 data)
-{
-    /* Get the memory location. */
-    u16 memLocation = reg.read16(memPointer);
-
-    u8 low = (u8) (data & 0xff);
-    u8 high = (u8) (data >> 8);
-
-    /* Get and return the data from memory. */
-    mmu->write(memLocation, low);
-    mmu->write(memLocation + 1, high);
 }
 
 
@@ -890,7 +776,6 @@ void Cpu::checkSignals()
 {
     /* Check for an interrupt signal. */
     u16 interruptSignal = this->interruptController.checkForInterrupts();
-    // printf("InterruptSignal: 0x%x\n", interruptSignal);
     if(interruptSignal == 0x0)
         return;
     else
@@ -906,261 +791,11 @@ void Cpu::setupSignalExecution(u16 interruptSignalAddress)
 {
     printf("Signal: 0x%x\n", interruptSignalAddress);
     interruptController.disableInterrupts();
-    _executePUSH(reg.read16(RegID_PC));
-    reg.write16(RegID_PC, interruptSignalAddress);
+    _executePUSH(reg.readDouble(RegID_PC));
+    reg.writeDouble(RegID_PC, interruptSignalAddress);
 }
 
 
-// /**
-//  * Fetches 16 bits pointed by the program counter and stores it in a register pair.
-//  */
-// void Cpu::executeLD16(RegID dest)
-// {
-//     reg.write16(dest, fetchNext16Bits());
-// }
-//
-//
-// /**
-//  * Pushes the contents of a register pair to the stack.
-//  */
-// void Cpu::executePUSH(u16 val)
-// {
-//     /* Get the high and low byte. */
-//     u8 low = val & 0xff;
-//     u8 high = (val >> 8) & 0xff;
-//     u16 sp = reg.getStackPointer();
-//
-//     /* Write the value to the stack. */
-//     mmu->write(sp - 1, high);
-//     mmu->write(sp - 2, low);
-//
-//     /* Decrease the stack pointer by two. */
-//     reg.decStackPointer();
-//     reg.decStackPointer();
-// }
-//
-//
-// /**
-//  * Pops 2 bytes from the stack.
-//  */
-// u16 Cpu::executePOP()
-// {
-//     /* Get 2 bytes from the stack. */
-//     u16 val = mmu->read16bits(reg.getStackPointer());
-//
-//     /* Increases the stack pointer by two. */
-//     reg.incStackPointer();
-//     reg.incStackPointer();
-//
-//     return val;
-// }
-//
-//
-// /**
-//  * Adds a value to the contents of register A and store it in register A.
-//  */
-// void Cpu::executeADD8(u8 val)
-// {
-//     /* Add the value of register 2 to register 1. */
-//     u8 result = reg.read8(RegID_A) + val;
-//     int val1 = (int) reg.read8(RegID_A);
-//     int val2 = (int) val;
-//
-//     /* Set or reset the flags. */
-//     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
-//     reg.setFlagSub(false);               /* Always reset the Sub flag. */
-//     reg.setFlagHalfCarry(halfCarryTest(val1, val2));
-//     reg.setFlagCarry(carryTest(val1, val2));
-//
-//     /* Store the addition. */
-//     reg.write8(RegID_A, result);
-// }
-//
-// /**
-//  * Adds a value and the carry bit to the contents of register A and stores it in register A.
-//  */
-// void Cpu::executeADC(u8 val)
-// {
-//     /* Add the value of register 2 to register 1. */
-//     int val1 = (int) reg.read8(RegID_A);
-//     int val2 = (int) val;
-//
-//     u8 carry;
-//     if(reg.getFlagCarry())
-//         carry = 1;
-//     else
-//         carry = 0;
-//
-//     u8 result = reg.read8(RegID_A) + val + carry;
-//
-//     /* Set or reset the flags. */
-//     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
-//     reg.setFlagSub(false);               /* Always reset the Sub flag. */
-//     reg.setFlagHalfCarry(halfCarryTest(val1, val2 + carry));
-//     reg.setFlagCarry(carryTest(val1, val2 + carry));
-//
-//     /* Store the addition. */
-//     reg.write8(RegID_A, result);
-// }
-//
-// /**
-//  * Subtracts a value from register A.
-//  */
-// void Cpu::executeSUB(u8 val)
-// {
-//     /* Add the value of register 2 to register 1. */
-//     int val1 = (int) reg.read8(RegID_A);
-//     int val2 = (int) val;
-//     u8 result = reg.read8(RegID_A) - val;
-//
-//     /* Set or reset the flags. */
-//     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
-//     reg.setFlagSub(true);               /* Always set the Sub flag. */
-//     reg.setFlagHalfCarry(halfBorrowTest(val1, val2));
-//     reg.setFlagCarry(borrowTest(val1, val2));
-//
-//     /* Store the addition. */
-//     reg.write8(RegID_A, result);
-// }
-//
-// /**
-//  * Subtracts a value and the carry bit from register A.
-//  */
-// void Cpu::executeSBC(u8 val)
-// {
-//     /* Add the value of register 2 to register 1. */
-//     int val1 = (int) reg.read8(RegID_A);
-//     int val2 = (int) val;
-//
-//     u8 carry;
-//     if(reg.getFlagCarry())
-//         carry = 1;
-//     else
-//         carry = 0;
-//
-//     u8 result = reg.read8(RegID_A) - val - carry;
-//
-//     /* Set or reset the flags. */
-//     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
-//     reg.setFlagSub(true);               /* Always set the Sub flag. */
-//     reg.setFlagHalfCarry(halfBorrowTest(val1, val2 - carry));
-//     reg.setFlagCarry(borrowTest(val1, val2 - carry));
-//
-//     /* Store the addition. */
-//     reg.write8(RegID_A, result);
-// }
-//
-//
-// /**
-//  * Bitwise AND of a value with register A. Then store the result in register A.
-//  */
-// void Cpu::executeAND(u8 val)
-// {
-//     /* Bitwise AND. */
-//     u8 result = reg.read8(RegID_A) & val;
-//
-//     /* Set or reset the flags. */
-//     reg.setFlagZero(reg.read8(RegID_A) == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(true);
-//     reg.setFlagCarry(false);
-//
-//     /* Store the result. */
-//     reg.write8(RegID_A, result);
-// }
-//
-//
-// /**
-//  * Bitwise XOR of a value with register A. Then store the result in register A.
-//  */
-// void Cpu::executeXOR(u8 val)
-// {
-//     /* Bitwise xor. */
-//     u8 result = reg.read8(RegID_A) ^ val;
-//
-//     /* Set or reset the flags. */
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry(false);
-//
-//     /* Store the result. */
-//     reg.write8(RegID_A, result);
-// }
-//
-//
-// /**
-//  * Bitwise OR of a value with register A. Then store the result in register A.
-//  */
-// void Cpu::executeOR(u8 val)
-// {
-//     /* Bitwise or. */
-//     u8 result = reg.read8(RegID_A) | val;
-//
-//     /* Set or reset the flags. */
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry(false);
-//
-//     /* Store the result. */
-//     reg.write8(RegID_A, result);
-// }
-//
-//
-// /**
-//  * Execute the CP instruction and set the flags based on the result.
-//  */
-// void Cpu::executeCP(u8 val)
-// {
-//     u8 src = reg.read8(RegID_A);
-//
-//     reg.setFlagZero(src == val);
-//     reg.setFlagHalfCarry(src > val);
-//     reg.setFlagCarry(src < val);
-//     reg.setFlagSub(true);
-// }
-//
-//
-// u8 Cpu::executeINC8(u8 val)
-// {
-//     u8 result = val + 1;
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(halfCarryTest(val, 1));
-//
-//     return result;
-// }
-//
-//
-// u8 Cpu::executeDEC8(u8 val)
-// {
-//     u8 result = val - 1;
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(true);
-//     reg.setFlagHalfCarry(halfBorrowTest(val, 1));
-//
-//     /* Store the result. */
-//     return result;
-// }
-//
-//
-// void Cpu::executeINC16(RegID dest)
-// {
-//     u16 result = reg.read16(dest) + 1;
-//     reg.write16(dest, result);
-// }
-//
-//
-// void Cpu::executeDEC16(RegID dest)
-// {
-//     u16 result = reg.read16(dest) - 1;
-//     reg.write16(dest, result);
-// }
-//
-//
 // void Cpu::executeADD16(RegID dest, int val)
 // {
 //     /* Get the values from the registers and do the addition. */
@@ -1183,120 +818,7 @@ void Cpu::setupSignalExecution(u16 interruptSignalAddress)
 //         reg.setFlagZero(false);
 //
 //     /* Store the result. */
-//     reg.write16(dest, result);
-// }
-//
-//
-// int Cpu::executeJP(int conditionFlag)
-// {
-//     int cycles = 3;
-//     bool zero = reg.getFlagZero();
-//     bool carry = reg.getFlagCarry();
-//
-//     /* Code execution for: JP (HL) */
-//     if(conditionFlag == COND_HL)
-//     {
-//         reg.setProgramCounter(reg.read16(RegID_HL));
-//         return 1;
-//     }
-//
-//     /* Get the jump location and check if the condition is true or does not exist. */
-//     u16 jumpLocation = fetchNext16Bits();
-//     if(conditionFlag == COND_NONE
-//     ||(conditionFlag == COND_NZ && zero == false)
-//     ||(conditionFlag == COND_Z  && zero == true)
-//     ||(conditionFlag == COND_NC && carry == false)
-//     ||(conditionFlag == COND_C  && carry == true))
-//     {
-//         reg.setProgramCounter(jumpLocation);
-//         cycles = 4;
-//     }
-//
-//     return cycles;
-// }
-//
-//
-// int Cpu::executeJR(int conditionFlag)
-// {
-//     int cycles = 2;
-//     bool zero = reg.getFlagZero();
-//     bool carry = reg.getFlagCarry();
-//     u8 tmp = fetchNextInstruction();
-//     i8 step = (static_cast<i8> (tmp));
-//
-//     /* Get the jump location and check if the condition is true or does not exist. */
-//     if(conditionFlag == COND_NONE
-//     ||(conditionFlag == COND_NZ && zero == false)
-//     ||(conditionFlag == COND_Z  && zero == true)
-//     ||(conditionFlag == COND_NC && carry == false)
-//     ||(conditionFlag == COND_C  && carry == true))
-//     {
-//         u16 newPC = reg.getProgramCounter() + step;
-//         reg.setProgramCounter(newPC);
-//         cycles = 3;
-//     }
-//
-//     return cycles;
-// }
-//
-//
-// /**
-//  * Push the program counter on the stack and adjust the program counter.
-//  */
-// int Cpu::executeCALL(u16 jumpLocation, int conditionFlag)
-// {
-//     int cycles = 3;
-//     bool zero = reg.getFlagZero();
-//     bool carry = reg.getFlagCarry();
-//     u16 pc = reg.getProgramCounter();
-//
-//     /* Write the program counter to the stack if the condition matches. */
-//     if(conditionFlag == COND_NONE
-//     ||(conditionFlag == COND_NZ && zero == false)
-//     ||(conditionFlag == COND_Z  && zero == true)
-//     ||(conditionFlag == COND_NC && carry == false)
-//     ||(conditionFlag == COND_C  && carry == true))
-//     {
-//         this->executePUSH(pc);
-//         cycles = 6;
-//
-//         /* Change the program counter. */
-//         reg.setProgramCounter(jumpLocation);
-//     }
-//
-//     return cycles;
-// }
-//
-//
-// /**
-//  * Push the program counter on the stack and adjust the program counter.
-//  */
-// int Cpu::executeRET(int conditionFlag)
-// {
-//     int cycles = 2;
-//     bool zero = reg.getFlagZero();
-//     bool carry = reg.getFlagCarry();
-//
-//     /* Write the program counter to the stack if the condition matches. */
-//     if(conditionFlag == COND_NONE
-//     ||(conditionFlag == COND_NZ && zero == false)
-//     ||(conditionFlag == COND_Z  && zero == true)
-//     ||(conditionFlag == COND_NC && carry == false)
-//     ||(conditionFlag == COND_C  && carry == true))
-//     {
-//         u16 val = this->executePOP();
-//         reg.setProgramCounter(val);
-//         cycles = 4;
-//
-//         /* Adjust the stack pointer. */
-//         reg.incStackPointer();
-//         reg.incStackPointer();
-//     }
-//
-//     if(conditionFlag != COND_NONE)
-//         cycles = 5;
-//
-//     return cycles;
+//     reg.writeDouble(dest, result);
 // }
 //
 //
@@ -1515,31 +1037,3 @@ void Cpu::setupSignalExecution(u16 interruptSignalAddress)
 //
 //     return result;
 // }
-//
-//
-bool Cpu::halfCarryTest(int val1, int val2)
-{
-    int test = ((val1 & 0xf) + (val2 & 0xf)) & 0x1;
-    return (test == 0x1);
-}
-
-
-bool Cpu::halfBorrowTest(int val1, int val2)
-{
-    int test = ((val1 & 0x1f) - (val2 & 0x1f)) & 0x8;
-    return (test == 0x8);
-}
-
-
-bool Cpu::carryTest(int val1, int val2)
-{
-    int test = ((val1 & 0xff) + (val2 & 0xff)) & 0x10;
-    return (test == 0x10);
-}
-
-
-bool Cpu::borrowTest(int val1, int val2)
-{
-    int test = ((val1 & 0x1ff) + (val2 & 0x1ff)) & 0x80;
-    return (test == 0x80);
-}

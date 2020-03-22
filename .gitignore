@@ -1,5 +1,8 @@
+# Binaries
 polarGB
-runTests
+tests/runTests
+
+# Folders.
 bin/*
 build/*
 rom/*

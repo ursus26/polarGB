@@ -53,10 +53,11 @@ public:
 
     /* Read from an address. */
     u8 read(u16 addr);
-    u16 read16bits(u16 addr);
+    u16 read2Bytes(u16 addr);
 
     /* Write data to memory. */
     void write(u16 addr, u8 data);
+    void write2Bytes(u16 addr, u16 data);
 
     /* Load a rom file into memory. */
     void loadRom(std::string fileName);

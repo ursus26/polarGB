@@ -50,6 +50,8 @@ const int IDX_LOW = 1;
 typedef enum RegID
 {
     RegID_NONE,
+
+    /* Single registers. */
     RegID_A,
     RegID_F,
     RegID_B,
@@ -58,12 +60,16 @@ typedef enum RegID
     RegID_E,
     RegID_H,
     RegID_L,
+
+    /* Double sized registers. */
     RegID_AF,
     RegID_BC,
     RegID_DE,
     RegID_HL,
     RegID_SP,
     RegID_PC,
+
+    /* Miscellaneous */
     RegID_MISS  /* Used if a value is not in a register but in memory. */
 } RegID;
 
@@ -81,13 +87,13 @@ public:
     Register();
 
     /* Functions for writing to a register or copying. */
-    void write8(RegID id, u8 val);
-    void write16(RegID id, u16 val);
-    void copy8(RegID dest, RegID src);
+    void writeSingle(RegID id, u8 val);
+    void writeDouble(RegID id, u16 val);
+    void copySingle(RegID dest, RegID src);
 
     /* Functions for loading data from a register. */
-    u8 read8(RegID id);
-    u16 read16(RegID id);
+    u8 readSingle(RegID id);
+    u16 readDouble(RegID id);
 
     /* Operations on the program counter. */
     u16 getProgramCounter() const;

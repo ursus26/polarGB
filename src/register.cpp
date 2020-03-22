@@ -23,10 +23,10 @@
 Register::Register()
 {
     /* Initialize the registers. */
-    write16(RegID_AF, 0x01b0);
-    write16(RegID_BC, 0x0013);
-    write16(RegID_DE, 0x00d8);
-    write16(RegID_HL, 0x014d);
+    writeDouble(RegID_AF, 0x01b0);
+    writeDouble(RegID_BC, 0x0013);
+    writeDouble(RegID_DE, 0x00d8);
+    writeDouble(RegID_HL, 0x014d);
     this->SP = 0xfffe;
     this->PC = 0x0100;
 }
@@ -35,7 +35,7 @@ Register::Register()
 /**
  * Writes a byte to a register specified by its id. We can only write to A, B, C, D, E, H and L.
  */
-void Register::write8(RegID id, u8 val)
+void Register::writeSingle(RegID id, u8 val)
 {
     switch(id)
     {
@@ -71,25 +71,25 @@ void Register::write8(RegID id, u8 val)
  * Writes a word to a register specified by its id. We can only write to the register pairs:
  * AF, BC, DE and HL.
  */
-void Register::write16(RegID id, u16 val)
+void Register::writeDouble(RegID id, u16 val)
 {
     switch(id)
     {
         case RegID_AF:
-            write8(RegID_A, (val >> 8) & 0xff);
+            writeSingle(RegID_A, (val >> 8) & 0xff);
             AF.low = 0xff & val;
             break;
         case RegID_BC:
-            write8(RegID_B, (val >> 8) & 0xff);
-            write8(RegID_C, val & 0xff);
+            writeSingle(RegID_B, (val >> 8) & 0xff);
+            writeSingle(RegID_C, val & 0xff);
             break;
         case RegID_DE:
-            write8(RegID_D, (val >> 8) & 0xff);
-            write8(RegID_E, val & 0xff);
+            writeSingle(RegID_D, (val >> 8) & 0xff);
+            writeSingle(RegID_E, val & 0xff);
             break;
         case RegID_HL:
-            write8(RegID_H, (val >> 8) & 0xff);
-            write8(RegID_L, val & 0xff);
+            writeSingle(RegID_H, (val >> 8) & 0xff);
+            writeSingle(RegID_L, val & 0xff);
             break;
         case RegID_SP:
             SP = val;
@@ -106,14 +106,14 @@ void Register::write16(RegID id, u16 val)
 /**
  * Copies the value from register src to register dest.
  */
-void Register::copy8(RegID dest, RegID src)
+void Register::copySingle(RegID dest, RegID src)
 {
-    u8 srcVal = read8(src);
-    write8(dest, srcVal);
+    u8 srcVal = readSingle(src);
+    writeSingle(dest, srcVal);
 }
 
 
-u8 Register::read8(RegID id)
+u8 Register::readSingle(RegID id)
 {
     switch(id)
     {
@@ -147,25 +147,25 @@ u8 Register::read8(RegID id)
 }
 
 
-u16 Register::read16(RegID id)
+u16 Register::readDouble(RegID id)
 {
     u16 returnValue = 0x0;
     switch(id)
     {
         case RegID_AF:
-            returnValue = (read8(RegID_A) << 8) + AF.low;
+            returnValue = (readSingle(RegID_A) << 8) + AF.low;
             break;
 
         case RegID_BC:
-            returnValue = (read8(RegID_B) << 8) + read8(RegID_C);
+            returnValue = (readSingle(RegID_B) << 8) + readSingle(RegID_C);
             break;
 
         case RegID_DE:
-            returnValue = (read8(RegID_D) << 8) + read8(RegID_E);
+            returnValue = (readSingle(RegID_D) << 8) + readSingle(RegID_E);
             break;
 
         case RegID_HL:
-            returnValue = (read8(RegID_H) << 8) + read8(RegID_L);
+            returnValue = (readSingle(RegID_H) << 8) + readSingle(RegID_L);
             break;
 
         case RegID_SP:
@@ -307,8 +307,8 @@ void Register::decStackPointer()
 
 void Register::printRegister()
 {
-    printf("AF: 0x%04x\n", read16(RegID_AF));
-    printf("BC: 0x%04x\n", read16(RegID_BC));
-    printf("DE: 0x%04x\n", read16(RegID_DE));
-    printf("HL: 0x%04x\n", read16(RegID_HL));
+    printf("AF: 0x%04x\n", readDouble(RegID_AF));
+    printf("BC: 0x%04x\n", readDouble(RegID_BC));
+    printf("DE: 0x%04x\n", readDouble(RegID_DE));
+    printf("HL: 0x%04x\n", readDouble(RegID_HL));
 }

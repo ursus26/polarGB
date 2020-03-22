@@ -97,22 +97,10 @@ private:
     void checkSignals();
     void setupSignalExecution(u16 interruptSignal);
 
-    /* old functions TODO: delete  */
-    u8 fetchNextInstruction();
-    u16 fetchNext16Bits();
-    int executeInstruction(u8 opcode);
-
+    /* Instruction decoding.  */
     instruction_t* fetchDecode();
     void decodeOpcode(instruction_t *instr, u8 opcode);
     void printInstructionInfo(instruction_t *instr);
-
-    /* Read and write to a memory location specified by a register. */
-    u8 readMemFromPointer(RegID memPointer);
-    u8 readMem8bits(u16 memPointer);
-    u16 readMem16bitsFromPointer(RegID memPointer);
-    u16 readMem16bits(u16 memPointer);
-    void writeMem(RegID memPointer, u8 data);
-    void writeMem16bits(RegID memPointer, u16 data);
 
     /* Half-carry and carry test. */
     bool halfCarryTest(int val1, int val2);
@@ -184,33 +172,7 @@ private:
     // /* Execute the extended instruction set. */
     // int executeCB();
     //
-    // /* 16 bit load/store/move instructions */
-    // void executeLD16(RegID dest);
-    // void executePUSH(u16 val);
-    // u16 executePOP();
-    //
-    // /* 8 bit arithmetic/logical instructions */
-    // void executeADD8(u8 val);
-    // void executeADC(u8 val);
-    // void executeSUB(u8 val);
-    // void executeSBC(u8 val);
-    // void executeAND(u8 val);
-    // void executeXOR(u8 val);
-    // void executeOR(u8 val);
-    // void executeCP(u8 val);
-    // u8 executeINC8(u8 val);
-    // u8 executeDEC8(u8 val);
-    //
-    // /* 16 bit arithmetic/logical instructions */
-    // void executeINC16(RegID dest);
-    // void executeDEC16(RegID dest);
     // void executeADD16(RegID dest, int val);
-    //
-    // /* Jumps/calls */
-    // int executeJP(int conditionFlag);
-    // int executeJR(int conditionFlag);
-    // int executeCALL(u16 jumpLocation, int conditionFlag);
-    // int executeRET(int conditionFlag);
     //
     // /* 	8 bit rotations/shifts and bit instructions */
     // u8 executeSET(u8 src, int bitNumber);

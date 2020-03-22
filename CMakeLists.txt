@@ -21,6 +21,8 @@ set(CMAKE_C_STANDARD 11)
 find_package(Boost 1.46.1 REQUIRED COMPONENTS program_options)
 find_package(glfw3 REQUIRED)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
 # Find all the source files
 file(GLOB SOURCES "src/*.cpp")
 
@@ -47,24 +49,17 @@ target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -D_FORTIF
                        -fstack-protector -fPIE)
 
 
+
+###############################################################################
+# Third party
+###############################################################################
+
+add_subdirectory(third_party)
+
+
 ###############################################################################
 # TESTS
 ###############################################################################
 
-add_subdirectory(third_party)
 enable_testing()
-
-
-# Find all the source files
-file(GLOB TEST_SRC_FILES
-    "${PROJECT_SOURCE_DIR}/tests/*.h"
-    "${PROJECT_SOURCE_DIR}/tests/*.cpp"
-)
-
-add_executable(runTests ${TEST_SRC_FILES} ${PROJECT_SOURCE_DIR}/src/register.cpp)
-
-target_include_directories(runTests PUBLIC ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-target_include_directories(runTests PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
-
-target_link_libraries(runTests gtest gtest_main)
-target_link_libraries(runTests boost_program_options glfw GL X11 pthread Xrandr Xi dl)
+add_subdirectory(tests)
