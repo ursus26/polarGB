@@ -16,9 +16,9 @@
  */
 
 #include <stdlib.h>
-#include <iostream>
 #include <vector>
 #include <boost/program_options.hpp>
+#include <fmt/format.h>
 #include "polarGB/emulator.h"
 #include "polarGB/log.h"
 
@@ -32,15 +32,13 @@ const size_t MINOR_VERSION = 0;
 
 void printHelp()
 {
-    cout << "Usage: polarGB [OPTION] [FILE]\n"
-         << "Emulates the Game Boy to play FILE.\n"
-         << "\n"
-         << "Options:\n"
-         << "  -h, --help           Display this help information\n"
-         << "      --input-file     Input gameboy rom file\n"
-         << "  -v, --verbose        Verbose printing\n"
-         << "      --version        Display emulator version information"
-         << endl;
+    fmt::print("Usage: polarGB [OPTION] [FILE]\n");
+    fmt::print("Emulates the Game Boy to play FILE.\n\n");
+    fmt::print("Options:\n");
+    fmt::print("  -h, --help           Display this help information\n");
+    fmt::print("      --input-file     Input gameboy rom file\n");
+    fmt::print("  -v, --verbose        Verbose printing\n");
+    fmt::print("      --version        Display emulator version information\n");
 
     exit(EXIT_SUCCESS);
 }
@@ -48,9 +46,7 @@ void printHelp()
 
 void printVersion()
 {
-    cout << "polarGB version " << MAJOR_VERSION << "." << MINOR_VERSION
-         << endl;
-
+    fmt::print("polarGB version {}.{}\n", MAJOR_VERSION, MINOR_VERSION);
     exit(EXIT_SUCCESS);
 }
 
@@ -102,7 +98,7 @@ int main(int argc, char* argv[])
     }
     catch(exception& e)
     {
-        cout << e.what() << "\nTry 'polarGB --help' for more information." << endl;
+        fmt::print(stderr, "Error, {}\nTry 'polarGB --help' for more information.\n", e.what());
         return EXIT_FAILURE;
     }
 

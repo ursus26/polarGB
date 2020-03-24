@@ -4,6 +4,10 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2020-03-24: - I finished replacing printf, std::cerr, and std::cout with fmt::print. Now I have a
+              single printing library that I can use instead of using both a C or a C++
+              implementation at the same time.
+2020-03-22: - Code clean up and refactor. It was mostly focused at the cpu, mmu and registers.
 2020-03-19: - Refactored emulator loop and moved it from the CPU class to the emulator class.
             - Added LCD Status register logic. The emulator progresses further with the Tetris ROM
               for the first time since a year?? It now crashes 10 instructions further.

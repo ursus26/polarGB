@@ -15,10 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
+#include <fmt/format.h>
 #include "polarGB/mmu.h"
 
 
@@ -128,11 +127,11 @@ u8 Mmu::read(u16 addr)
     else if(addr >= 0xd000 && addr <= 0xdfff) /* Working RAM bank 1 */
         data = WRAM.mem[addr - 0xC000];
     else if(addr >= 0xe000 && addr <= 0xfdff) /* Echo ram, typically not used. */
-        cerr << "Error, unsuported echo RAM" << endl;
+        fmt::print(stderr, "Error, unsuported echo RAM\n");
     else if(addr >= 0xfe00 && addr <= 0xfe9f) /* Sprite attribute table / OAM (Object Actribute Mem) */
         data = HRAM.mem[addr - 0xff00];
     else if(addr >= 0xfea0 && addr <= 0xfeff) /* Not usable */
-        cerr << "Error, request for Unusable memory" << endl;
+        fmt::print(stderr, "Error, request for unusable memory\n");
     else if(addr >= 0xff00 && addr <= 0xff7f) /* I/O Ports */
         data = HRAM.mem[addr - 0xff00];
     else if(addr >= 0xff80) /* High RAM (HRAM) */
@@ -167,7 +166,7 @@ void Mmu::write(u16 addr, u8 data)
 {
     if(addr <= 0x7fff) /* ROM banks */
     {
-        cerr << "Error, unsupported write action for cartridge roms" << endl;
+        fmt::print(stderr, "Error, unsupported write action for cartridge roms on address: {:#x}\n", addr);
         // exit(EXIT_FAILURE);
     }
     else if(addr >= 0x8000 && addr <= 0x9fff) /* VRAM */
@@ -180,15 +179,14 @@ void Mmu::write(u16 addr, u8 data)
         WRAM.mem[addr - 0xc000] = data;
     else if(addr >= 0xe000 && addr <= 0xfdff) /* Echo ram, typically not used. */
     {
-        cerr << "Error, unsupported echo RAM" << endl;
+        fmt::print(stderr, "Error, unsupported write action for echo RAM on address: {:#x}\n", addr);
         exit(EXIT_FAILURE);
     }
     else if(addr >= 0xfe00 && addr <= 0xfe9f) /* Sprite attribute table */
         HRAM.mem[addr - 0xff00] = data;
     else if(addr >= 0xfea0 && addr <= 0xfeff) /* Not usable */
     {
-        printf("Addr: 0x%x, data: 0x%x\n", addr, data);
-        cerr << "Error, write request for unusable memory" << endl;
+        fmt::print(stderr, "write request for unusable memory on address: {:#x}\n", addr);
     }
     else if(addr >= 0xff00 && addr <= 0xff7f) /* I/O Ports */
     {
@@ -233,7 +231,7 @@ void Mmu::DMATransfer(u8 index)
     u16 source_address = index << 8;
     u16 dest_address = 0xfe00;
     u8 data = 0x0;
-    printf("DMATransfer 0x%x\n", index);
+    fmt::print("DMATransfer {:#x}\n", index);
 
     for(u8 i = 0; i < 0xa0; i++)
     {

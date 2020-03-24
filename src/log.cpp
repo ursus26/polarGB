@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
+#include <fmt/format.h>
 #include "polarGB/log.h"
 
 
@@ -25,13 +25,13 @@ bool Log::isVerbose = false;
 void Log::printVerbose(string msg)
 {
     if(isVerbose)
-        cout << msg << endl;
+        fmt::print("{}\n", msg);
 }
 
 
 void Log::printError(string msg)
 {
-    cerr << msg << endl;
+    fmt::print(stderr, "{}\n", msg);
 }
 
 

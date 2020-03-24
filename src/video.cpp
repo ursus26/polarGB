@@ -15,8 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
 #include <stdlib.h>
+#include <fmt/format.h>
 #include "polarGB/video.h"
 
 
@@ -81,7 +81,7 @@ void Video::startUp(Mmu* m)
     this->window = glfwCreateWindow(this->width, this->height, this->windowName.c_str(), NULL, NULL);
     if (this->window == NULL)
     {
-        std::cerr << "Failed to create GLFW window" << std::endl;
+        fmt::print(stderr, "Failed to create GLFW window\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -93,7 +93,7 @@ void Video::startUp(Mmu* m)
      */
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
+        fmt::print(stderr, "Failed to initialize GLAD\n");
         exit(EXIT_FAILURE);
     }
 
@@ -139,8 +139,8 @@ void Video::initShaders()
     glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
     if(!success)
     {
-        glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        fmt::print(stderr, "Error, compilation of vertex shader failed. {}\n", infoLog);
+        exit(EXIT_FAILURE);
     }
 
     /**
@@ -154,7 +154,8 @@ void Video::initShaders()
     if(!success)
     {
         glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+        fmt::print(stderr, "Error, compilation of fragment shader failed. {}\n", infoLog);
+        exit(EXIT_FAILURE);
     }
 
     /**
@@ -168,7 +169,8 @@ void Video::initShaders()
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if(!success) {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER_PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+        fmt::print(stderr, "Error, linking shaders failed. {}\n", infoLog);
+        exit(EXIT_FAILURE);
     }
 
     glUseProgram(this->shaderProgram);
@@ -344,7 +346,7 @@ void Video::setCurrentMode(u8 newMode)
 {
     if(newMode > 3)
     {
-        std::cerr << "Video::setCurrentMode | Invalid new mode." << std::endl;
+        fmt::print(stderr, "Video::setCurrentMode() | {:#x} is an invalid mode\n", newMode);
         return;
     }
 

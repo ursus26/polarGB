@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <stdio.h>
 #include "polarGB/types.h"
 #include "polarGB/register.h"
 

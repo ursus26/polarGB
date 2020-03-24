@@ -15,10 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
+#include <fmt/format.h>
 #include "polarGB/cpu.h"
 #include "polarGB/log.h"
 
@@ -114,8 +113,7 @@ Cpu::instruction_t * Cpu::fetchDecode()
 
 void Cpu::printInstructionInfo(instruction_t *instr)
 {
-    printf("%04x:\t", instr->memoryLocation);
-    printf("%02x", instr->opcode);
+    fmt::print("{:04x}\t{:02x}", instr->memoryLocation, instr->opcode);
 
     u16 data = 0;
     if(instr->instructionLength == 3)
@@ -124,7 +122,7 @@ void Cpu::printInstructionInfo(instruction_t *instr)
             data = instr->operandSrc.immediate;
         else
             data = instr->operandDst.immediate;
-        printf(" %02x %02x    ", data & 0xff, data >> 8);
+        fmt::print(" {:02x} {:02x}    ", data & 0xff, data >> 8);
     }
     else if(instr->instructionLength == 2)
     {
@@ -132,15 +130,15 @@ void Cpu::printInstructionInfo(instruction_t *instr)
             data = instr->operandSrc.immediate;
         else
             data = instr->operandDst.immediate;
-        printf(" %02x         ", data & 0xff);
+        fmt::print(" {:02x}         ", data & 0xff);
     }
     else
     {
         /* Padding for allignment. */
-        printf("%-10s", " ");
+        fmt::print("          ");
     }
 
-    printf("\t%s\n", instr->mnemonic);
+    fmt::print("\t{}\n", instr->mnemonic);
 }
 
 
@@ -223,7 +221,7 @@ void Cpu::storeOperand8bits(Operand* operand, u8 value)
             mmu->write(operand->immediate, value);
             break;
         default:
-            printf("Unexpected store 8 bits location, operand = %d\n", operand->type);
+            fmt::print("Unexpected store 8 bits location, operand = {}\n", operand->type);
             break;
     }
 }
@@ -243,7 +241,7 @@ void Cpu::storeOperand16bits(Operand* operand, u16 value)
             mmu->write2Bytes(operand->immediate, value);
             break;
         default:
-            printf("Unexpected store 16 bits location, operand = %d\n", operand->type);
+            fmt::print("Unexpected store 16 bits location, operand = %d\n", operand->type);
             break;
     }
 }
@@ -729,7 +727,7 @@ void Cpu::_executePUSH(u16 val)
     u16 sp = reg.getStackPointer();
     // if(sp - 2 < HRAM_START_ADDR)
     // {
-    //     printf("SP: 0x%x\n", sp);
+        // fmt::print("SP: {:#x}\n", sp);
     //     Log::printError("Error, stack overflow!");
     //     this->isRunning = false;
     //     exit(1);
@@ -789,7 +787,7 @@ void Cpu::checkSignals()
  */
 void Cpu::setupSignalExecution(u16 interruptSignalAddress)
 {
-    printf("Signal: 0x%x\n", interruptSignalAddress);
+    fmt::print("Signal: {:#x}\n", interruptSignalAddress);
     interruptController.disableInterrupts();
     _executePUSH(reg.readDouble(RegID_PC));
     reg.writeDouble(RegID_PC, interruptSignalAddress);

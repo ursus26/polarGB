@@ -40,7 +40,7 @@ target_include_directories(runTests PUBLIC ${gtest_SOURCE_DIR}/include ${gtest_S
 target_include_directories(runTests PUBLIC ${PROJECT_SOURCE_DIR}/include ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(runTests gtest gtest_main)
-target_link_libraries(runTests boost_program_options glfw GL X11 pthread Xrandr Xi dl)
+target_link_libraries(runTests boost_program_options glfw GL X11 pthread Xrandr Xi dl fmt::fmt)
 
 add_test(NAME runTests COMMAND runTests)
 

@@ -16,7 +16,7 @@
  */
 
 #include <stdexcept>
-#include <stdio.h>
+#include <fmt/format.h>
 #include "polarGB/register.h"
 
 
@@ -307,8 +307,8 @@ void Register::decStackPointer()
 
 void Register::printRegister()
 {
-    printf("AF: 0x%04x\n", readDouble(RegID_AF));
-    printf("BC: 0x%04x\n", readDouble(RegID_BC));
-    printf("DE: 0x%04x\n", readDouble(RegID_DE));
-    printf("HL: 0x%04x\n", readDouble(RegID_HL));
+    fmt::print("AF: {:#x}\n", readDouble(RegID_AF));
+    fmt::print("BC: {:#x}\n", readDouble(RegID_BC));
+    fmt::print("DE: {:#x}\n", readDouble(RegID_DE));
+    fmt::print("HL: {:#x}\n", readDouble(RegID_HL));
 }

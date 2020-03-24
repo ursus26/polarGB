@@ -16,8 +16,8 @@
  */
 
 #include <stdlib.h>
-#include <iostream>
 #include <fstream>
+#include <fmt/format.h>
 #include "polarGB/cartridge.h"
 
 
@@ -50,7 +50,7 @@ void Cartridge::shutDown()
 
 bool Cartridge::loadCartridge(string fileName)
 {
-    cout << "Loading a new cartridge from file: " << fileName << endl;
+    fmt::print("Loading a new cartridge from file: {}\n", fileName);
 
     /* Open the file that acts as a gameboy cartridge. */
     ifstream f;
@@ -58,7 +58,7 @@ bool Cartridge::loadCartridge(string fileName)
 
     if(!f.is_open())
     {
-        cout << "Error, could not open \"" << fileName << "\"" << endl;
+        fmt::print(stderr, "Error, could not open \"{}\"\n", fileName);
         exit(EXIT_FAILURE);
     }
 
@@ -69,8 +69,6 @@ bool Cartridge::loadCartridge(string fileName)
         this->size = f.tellg();
         f.seekg (0, f.beg);
     }
-
-    // cout << "File size: 0x" << hex << this->size << dec << endl;
 
     /* Read the cartridge into a buffer. */
     this->mem = new uint8_t[this->size];
@@ -127,8 +125,7 @@ void Cartridge::processCartridgeHeader()
 
 void Cartridge::printInfo()
 {
-    cout << "Game Title: " << this->gameTitle << endl;
-    cout << "Cartridge Type: " << hex << cartridgeType << endl;
+    fmt::print("Game Title: {}\nCartridge Type: {:#x}\n", this->gameTitle, this->cartridgeType);
 }
 
 
@@ -140,10 +137,10 @@ bool Cartridge::checksum()
 
     if(checksum != 0)
     {
-        std::cerr << "Error, checksum on boot failed. Possibly did not use a correct cartridge." << std::endl;
+        fmt::print(stderr, "Error, cartridge header checksum failed. Probably trying to load an invalid cartridge.\n");
         exit(EXIT_FAILURE);
     }
 
-    std::cout << "Checksum: PASSED" << std::endl;
+    fmt::print("Checksum: PASSED\n");
     return true;
 }

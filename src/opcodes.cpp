@@ -15,10 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fmt/format.h>
 #include "polarGB/cpu.h"
 #include "polarGB/log.h"
 
@@ -5434,7 +5433,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         //     cycles = 4;
         //     break;
         default:
-            fprintf(stderr, "Error, unsupported opcode: 0x%02x\n", opcode);
+            fmt::print(stderr, "Error, unsupported opcode: {:#02x}\n", opcode);
             exit(EXIT_FAILURE);
             break;
     }
