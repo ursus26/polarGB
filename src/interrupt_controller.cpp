@@ -112,8 +112,8 @@ u16 InterruptController::checkForInterrupts()
 
 void InterruptController::processInterruptRegister()
 {
-    u8 interruptFlags = this->mmu->read(this->interruptFlagsRegister);
-    u8 interruptEnable = this->mmu->read(this->interruptEnableRegister);
+    u8 interruptFlags = this->mmu->read(IF_ADDR);
+    u8 interruptEnable = this->mmu->read(IE_ADDR);
 
     this->verticalBlankRequested = (interruptFlags & INTERRUPT_VERTICAL_BLANKING) == INTERRUPT_VERTICAL_BLANKING;
     this->verticalBlankEnabled = (interruptEnable & INTERRUPT_VERTICAL_BLANKING) == INTERRUPT_VERTICAL_BLANKING;

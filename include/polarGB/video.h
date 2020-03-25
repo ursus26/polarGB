@@ -33,10 +33,7 @@ public:
     void startUp(Mmu* m);
     void shutDown();
 
-    void update();
     void update(u8 cycles);
-
-    void drawFrame();
 
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
     bool closeWindow();
@@ -57,10 +54,10 @@ private:
     /* Shaders */
     unsigned int shaderProgram;
 
+    void drawFrame();
+
     void initShaders();
-    int getCurrentMode();
     void setCurrentMode(u8 newMode);
-    // int getCurrentScanline();
     void setCurrentScanline(u8 lineIdx);
 };
 

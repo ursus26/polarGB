@@ -30,6 +30,7 @@ typedef struct
 } Ram;
 
 
+/* Memory boundaries. */
 const u16 ROM_END_ADDR      = 0x7fff;
 const u16 VRAM_START_ADDR   = 0x8000;
 const u16 VRAM_END_ADDR     = 0x9fff;
@@ -40,6 +41,23 @@ const u16 WRAM_END_ADDR     = 0xdfff;
 const u16 HRAM_START_ADDR   = 0xfe00;
 const u16 HRAM_END_ADDR     = 0xffff;
 
+/* LCD display registers addresses. */
+const u16 LCDC_ADDR     = 0xff40;
+const u16 STAT_ADDR     = 0xff41;
+const u16 SCY_ADDR      = 0xff42;
+const u16 SCX_ADDR      = 0xff43;
+const u16 LY_ADDR       = 0xff44;
+const u16 LYC_ADDR      = 0xff45;
+const u16 DMA_ADDR      = 0xff46;
+const u16 BGP_ADDR      = 0xff47;
+const u16 OBP0_ADDR     = 0xff48;
+const u16 OBP1_ADDR     = 0xff49;
+const u16 WY_ADDR       = 0xff4a;
+const u16 WX_ADDR       = 0xff4b;
+
+/* Interrupt flag registers addresses. */
+const u16 IF_ADDR = 0xff0f;
+const u16 IE_ADDR = 0xffff;
 
 class Mmu
 {

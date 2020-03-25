@@ -25,10 +25,10 @@
 #include "video.h"
 
 
-const int FPS = 60;
-const double FRAME_TIME = 1.0 / (double) FPS;
-const int CPU_FREQUENCY = 1048575; /* Hz */
-const int MAX_INSTRUCTIONS_PER_FRAME = CPU_FREQUENCY / FPS;
+const int CPU_FREQUENCY = 1048576; /* Hz */
+const int INSTRUCTIONS_PER_FRAME = 17556;
+const double FPS = CPU_FREQUENCY / (double)INSTRUCTIONS_PER_FRAME;
+const double FRAME_TIME = 1.0 / FPS;
 
 
 class Emulator

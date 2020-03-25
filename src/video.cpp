@@ -192,16 +192,6 @@ void Video::framebufferSizeCallback(GLFWwindow* window, int width, int height)
 
 
 /**
- * Update the window.
- */
-void Video::update()
-{
-    processInput(this->window);
-    glfwPollEvents();
-    drawFrame();
-}
-
-/**
  * Updates the video side of the GB by a given number of cpu cycles.
  * Inspiration and source: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
  */
@@ -337,11 +327,9 @@ bool Video::closeWindow()
 }
 
 
-int Video::getCurrentMode()
-{
-    return this->mode;
-}
-
+/**
+ * Switch to a new display mode and push this update to the corresponding STAT display register.
+ */
 void Video::setCurrentMode(u8 newMode)
 {
     if(newMode > 3)
@@ -354,14 +342,18 @@ void Video::setCurrentMode(u8 newMode)
     this->mode = newMode;
 
     /* Update the mode in the STAT register. */
-    u8 statRegister = this->mmu->read(0xff41);
+    u8 statRegister = this->mmu->read(STAT_ADDR);
     u8 newStatRegister = (statRegister & 0xfc) | newMode;
-    this->mmu->write(0xff41, newStatRegister);
+    this->mmu->write(STAT_ADDR, newStatRegister);
 }
 
 
+/**
+ * Set the current scanline to argument: lineIdx, and also push the update to the corresponding LY
+ * display register.
+ */
 void Video::setCurrentScanline(u8 lineIdx)
 {
     this->scanline = lineIdx;
-    this->mmu->write(0xff44, lineIdx);
+    this->mmu->write(LY_ADDR, lineIdx);
 }

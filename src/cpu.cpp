@@ -76,7 +76,7 @@ u8 Cpu::step()
     Instruction* instr = fetchDecode();
     reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
 
-    printInstructionInfo(instr);
+    // printInstructionInfo(instr);
 
     /* Execute the instruction handler. */
     (this->*(instr->executionFunction))(instr);
@@ -787,7 +787,6 @@ void Cpu::checkSignals()
  */
 void Cpu::setupSignalExecution(u16 interruptSignalAddress)
 {
-    fmt::print("Signal: {:#x}\n", interruptSignalAddress);
     interruptController.disableInterrupts();
     _executePUSH(reg.readDouble(RegID_PC));
     reg.writeDouble(RegID_PC, interruptSignalAddress);

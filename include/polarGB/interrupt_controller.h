@@ -54,8 +54,6 @@ private:
     Mmu* mmu;
     bool ime;   /* Interrupt Master Enable. 0: disable all interrupts, 1: enable all interrupts. */
     bool delayed_enable;
-    const u16 interruptEnableRegister = 0xffff; /* Interrupt Enable register address. */
-    const u16 interruptFlagsRegister = 0xff0f;  /* Interrupt Flag register address. */
 
     bool verticalBlankRequested;
     bool verticalBlankEnabled;

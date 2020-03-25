@@ -231,7 +231,6 @@ void Mmu::DMATransfer(u8 index)
     u16 source_address = index << 8;
     u16 dest_address = 0xfe00;
     u8 data = 0x0;
-    fmt::print("DMATransfer {:#x}\n", index);
 
     for(u8 i = 0; i < 0xa0; i++)
     {

@@ -17,6 +17,7 @@
 
 #include <fstream>
 #include <chrono>
+#include <fmt/format.h>
 #include "polarGB/emulator.h"
 
 
@@ -115,7 +116,7 @@ void Emulator::runFrame()
 {
     u8 cpuCycles = 0;
 
-    while(cyclesCompleted < MAX_INSTRUCTIONS_PER_FRAME)
+    while(cyclesCompleted < INSTRUCTIONS_PER_FRAME)
     {
         /* CPU step. */
         cpuCycles = this->cpu->step();
@@ -125,12 +126,9 @@ void Emulator::runFrame()
         this->video->update(cpuCycles);
     }
 
-    // /* Update display. */
-    // this->video->update();
-
     /* Check if we should close our window. */
     if(this->video->closeWindow())
         this->isRunning = false;
 
-    cyclesCompleted -= MAX_INSTRUCTIONS_PER_FRAME;
+    cyclesCompleted -= INSTRUCTIONS_PER_FRAME;
 }
