@@ -19,7 +19,7 @@ set(CMAKE_C_STANDARD 11)
 
 # Required packages
 find_package(Boost 1.46.1 REQUIRED COMPONENTS program_options)
-find_package(glfw3 REQUIRED)
+find_package(OpenGL REQUIRED)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
@@ -34,8 +34,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include
 target_include_directories(${PROJECT_NAME} PUBLIC ${Boost_INCLUDE_DIRS})
 
 # Set the link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE boost_program_options glfw GL X11 pthread Xrandr Xi dl fmt::fmt)
-# target_link_libraries(${PROJECT_NAME} fmt::fmt)
+target_link_libraries(${PROJECT_NAME} PRIVATE boost_program_options glfw OpenGL::GL X11 pthread
+                                              Xrandr Xi dl fmt::fmt)
 
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
