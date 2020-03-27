@@ -113,8 +113,30 @@ void Video::startUp(Mmu* m)
  */
 void Video::shutDown()
 {
-    glfwTerminate();
+    // fmt::print("Video::shutDown() | Shutting down glfw\n");
+    // fmt::print("Video::shutDown() | STAT: {:#x}\n", mmu->read(STAT_ADDR));
+    //
+    //
+    // u16 start_addr = VRAM_START_ADDR;
+    // if((mmu->read(STAT_ADDR) & 0x10) == 0x10)
+    // {
+    //     start_addr = 0x8800;
+    // }
+    //
+    // for(int i = 0; i < 8; i++)
+    // {
+    //     for(int j = 0; j < 8; j++)
+    //     {
+    //         fmt::print("{:x} ", mmu->read(start_addr));
+    //     }
+    //     fmt::print("\n");
+    // }
+
+
+    glfwDestroyWindow(this->window);
     this->window = nullptr;
+
+    glfwTerminate();
     this->mmu = nullptr;
 }
 
@@ -263,6 +285,35 @@ void Video::update(u8 cycles)
 
 void Video::drawFrame()
 {
+    // u16 start_addr = VRAM_START_ADDR;
+    // if((mmu->read(STAT_ADDR) & 0x10) == 0x10)
+    // {
+    //     start_addr = 0x8800;
+    // }
+    //
+    // for(int i = 0; i < 8; i++)
+    // {
+    //     for(int j = 0; j < 8; j++)
+    //     {
+    //         fmt::print("{:x} ", mmu->read(start_addr + 0x10 * 0x2f));
+    //     }
+    //     fmt::print("\n");
+    // }
+    //
+    // unsigned int sum = 0;
+    // for(int i = VRAM_START_ADDR; i <= VRAM_END_ADDR; i++)
+    // {
+    //     u8 data = mmu->read(i);
+    //     sum += data;
+    //     if(data > 0)
+    //     {
+    //         fmt::print("FOUND VRAM DATA AT: VRAM[{:#x}] = {:#x}\n", i, data);
+    //     }
+    // }
+    //
+    // fmt::print("VRAM sum: {:#x}\n", sum);
+    // fmt::print("---------------------------\n");
+
     float vertices[] =
     {
     -0.5f, -0.5f, 0.0f,
@@ -303,6 +354,10 @@ void Video::drawFrame()
     /* Update buffers and events. */
     glfwSwapBuffers(this->window);
     glfwPollEvents();
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    // glDeleteBuffers(1, &EBO);
 }
 
 

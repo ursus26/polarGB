@@ -123,7 +123,6 @@ private:
     void executeLD8(instruction_t* instr);
     void executeLD8Inc(instruction_t* instr);
     void executeLD8Dec(instruction_t* instr);
-    void executeLD8InternalRam(instruction_t* instr);
 
     /* 16-bit load instructions */
     void executeLD16(instruction_t* instr);

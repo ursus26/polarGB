@@ -78,6 +78,19 @@ u8 Cpu::step()
 
     // printInstructionInfo(instr);
 
+    // if(instr->memoryLocation == 0x282a)
+    // {
+    //     for(int i = 0; i < 8; i++)
+    //     {
+    //         for(int j = 0; j < 8; j++)
+    //         {
+    //             fmt::print("{:x} ", mmu->read(VRAM_START_ADDR + 0x100));
+    //         }
+    //         fmt::print("\n");
+    //     }
+    //     exit(0);
+    // }
+
     /* Execute the instruction handler. */
     (this->*(instr->executionFunction))(instr);
     u8 cycleCost = instr->cycleCost;
@@ -290,31 +303,6 @@ void Cpu::executeLD8Dec(instruction_t* instr)
     reg.writeDouble(RegID_HL, result);
 
     /* Add the amount of cycles used. */
-    this->cyclesCompleted += instr->cycleCost;
-}
-
-
-void Cpu::executeLD8InternalRam(instruction_t* instr)
-{
-    if(instr->operandSrc.type == OP_REG)
-    {
-        u16 destAddr = 0xff00;
-        if(instr->operandDst.type == OP_IMM)
-            destAddr += instr->operandDst.immediate;
-        else
-            destAddr += reg.readSingle(instr->operandDst.memPtr);
-        mmu->write(destAddr, reg.readSingle(instr->operandSrc.reg));
-    }
-    else
-    {
-        u16 srcAddr = 0xff00;
-        if(instr->operandSrc.type == OP_IMM)
-            srcAddr += instr->operandSrc.immediate;
-        else
-            srcAddr += reg.readSingle(instr->operandSrc.memPtr);
-        reg.writeSingle(RegID_A, mmu->read(srcAddr));
-    }
-
     this->cyclesCompleted += instr->cycleCost;
 }
 

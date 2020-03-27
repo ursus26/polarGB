@@ -93,6 +93,18 @@ u8 Cartridge::read(u16 address)
 }
 
 
+void Cartridge::write(u16 address, u8 data)
+{
+    if(address > this->size || this->mem == nullptr)
+    {
+        fmt::print(stderr, "{}: Error, invalid write request\n");
+        return;
+    }
+
+    mem[address] = data;
+}
+
+
 /**
  * More info can be found here: http://gbdev.gg8.se/wiki/articles/The_Cartridge_Header
  */

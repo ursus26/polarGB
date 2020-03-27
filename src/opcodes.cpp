@@ -5237,10 +5237,10 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_A;
-            instr->operandDst.type = OP_IMM;
-            instr->operandDst.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandDst.type = OP_IMM_PTR;
+            instr->operandDst.immediate = mmu->read(reg.getProgramCounter() + 1) + 0xff00;
             instr->cycleCost = 3;
-            instr->executionFunction = &Cpu::executeLD8InternalRam;
+            instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD (a8), A");
             break;
         case 0xE1: /* POP HL */
@@ -5258,10 +5258,10 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_A;
-            instr->operandDst.type = OP_MEM;
-            instr->operandDst.memPtr = RegID_C;
+            instr->operandDst.type = OP_IMM_PTR;
+            instr->operandDst.immediate = reg.readSingle(RegID_C) + 0xff00;
             instr->cycleCost = 2;
-            instr->executionFunction = &Cpu::executeLD8InternalRam;
+            instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD (C), A");
             break;
         // case 0xE3: /* No instruction */
@@ -5328,12 +5328,12 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         //     break;
         case 0xF0: /* LD A, (a8) */
             instr->instructionLength = 2;
-            instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.type = OP_IMM_PTR;
+            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1) + 0xff00;
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 3;
-            instr->executionFunction = &Cpu::executeLD8InternalRam;
+            instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD A, (a8)");
             break;
         case 0xF1: /* POP AF */
@@ -5349,12 +5349,12 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             break;
         case 0xF2: /* LD A, (C) */
             instr->instructionLength = 1;
-            instr->operandSrc.type = OP_REG;
-            instr->operandSrc.reg = RegID_C;
+            instr->operandSrc.type = OP_IMM_PTR;
+            instr->operandSrc.immediate = reg.readSingle(RegID_C) + 0xff00;
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 2;
-            instr->executionFunction = &Cpu::executeLD8InternalRam;
+            instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD A, (C)");
             break;
         case 0xF3: /* DI */

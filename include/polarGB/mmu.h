@@ -31,15 +31,19 @@ typedef struct
 
 
 /* Memory boundaries. */
-const u16 ROM_END_ADDR      = 0x7fff;
-const u16 VRAM_START_ADDR   = 0x8000;
-const u16 VRAM_END_ADDR     = 0x9fff;
-const u16 ERAM_START_ADDR   = 0xa000;
-const u16 ERAM_END_ADDR     = 0xbfff;
-const u16 WRAM_START_ADDR   = 0xc000;
-const u16 WRAM_END_ADDR     = 0xdfff;
-const u16 HRAM_START_ADDR   = 0xfe00;
-const u16 HRAM_END_ADDR     = 0xffff;
+const u16 ROM_END_ADDR                  = 0x7fff;
+const u16 VRAM_START_ADDR               = 0x8000;
+const u16 VRAM_END_ADDR                 = 0x9fff;
+const u16 ERAM_START_ADDR               = 0xa000;
+const u16 ERAM_END_ADDR                 = 0xbfff;
+const u16 WRAM_START_ADDR               = 0xc000;
+const u16 WRAM_END_ADDR                 = 0xdfff;
+const u16 OAM_START_ADDR                = 0xfe00;
+const u16 OAM_END_ADDR                  = 0xfe9f;
+const u16 HARDWARE_REGISTER_START_ADDR  = 0xff00;
+const u16 HARDWARE_REGISTER_END_ADDR    = 0xff7f;
+const u16 HRAM_START_ADDR               = 0xff80;
+const u16 HRAM_END_ADDR                 = 0xffff;
 
 /* LCD display registers addresses. */
 const u16 LCDC_ADDR     = 0xff40;
@@ -85,6 +89,8 @@ private:
     Ram VRAM;       /* Video RAM */
     Ram ERAM;       /* External RAM */
     Ram WRAM;       /* Working RAM */
+    Ram OAM;
+    Ram HardwareRegisters;
     Ram HRAM;       /* High Ram / CPU working RAM */
 
     void DMATransfer(u8 index);
