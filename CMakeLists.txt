@@ -47,8 +47,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Compile flags
+add_compile_options(-pipe)
 target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -D_FORTIFY_SOURCE=2
-                       -fstack-protector -fPIE)
+                                              -fstack-protector -fPIE)
 
 
 

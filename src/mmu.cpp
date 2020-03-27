@@ -51,7 +51,7 @@ void Mmu::startUp()
     OAM.size = OAM_END_ADDR - OAM_START_ADDR + 1;
     OAM.mem = new u8[OAM.size]();
 
-    HardwareRegisters.size = HARDWARE_REGISTER_END_ADDR - HARDWARE_REGISTER_START_ADDR + 1;
+    HardwareRegisters.size = HARDWARE_REGISTERS_END_ADDR - HARDWARE_REGISTERS_START_ADDR + 1;
     HardwareRegisters.mem = new u8[HardwareRegisters.size]();
 
     HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
@@ -140,10 +140,10 @@ u8 Mmu::read(u16 addr)
         fmt::print(stderr, "Error, read request for echo RAM is not supported\n");
     else if(addr >= OAM_START_ADDR && addr <= OAM_END_ADDR) /* Sprite attribute table / OAM (Object Actribute Mem) */
         data = OAM.mem[addr - OAM_START_ADDR];
-    else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTER_START_ADDR) /* Not usable */
+    else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTERS_START_ADDR) /* Not usable */
         fmt::print(stderr, "Error, read request for unusable memory at address: {:#x}\n", addr);
-    else if(addr >= HARDWARE_REGISTER_START_ADDR && addr <= HARDWARE_REGISTER_END_ADDR) /* I/O Ports */
-        data = HardwareRegisters.mem[addr - HARDWARE_REGISTER_START_ADDR];
+    else if(addr >= HARDWARE_REGISTERS_START_ADDR && addr <= HARDWARE_REGISTERS_END_ADDR) /* I/O Ports */
+        data = HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR];
     else if(addr >= HRAM_START_ADDR) /* High RAM (HRAM) */
         data = HRAM.mem[addr - HRAM_START_ADDR];
 
@@ -186,8 +186,8 @@ void Mmu::write(u16 addr, u8 data)
         OAM.mem[addr - OAM_START_ADDR] = data;
     // else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTER_START_ADDR) /* Not usable */
         // fmt::print(stderr, "Error, write request for unusable memory at address: {:#x}, data: {:#x}\n", addr, data);
-    else if(addr >= HARDWARE_REGISTER_START_ADDR && addr <= HARDWARE_REGISTER_END_ADDR) /* I/O Ports */
-        HardwareRegisters.mem[addr - HARDWARE_REGISTER_START_ADDR] = data;
+    else if(addr >= HARDWARE_REGISTERS_START_ADDR && addr <= HARDWARE_REGISTERS_END_ADDR) /* I/O Ports */
+        HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR] = data;
     else if(addr >= HRAM_START_ADDR) /* High RAM (HRAM) */
         HRAM.mem[addr - HRAM_START_ADDR] = data;
 }

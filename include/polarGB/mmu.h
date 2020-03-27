@@ -40,8 +40,8 @@ const u16 WRAM_START_ADDR               = 0xc000;
 const u16 WRAM_END_ADDR                 = 0xdfff;
 const u16 OAM_START_ADDR                = 0xfe00;
 const u16 OAM_END_ADDR                  = 0xfe9f;
-const u16 HARDWARE_REGISTER_START_ADDR  = 0xff00;
-const u16 HARDWARE_REGISTER_END_ADDR    = 0xff7f;
+const u16 HARDWARE_REGISTERS_START_ADDR  = 0xff00;
+const u16 HARDWARE_REGISTERS_END_ADDR    = 0xff7f;
 const u16 HRAM_START_ADDR               = 0xff80;
 const u16 HRAM_END_ADDR                 = 0xffff;
 

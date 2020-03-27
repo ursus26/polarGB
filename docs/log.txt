@@ -4,6 +4,11 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2020-03-27: - Removed "executeLD8InternalRAM" because it was too complex and instead I used the
+              simpler "executeLD8" function to read and write to HRAM.
+            - Fixed I/O of HRAM. Due to a programming error, HRAM also incorrectly included OAM and
+              the hardware registers while the read and write functions did not assume this.
+            - Added MMU read and write tests.
 2020-03-24: - I finished replacing printf, std::cerr, and std::cout with fmt::print. Now I have a
               single printing library that I can use instead of using both a C or a C++
               implementation at the same time.
