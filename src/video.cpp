@@ -56,8 +56,10 @@ Video::~Video()
  * Initialise GLFW and GLAD. This initialises OpenGL. We also create a Window on which we can draw
  * graphics.
  */
-void Video::startUp()
+void Video::startUp(bool noWindow)
 {
+    this->noWindow = noWindow;
+
     vram.size = 0x2000;
     vram.mem = new u8[vram.size]();
 
@@ -69,44 +71,48 @@ void Video::startUp()
     this->width = 800;
     this->height = 600;
 
-    /**
-     * Initialise GLFW for OpenGL. Use version 3.3 with the core profile.
-     */
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    /**
-     * Create a window on which we can draw.
-     */
-    this->window = glfwCreateWindow(this->width, this->height, this->windowName.c_str(), NULL, NULL);
-    if (this->window == NULL)
+    if(noWindow == false)
     {
-        fmt::print(stderr, "Failed to create GLFW window\n");
-        glfwTerminate();
-        exit(EXIT_FAILURE);
+        /**
+        * Initialise GLFW for OpenGL. Use version 3.3 with the core profile.
+        */
+        glfwInit();
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+        /**
+        * Create a window on which we can draw.
+        */
+        this->window = glfwCreateWindow(this->width, this->height, this->windowName.c_str(), NULL, NULL);
+        if (this->window == NULL)
+        {
+            fmt::print(stderr, "Failed to create GLFW window\n");
+            glfwTerminate();
+            exit(EXIT_FAILURE);
+        }
+        glfwMakeContextCurrent(window);
+
+        /**
+        * Load GLAD which is responsible for function pointer for OpenGL and makes everything
+        * cross-platform.
+        */
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+        {
+            fmt::print(stderr, "Failed to initialize GLAD\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /**
+        * Define a viewport for OpenGL.
+        */
+        glViewport(0, 0, this->width, this->height);
+        glfwSetFramebufferSizeCallback(this->window, this->framebufferSizeCallback);
+
+        /* Setup shaders. */
+        initShaders();
     }
-    glfwMakeContextCurrent(window);
-
-    /**
-     * Load GLAD which is responsible for function pointer for OpenGL and makes everything
-     * cross-platform.
-     */
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        fmt::print(stderr, "Failed to initialize GLAD\n");
-        exit(EXIT_FAILURE);
-    }
-
-    /**
-     * Define a viewport for OpenGL.
-     */
-    glViewport(0, 0, this->width, this->height);
-    glfwSetFramebufferSizeCallback(this->window, this->framebufferSizeCallback);
-
-    /* Setup shaders. */
-    initShaders();
 }
 
 
@@ -137,10 +143,13 @@ void Video::shutDown()
     delete[] vram.mem;
     vram.mem = nullptr;
 
-    glfwDestroyWindow(this->window);
-    this->window = nullptr;
+    if(noWindow == false)
+    {
+        glfwDestroyWindow(this->window);
+        this->window = nullptr;
 
-    glfwTerminate();
+        glfwTerminate();
+    }
 }
 
 
@@ -288,6 +297,9 @@ void Video::update(u8 cycles)
 
 void Video::drawFrame()
 {
+    if(noWindow)
+        return;
+
     // u16 start_addr = VRAM_START_ADDR;
     // if((mmu->read(STAT_ADDR) & 0x10) == 0x10)
     // {
@@ -369,6 +381,9 @@ void Video::drawFrame()
  */
 void Video::processInput(GLFWwindow* window)
 {
+    if(noWindow)
+        return;
+
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
@@ -381,6 +396,9 @@ void Video::processInput(GLFWwindow* window)
  */
 bool Video::closeWindow()
 {
+    if(noWindow)
+        return false;
+        
     return glfwWindowShouldClose(this->window);
 }
 

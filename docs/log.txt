@@ -4,6 +4,10 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2020-03-28: - Moved video RAM to the video class
+            - Moved the hardware register related to the display to video.
+            - Project now builds as a library and has a main file that links to this library. This
+              helps linking google tests to the project which simplifies testing.
 2020-03-27: - Removed "executeLD8InternalRAM" because it was too complex and instead I used the
               simpler "executeLD8" function to read and write to HRAM.
             - Fixed I/O of HRAM. Due to a programming error, HRAM also incorrectly included OAM and

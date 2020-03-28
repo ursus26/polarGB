@@ -1,6 +1,5 @@
 To do:
 
-- Add debug and release builds to Cmake with different compiler options.
 - Continue the rewrite of instruction handling
 - Handle display updates to memory
 - Make a README

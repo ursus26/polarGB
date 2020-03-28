@@ -60,7 +60,7 @@ void Emulator::startUp()
     this->cpu = new Cpu();
 
     this->mmu->startUp(this->video);
-    this->video->startUp();
+    this->video->startUp(false);
     this->cpu->startUp(this->mmu);
 }
 

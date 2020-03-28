@@ -48,7 +48,7 @@ public:
     ~Video();
 
     /* Initialization and clean up. */
-    void startUp();
+    void startUp(bool noWindow);
     void shutDown();
 
     /* Video RAM read and write. */
@@ -81,6 +81,7 @@ private:
     u8 mode;
     u64 modeCycles;
 
+    bool noWindow;  /* Mainly used for testing in order to not setup OpenGL. */
     GLFWwindow* window;
     std::string windowName;
     int width;
