@@ -56,12 +56,11 @@ void Emulator::startUp()
     this->cyclesCompleted = 0;
 
     this->mmu = new Mmu();
-    this->mmu->startUp();
-
     this->video = new Video();
-    this->video->startUp(this->mmu);
-
     this->cpu = new Cpu();
+
+    this->mmu->startUp(this->video);
+    this->video->startUp();
     this->cpu->startUp(this->mmu);
 }
 

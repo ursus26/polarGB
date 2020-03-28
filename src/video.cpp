@@ -16,6 +16,7 @@
  */
 
 #include <stdlib.h>
+#include <assert.h>
 #include <fmt/format.h>
 #include "polarGB/video.h"
 
@@ -55,10 +56,11 @@ Video::~Video()
  * Initialise GLFW and GLAD. This initialises OpenGL. We also create a Window on which we can draw
  * graphics.
  */
-void Video::startUp(Mmu* m)
+void Video::startUp()
 {
-    this->mmu = m;
-    this->scanline = 0;
+    vram.size = 0x2000;
+    vram.mem = new u8[vram.size]();
+
     this->mode = 2;
     this->modeCycles = 0;
 
@@ -132,12 +134,13 @@ void Video::shutDown()
     //     fmt::print("\n");
     // }
 
+    delete[] vram.mem;
+    vram.mem = nullptr;
 
     glfwDestroyWindow(this->window);
     this->window = nullptr;
 
     glfwTerminate();
-    this->mmu = nullptr;
 }
 
 
@@ -228,10 +231,10 @@ void Video::update(u8 cycles)
             if(modeCycles >= 60)
             {
                 modeCycles -= 60;
-                setCurrentScanline(scanline + 1);
+                LY++;
 
                 /* Check if we enter V-Blank or go to mode 2. */
-                if(scanline == 143)
+                if(LY == 143)
                 {
                     setCurrentMode(1);
 
@@ -251,12 +254,12 @@ void Video::update(u8 cycles)
             if(modeCycles >= 114)
             {
                 modeCycles -= 114;
-                setCurrentScanline(scanline + 1);
+                LY++;
 
-                if(scanline > 153)
+                if(LY > 153)
                 {
                     setCurrentMode(2);
-                    setCurrentScanline(0);
+                    LY = 0;
                 }
 
             }
@@ -384,31 +387,107 @@ bool Video::closeWindow()
 
 /**
  * Switch to a new display mode and push this update to the corresponding STAT display register.
+ * Mode can only take the values: 0, 1, 2 or 3.
  */
 void Video::setCurrentMode(u8 newMode)
 {
-    if(newMode > 3)
-    {
-        fmt::print(stderr, "Video::setCurrentMode() | {:#x} is an invalid mode\n", newMode);
-        return;
-    }
+    assert(newMode < 4);
 
     /* Update the mode locally. */
     this->mode = newMode;
 
     /* Update the mode in the STAT register. */
-    u8 statRegister = this->mmu->read(STAT_ADDR);
-    u8 newStatRegister = (statRegister & 0xfc) | newMode;
-    this->mmu->write(STAT_ADDR, newStatRegister);
+    this->STAT = (this->STAT & 0xfc) | newMode;
 }
 
 
-/**
- * Set the current scanline to argument: lineIdx, and also push the update to the corresponding LY
- * display register.
- */
-void Video::setCurrentScanline(u8 lineIdx)
+u8 Video::vramRead(u16 address)
 {
-    this->scanline = lineIdx;
-    this->mmu->write(LY_ADDR, lineIdx);
+    assert(address < vram.size);
+
+    return vram.mem[address];
+}
+
+
+void Video::vramWrite(u16 address, u8 data)
+{
+    assert(address < vram.size);
+
+    vram.mem[address] = data;
+}
+
+
+u8 Video::videoRegisterRead(VideoRegister reg)
+{
+    switch(reg) {
+        case RegLCDC:
+            return LCDC;
+        case RegSTAT:
+            return STAT;
+        case RegSCY:
+            return SCY;
+        case RegSCX:
+            return SCX;
+        case RegLY:
+            return LY;
+        case RegLYC:
+            return LYC;
+        case RegDMA:
+            return DMA;
+        case RegBGP:
+            return BGP;
+        case RegOBP0:
+            return OBP0;
+        case RegOBP1:
+            return OBP1;
+        case RegWY:
+            return WY;
+        case RegWX:
+            return WX;
+        default:
+            return 0xff;
+    }
+}
+
+
+void Video::videoRegisterWrite(VideoRegister reg, u8 data)
+{
+    switch(reg) {
+        case RegLCDC:
+            LCDC = data;
+            break;
+        case RegSTAT:
+            STAT = data;
+            break;
+        case RegSCY:
+            SCY = data;
+            break;
+        case RegSCX:
+            SCX = data;
+            break;
+        case RegLY:
+            LY = data;
+            break;
+        case RegLYC:
+            LYC = data;
+            break;
+        case RegDMA:
+            DMA = data;
+            break;
+        case RegBGP:
+            BGP = data;
+            break;
+        case RegOBP0:
+            OBP0 = data;
+            break;
+        case RegOBP1:
+            OBP1 = data;
+            break;
+        case RegWY:
+            WY = data;
+            break;
+        case RegWX:
+            WX = data;
+            break;
+    }
 }

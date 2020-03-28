@@ -21,13 +21,7 @@
 #include <string>
 #include "types.h"
 #include "cartridge.h"
-
-
-typedef struct
-{
-    u8* mem;
-    unsigned int size;
-} Ram;
+#include "video.h"
 
 
 /* Memory boundaries. */
@@ -70,7 +64,7 @@ public:
     ~Mmu();
 
     /* Small boot program for the mmu. */
-    void startUp();
+    void startUp(Video* v);
     void shutDown();
 
     /* Read from an address. */
@@ -86,14 +80,18 @@ public:
 
 private:
     Cartridge rom;  /* Game cartridge */
-    Ram VRAM;       /* Video RAM */
+    // Ram VRAM;       /* Video RAM */
     Ram ERAM;       /* External RAM */
     Ram WRAM;       /* Working RAM */
     Ram OAM;
     Ram HardwareRegisters;
     Ram HRAM;       /* High Ram / CPU working RAM */
 
+    Video* video;
+
     void DMATransfer(u8 index);
+    u8 readHardwareRegister(u16 addr);
+    void writeHardwareRegister(u16 addr, u8 data);
 };
 
 #endif /* MEMORY_MANAGER_H */

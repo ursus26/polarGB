@@ -76,7 +76,7 @@ u8 Cpu::step()
     Instruction* instr = fetchDecode();
     reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
 
-    // printInstructionInfo(instr);
+    printInstructionInfo(instr);
 
     // if(instr->memoryLocation == 0x282a)
     // {

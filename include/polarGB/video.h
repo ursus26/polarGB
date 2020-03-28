@@ -22,7 +22,24 @@
 #include <GLFW/glfw3.h>
 #include <string>
 #include "types.h"
-#include "mmu.h"
+
+
+typedef enum VideoRegister
+{
+    RegLCDC,
+    RegSTAT,
+    RegSCY,
+    RegSCX,
+    RegLY,
+    RegLYC,
+    RegDMA,
+    RegBGP,
+    RegOBP0,
+    RegOBP1,
+    RegWY,
+    RegWX
+} VideoRegister;
+
 
 class Video
 {
@@ -30,21 +47,39 @@ public:
     Video();
     ~Video();
 
-    void startUp(Mmu* m);
+    /* Initialization and clean up. */
+    void startUp();
     void shutDown();
+
+    /* Video RAM read and write. */
+    u8 vramRead(u16 address);
+    void vramWrite(u16 address, u8 data);
+    u8 videoRegisterRead(VideoRegister reg);
+    void videoRegisterWrite(VideoRegister reg, u8 data);
 
     void update(u8 cycles);
 
-    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
     bool closeWindow();
-    void processInput(GLFWwindow* w);
 
 private:
-    u8 scanline;
+    Ram vram;
+    u8 LCDC;
+    u8 STAT;
+    u8 SCY;
+    u8 SCX;
+    u8 LY;
+    u8 LYC;
+    u8 DMA;
+    u8 BGP;
+    u8 OBP0;
+    u8 OBP1;
+    u8 WY;
+    u8 WX;
+
+    /* OLD REGISTERS */
+    // u8 scanline;
     u8 mode;
     u64 modeCycles;
-
-    Mmu* mmu;
 
     GLFWwindow* window;
     std::string windowName;
@@ -58,7 +93,10 @@ private:
 
     void initShaders();
     void setCurrentMode(u8 newMode);
-    void setCurrentScanline(u8 lineIdx);
+    // void setCurrentScanline(u8 lineIdx);
+
+    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+    void processInput(GLFWwindow* w);
 };
 
 

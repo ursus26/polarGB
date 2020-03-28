@@ -36,12 +36,8 @@ Mmu::~Mmu()
 /**
  * Small boot program that initializes specific memory locations.
  */
-void Mmu::startUp()
+void Mmu::startUp(Video* v)
 {
-    /* Allocate the memory areas. */
-    VRAM.size = VRAM_END_ADDR - VRAM_START_ADDR + 1;
-    VRAM.mem = new u8[VRAM.size]();
-
     ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
     ERAM.mem = new u8[ERAM.size]();
 
@@ -57,10 +53,8 @@ void Mmu::startUp()
     HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
     HRAM.mem = new u8[HRAM.size]();
 
+    this->video = v;
     this->rom.startUp();
-
-    /* First clear vram. */
-    memset(VRAM.mem, 0, sizeof(VRAM.size));
 
     /* Reference: http://gbdev.gg8.se/wiki/articles/Power_Up_Sequence */
     this->write(0xff05, 0x00);   /* TIMA */
@@ -103,9 +97,7 @@ void Mmu::startUp()
 void Mmu::shutDown()
 {
     this->rom.shutDown();
-
-    delete[] VRAM.mem;
-    VRAM.mem = nullptr;
+    this->video = nullptr;
 
     delete[] ERAM.mem;
     ERAM.mem = nullptr;
@@ -131,7 +123,9 @@ u8 Mmu::read(u16 addr)
     if(addr <= ROM_END_ADDR) /* ROM banks */
         data = rom.read(addr);
     else if(addr >= VRAM_START_ADDR && addr <= VRAM_END_ADDR) /* VRAM / LCD Display RAM */
-        data = VRAM.mem[addr - VRAM_START_ADDR];
+    {
+        data = video->vramRead(addr - VRAM_START_ADDR);
+    }
     else if(addr >= ERAM_START_ADDR && addr <= ERAM_END_ADDR) /* Switchable external RAM bank */
         data = ERAM.mem[addr - ERAM_START_ADDR];
     else if(addr >= WRAM_START_ADDR && addr <= WRAM_END_ADDR) /* Working RAM bank 0 */
@@ -143,7 +137,9 @@ u8 Mmu::read(u16 addr)
     else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTERS_START_ADDR) /* Not usable */
         fmt::print(stderr, "Error, read request for unusable memory at address: {:#x}\n", addr);
     else if(addr >= HARDWARE_REGISTERS_START_ADDR && addr <= HARDWARE_REGISTERS_END_ADDR) /* I/O Ports */
-        data = HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR];
+    {
+        data = readHardwareRegister(addr);
+    }
     else if(addr >= HRAM_START_ADDR) /* High RAM (HRAM) */
         data = HRAM.mem[addr - HRAM_START_ADDR];
 
@@ -172,7 +168,10 @@ void Mmu::write(u16 addr, u8 data)
     if(addr <= ROM_END_ADDR) /* ROM banks */
         rom.write(addr, data);
     else if(addr >= VRAM_START_ADDR && addr <= VRAM_END_ADDR) /* VRAM / LCD Display RAM */
-        VRAM.mem[addr - VRAM_START_ADDR] = data;
+    {
+        video->vramWrite(addr - VRAM_START_ADDR, data);
+        // VRAM.mem[addr - VRAM_START_ADDR] = data;
+    }
     else if(addr >= ERAM_START_ADDR && addr <= ERAM_END_ADDR) /* Switchable external RAM bank */
         ERAM.mem[addr - ERAM_START_ADDR] = data;
     else if(addr >= WRAM_START_ADDR && addr <= WRAM_END_ADDR) /* Working RAM bank 0 */
@@ -187,7 +186,9 @@ void Mmu::write(u16 addr, u8 data)
     // else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTER_START_ADDR) /* Not usable */
         // fmt::print(stderr, "Error, write request for unusable memory at address: {:#x}, data: {:#x}\n", addr, data);
     else if(addr >= HARDWARE_REGISTERS_START_ADDR && addr <= HARDWARE_REGISTERS_END_ADDR) /* I/O Ports */
-        HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR] = data;
+    {
+        writeHardwareRegister(addr, data);
+    }
     else if(addr >= HRAM_START_ADDR) /* High RAM (HRAM) */
         HRAM.mem[addr - HRAM_START_ADDR] = data;
 }
@@ -225,3 +226,44 @@ void Mmu::loadRom(string fileName)
 //         this->write(dest_address + i, data);
 //     }
 // }
+
+u8 Mmu::readHardwareRegister(u16 addr)
+{
+    switch(addr)
+    {
+        case LCDC_ADDR: return this->video->videoRegisterRead(RegLCDC);
+        case STAT_ADDR: return this->video->videoRegisterRead(RegSTAT);
+        case SCY_ADDR:  return this->video->videoRegisterRead(RegSCY);
+        case SCX_ADDR:  return this->video->videoRegisterRead(RegSCX);
+        case LY_ADDR:   return this->video->videoRegisterRead(RegLY);
+        case LYC_ADDR:  return this->video->videoRegisterRead(RegLYC);
+        case DMA_ADDR:  return this->video->videoRegisterRead(RegDMA);
+        case BGP_ADDR:  return this->video->videoRegisterRead(RegBGP);
+        case OBP0_ADDR: return this->video->videoRegisterRead(RegOBP0);
+        case OBP1_ADDR: return this->video->videoRegisterRead(RegOBP1);
+        case WY_ADDR:   return this->video->videoRegisterRead(RegWY);
+        case WX_ADDR:   return this->video->videoRegisterRead(RegWX);
+        default: return HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR];
+    }
+}
+
+
+void Mmu::writeHardwareRegister(u16 addr, u8 data)
+{
+    switch(addr)
+    {
+        case LCDC_ADDR: video->videoRegisterWrite(RegLCDC, data); break;
+        case STAT_ADDR: video->videoRegisterWrite(RegSTAT, data); break;
+        case SCY_ADDR:  video->videoRegisterWrite(RegSCY, data); break;
+        case SCX_ADDR:  video->videoRegisterWrite(RegSCX, data); break;
+        case LY_ADDR:   video->videoRegisterWrite(RegLY, data); break;
+        case LYC_ADDR:  video->videoRegisterWrite(RegLYC, data); break;
+        case DMA_ADDR:  video->videoRegisterWrite(RegDMA, data); break;
+        case BGP_ADDR:  video->videoRegisterWrite(RegBGP, data); break;
+        case OBP0_ADDR: video->videoRegisterWrite(RegOBP0, data); break;
+        case OBP1_ADDR: video->videoRegisterWrite(RegOBP1, data); break;
+        case WY_ADDR:   video->videoRegisterWrite(RegWY, data); break;
+        case WX_ADDR:   video->videoRegisterWrite(RegWX, data); break;
+        default:        HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR] = data; break;
+    }
+}
