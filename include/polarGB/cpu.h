@@ -95,7 +95,7 @@ private:
 
     /* Signal handling. */
     void checkSignals();
-    void setupSignalExecution(u16 interruptSignal);
+    void setupSignalExecution(u8 interruptSignal);
 
     /* Instruction decoding.  */
     instruction_t* fetchDecode();

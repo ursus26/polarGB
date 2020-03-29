@@ -303,34 +303,34 @@ void Video::drawFrame()
     if(noWindow)
         return;
 
-    u16 start_addr = 0;
-    if((STAT & 0x10) == 0x10)
-    {
-        start_addr = 0x800;
-    }
-
-    for(int i = 0; i < 8; i++)
-    {
-        for(int j = 0; j < 8; j++)
-        {
-            fmt::print("{:x} ", vramRead(start_addr + 0x10 * 0x2f));
-        }
-        fmt::print("\n");
-    }
-
-    unsigned int sum = 0;
-    for(unsigned int i = 0; i < vram.size; i++)
-    {
-        u8 data = vramRead(i);
-        sum += data;
-        if(data > 0)
-        {
-            fmt::print("FOUND VRAM DATA AT: VRAM[{:#x}] = {:#x}\n", i, data);
-        }
-    }
-
-    fmt::print("VRAM sum: {:#x}\n", sum);
-    fmt::print("---------------------------\n");
+    // u16 start_addr = 0;
+    // if((STAT & 0x10) == 0x10)
+    // {
+    //     start_addr = 0x800;
+    // }
+    //
+    // for(int i = 0; i < 8; i++)
+    // {
+    //     for(int j = 0; j < 8; j++)
+    //     {
+    //         fmt::print("{:x} ", vramRead(start_addr + 0x10 * 0x2f));
+    //     }
+    //     fmt::print("\n");
+    // }
+    //
+    // unsigned int sum = 0;
+    // for(unsigned int i = 0; i < vram.size; i++)
+    // {
+    //     u8 data = vramRead(i);
+    //     sum += data;
+    //     if(data > 0)
+    //     {
+    //         fmt::print("FOUND VRAM DATA AT: VRAM[{:#x}] = {:#x}\n", i, data);
+    //     }
+    // }
+    //
+    // fmt::print("VRAM sum: {:#x}\n", sum);
+    // fmt::print("---------------------------\n");
 
     float vertices[] =
     {

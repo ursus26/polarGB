@@ -23,11 +23,11 @@
 #include "mmu.h"
 
 
-const size_t INTERRUPT_VERTICAL_BLANKING            = 0x1;
-const size_t INTERRUPT_LCDC                         = 0x2;
-const size_t INTERRUPT_TIMER_OVERFLOW               = 0x4;
-const size_t INTERRUPT_SERIAL_TRANSFER_COMPLETION   = 0x8;
-const size_t INTERRUPT_JOYPAD                       = 0x10;
+const u8 INTERRUPT_VERTICAL_BLANKING            = 0x1;
+const u8 INTERRUPT_LCDC                         = 0x2;
+const u8 INTERRUPT_TIMER_OVERFLOW               = 0x4;
+const u8 INTERRUPT_SERIAL_TRANSFER_COMPLETION   = 0x8;
+const u8 INTERRUPT_JOYPAD                       = 0x10;
 
 const u16 INTERRUPT_VERTICAL_BLANKING_ADDR          = 0x40;
 const u16 INTERRUPT_LCDC_ADDR                       = 0x48;
@@ -48,7 +48,9 @@ public:
     void disableInterrupts();
     void enableInterrupts(bool delayed_enable);
 
-    u16 checkForInterrupts();
+    u8 checkForInterrupts();
+    void resetInterruptFlag(u8 interruptFlag);
+    u16 getInterruptVector(u8 interruptSignal);
 
 private:
     Mmu* mmu;

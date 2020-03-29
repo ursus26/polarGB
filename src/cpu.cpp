@@ -773,11 +773,14 @@ void Cpu::checkSignals()
  * Pushes the current program counter on the stack and updates the program counter to the signal
  * address.
  */
-void Cpu::setupSignalExecution(u16 interruptSignalAddress)
+void Cpu::setupSignalExecution(u8 interruptSignal)
 {
     interruptController.disableInterrupts();
+    interruptController.resetInterruptFlag(interruptSignal);
+    u16 interruptVector = interruptController.getInterruptVector(interruptSignal);
+
     _executePUSH(reg.readDouble(RegID_PC));
-    reg.writeDouble(RegID_PC, interruptSignalAddress);
+    reg.writeDouble(RegID_PC, interruptVector);
 }
 
 

@@ -15,6 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
+#include <fmt/format.h>
 #include "polarGB/interrupt_controller.h"
 
 
@@ -66,18 +68,32 @@ void InterruptController::enableInterrupts(bool delayed_enable)
 
 
 /**
+ * Resets the interrupt flag in the IF register. The type of flag is specified by the function arg.
+ * Possible values are: INTERRUPT_VERTICAL_BLANKING, INTERRUPT_LCDC, INTERRUPT_TIMER_OVERFLOW,
+ * INTERRUPT_SERIAL_TRANSFER_COMPLETION, and INTERRUPT_JOYPAD.
+ */
+void InterruptController::resetInterruptFlag(u8 interruptFlag)
+{
+    assert(interruptFlag <= INTERRUPT_JOYPAD);
+
+    u8 interruptFlags = this->mmu->read(IF_ADDR) & ~interruptFlag;
+    this->mmu->write(IF_ADDR, interruptFlags);
+}
+
+
+/**
  * Check if an interrupt needs to be executed by looking at the Interrupt Master Enable (IME) flag.
  * If enabled and an interrupt has to be processed then return a signal greather than 0 that
- * represents the start of the interrupt code. There are 5 signals with their instruction address:
- * - INTERRUPT_VERTICAL_BLANKING_ADDR          = 0x40
- * - INTERRUPT_LCDC_ADDR                       = 0x48
- * - INTERRUPT_TIMER_OVERFLOW_ADDR             = 0x50
- * - INTERRUPT_SERIAL_TRANSFER_COMPLETION_ADDR = 0x58
- * - INTERRUPT_JOYPAD_ADDR                     = 0x60
+ * represents the type of interrupt. There are 5 different interrupt signals:
+ * - INTERRUPT_VERTICAL_BLANKING          = 0x01
+ * - INTERRUPT_LCDC                       = 0x02
+ * - INTERRUPT_TIMER_OVERFLOW             = 0x04
+ * - INTERRUPT_SERIAL_TRANSFER_COMPLETION = 0x08
+ * - INTERRUPT_JOYPAD                     = 0x10
  *
  * In case no interrupt has to be processed we return 0.
  */
-u16 InterruptController::checkForInterrupts()
+u8 InterruptController::checkForInterrupts()
 {
     /* Enable the IME for the next instruction after EI instruction is encountered. */
     if(this->delayed_enable)
@@ -96,15 +112,15 @@ u16 InterruptController::checkForInterrupts()
 
     /* Check the 5 interrupts that need to processed in order of priority. */
     if(this->verticalBlankEnabled && this->verticalBlankRequested)
-        return INTERRUPT_VERTICAL_BLANKING_ADDR;
+        return INTERRUPT_VERTICAL_BLANKING;
     else if(this->LCDCEnabled && this->LCDCRequested)
-        return INTERRUPT_LCDC_ADDR;
+        return INTERRUPT_LCDC;
     else if(this->timerOverflowEnabled && this->timerOverflowRequested)
-        return INTERRUPT_TIMER_OVERFLOW_ADDR;
+        return INTERRUPT_TIMER_OVERFLOW;
     else if(this->serialEnabled && this->serialRequested)
-        return INTERRUPT_SERIAL_TRANSFER_COMPLETION_ADDR;
+        return INTERRUPT_SERIAL_TRANSFER_COMPLETION;
     else if(this->joypadEnabled && this->joypadRequested)
-        return INTERRUPT_JOYPAD_ADDR;
+        return INTERRUPT_JOYPAD;
     else
         return 0x0;
 }
@@ -125,4 +141,29 @@ void InterruptController::processInterruptRegister()
     this->serialEnabled = (interruptEnable & INTERRUPT_SERIAL_TRANSFER_COMPLETION) == INTERRUPT_SERIAL_TRANSFER_COMPLETION;
     this->joypadRequested = (interruptFlags & INTERRUPT_JOYPAD) == INTERRUPT_JOYPAD;
     this->joypadEnabled = (interruptEnable & INTERRUPT_JOYPAD) == INTERRUPT_JOYPAD;
+}
+
+
+u16 InterruptController::getInterruptVector(u8 signal)
+{
+    assert(signal <= INTERRUPT_JOYPAD);
+    assert(signal != 0);
+
+    switch(signal)
+    {
+        case INTERRUPT_VERTICAL_BLANKING:
+            return INTERRUPT_VERTICAL_BLANKING_ADDR;
+        case INTERRUPT_LCDC:
+            return INTERRUPT_LCDC;
+        case INTERRUPT_TIMER_OVERFLOW:
+            return INTERRUPT_TIMER_OVERFLOW_ADDR;
+        case INTERRUPT_SERIAL_TRANSFER_COMPLETION:
+            return INTERRUPT_SERIAL_TRANSFER_COMPLETION_ADDR;
+        case INTERRUPT_JOYPAD:
+            return INTERRUPT_JOYPAD_ADDR;
+        default:
+            fmt::print(stderr, "InterruptController::getInterruptVector | Signal: {:#x} is an invalid signal.\n", signal);
+            fmt::print(stderr, "InterruptController::getInterruptVector | Probably multiple signals are given at the same time\n");
+            exit(EXIT_FAILURE);
+    }
 }
