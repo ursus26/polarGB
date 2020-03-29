@@ -4,6 +4,10 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2020-03-29: - Added interrupt check for LY=LYC register.
+            - Fixed infinite interrupt loop due to not automatically resetting the flags in the IF
+              register.
+            - Added support for even more instructions.
 2020-03-28: - Moved video RAM to the video class
             - Moved the hardware register related to the display to video.
             - Project now builds as a library and has a main file that links to this library. This

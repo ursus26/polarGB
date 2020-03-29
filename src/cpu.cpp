@@ -116,11 +116,33 @@ Cpu::instruction_t * Cpu::fetchDecode()
     instr->opcode = opcode;
     decodeOpcode(instr, opcode);
 
-    // if(pc == 0x02b6) {
-    //     exit(0);
-    // }
-
     return instr;
+}
+
+
+void Cpu::checkSignals()
+{
+    /* Check for an interrupt signal. */
+    u16 interruptSignal = this->interruptController.checkForInterrupts();
+    if(interruptSignal == 0x0)
+        return;
+    else
+        setupSignalExecution(interruptSignal);
+}
+
+
+/**
+ * Pushes the current program counter on the stack and updates the program counter to the signal
+ * address.
+ */
+void Cpu::setupSignalExecution(u8 interruptSignal)
+{
+    interruptController.disableInterrupts();
+    interruptController.resetInterruptFlag(interruptSignal);
+    u16 interruptVector = interruptController.getInterruptVector(interruptSignal);
+
+    _executePUSH(reg.readDouble(RegID_PC));
+    reg.writeDouble(RegID_PC, interruptVector);
 }
 
 
@@ -128,21 +150,14 @@ void Cpu::printInstructionInfo(instruction_t *instr)
 {
     fmt::print("{:04x}\t{:02x}", instr->memoryLocation, instr->opcode);
 
-    u16 data = 0;
+    /* Read the next 2 bytes after the opcode and print them if needed. */
+    u16 data = mmu->read2Bytes(instr->memoryLocation + 1);
     if(instr->instructionLength == 3)
     {
-        if(instr->operandSrc.type == OP_IMM)
-            data = instr->operandSrc.immediate;
-        else
-            data = instr->operandDst.immediate;
         fmt::print(" {:02x} {:02x}    ", data & 0xff, data >> 8);
     }
     else if(instr->instructionLength == 2)
     {
-        if(instr->operandSrc.type == OP_IMM)
-            data = instr->operandSrc.immediate;
-        else
-            data = instr->operandDst.immediate;
         fmt::print(" {:02x}         ", data & 0xff);
     }
     else
@@ -345,7 +360,7 @@ void Cpu::executeJP(instruction_t* instr)
         }
         else
         {
-            this->cyclesCompleted += 3;
+            instr->cycleCost = 3;
         }
     }
 }
@@ -373,6 +388,7 @@ void Cpu::executeJR(instruction_t* instr)
     else
     {
         this->cyclesCompleted += 2;
+        instr->cycleCost = 2;
     }
 }
 
@@ -682,6 +698,22 @@ void Cpu::executeDEC16(instruction_t* instr)
 }
 
 
+void Cpu::executeADD16(instruction_t* instr)
+{
+    u32 src1 = loadOperand16bits(&instr->operandSrc);
+    u32 src2 = loadOperand16bits(&instr->operandDst);
+    u32 result = src1 + src2;
+    storeOperand16bits(&instr->operandDst, result & 0xffff);
+
+
+    reg.setFlagSub(false);
+    reg.setFlagCarry(result > 0xffff);
+    reg.setFlagHalfCarry((src2 & 0xfff) + (src1 & 0xfff) > 0xfff);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
 void Cpu::executeDI(instruction_t* instr)
 {
     this->interruptController.disableInterrupts();
@@ -692,6 +724,18 @@ void Cpu::executeDI(instruction_t* instr)
 void Cpu::executeEI(instruction_t* instr)
 {
     this->interruptController.enableInterrupts(true);
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeCPL(instruction_t* instr)
+{
+    u8 value = ~reg.readSingle(RegID_A);
+    reg.writeSingle(RegID_A, value);
+
+    reg.setFlagSub(true);
+    reg.setFlagHalfCarry(true);
+
     this->cyclesCompleted += instr->cycleCost;
 }
 
@@ -758,30 +802,41 @@ void Cpu::executePOP(instruction_t* instr)
 }
 
 
-void Cpu::checkSignals()
+/**
+ * Swaps the first 4 bits with the last 4 bits in a byte. For example 0xAF will result in 0xFA and
+ * 0x10 will result in 0x1.
+ */
+void Cpu::executeSWAP(instruction_t* instr)
 {
-    /* Check for an interrupt signal. */
-    u16 interruptSignal = this->interruptController.checkForInterrupts();
-    if(interruptSignal == 0x0)
-        return;
-    else
-        setupSignalExecution(interruptSignal);
+    u8 val = loadOperand8bits(&instr->operandSrc);
+
+    u8 result = (val << 4) + (val >> 4);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry(false);
+
+    storeOperand8bits(&instr->operandDst, result);
+    this->cyclesCompleted += instr->cycleCost;
 }
 
 
 /**
- * Pushes the current program counter on the stack and updates the program counter to the signal
- * address.
+ * Set a specific bit of a byte to 0.
  */
-void Cpu::setupSignalExecution(u8 interruptSignal)
+void Cpu::executeRES(instruction_t* instr)
 {
-    interruptController.disableInterrupts();
-    interruptController.resetInterruptFlag(interruptSignal);
-    u16 interruptVector = interruptController.getInterruptVector(interruptSignal);
-
-    _executePUSH(reg.readDouble(RegID_PC));
-    reg.writeDouble(RegID_PC, interruptVector);
+    u8 bitNumber = instr->extraInfo;
+    u8 srcVal = loadOperand8bits(&instr->operandSrc);
+    u8 dstVal = (srcVal & ~(1 << bitNumber));
+    storeOperand8bits(&instr->operandDst, dstVal);
+    this->cyclesCompleted += instr->cycleCost;
 }
+
+
+
+
 
 
 // void Cpu::executeADD16(RegID dest, int val)
@@ -820,15 +875,6 @@ void Cpu::setupSignalExecution(u8 interruptSignal)
 //
 //
 // /**
-//  * Set a specific bit in a byte to 0.
-//  */
-// u8 Cpu::executeRES(u8 src, int bitNumber)
-// {
-//     return (src & ~(1 << bitNumber));
-// }
-//
-//
-// /**
 //  * Get the bit value of a specific bit in a byte and set the zero flag as the complement of
 //  * this bit.
 //  */
@@ -839,23 +885,6 @@ void Cpu::setupSignalExecution(u8 interruptSignal)
 //     reg.setFlagZero(!bitValue);
 //     reg.setFlagSub(false);
 //     reg.setFlagHalfCarry(true);
-// }
-//
-//
-// /**
-//  * Swaps the first 4 bits with the last 4 bits in a byte. For example 0xAF will result in 0xFA and
-//  * 0x10 will result in 0x1.
-//  */
-// u8 Cpu::executeSWAP(u8 src)
-// {
-//     u8 result = (src << 4) + (src >> 4);
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry(false);
-//
-//     return result;
 // }
 //
 //

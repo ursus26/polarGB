@@ -100,9 +100,10 @@ private:
     /* Instruction decoding.  */
     instruction_t* fetchDecode();
     void decodeOpcode(instruction_t *instr, u8 opcode);
+    void decodePrefixedOpcode(instruction_t *instr);
     void printInstructionInfo(instruction_t *instr);
 
-    /* Half-carry and carry test. */
+    /* Half-carry and carry test for 8-bit operations!!!!. */
     bool halfCarryTest(int val1, int val2);
     bool halfBorrowTest(int val1, int val2);
     bool carryTest(int val1, int val2);
@@ -148,14 +149,17 @@ private:
     /* 16-bit arithmetic/logical instructions */
     void executeINC16(instruction_t* instr);
     void executeDEC16(instruction_t* instr);
+    void executeADD16(instruction_t* instr);
 
     /* Misc/control instructions */
     void executeNOP(instruction_t* instr);
     void executeDI(instruction_t* instr);
     void executeEI(instruction_t* instr);
+    void executeCPL(instruction_t* instr);
 
     /* 8-bit shift, rotate and bit instructions */
-
+    void executeSWAP(instruction_t* instr);
+    void executeRES(instruction_t* instr);
 
     /* Stack functions */
     void executePUSH(instruction_t* instr);
