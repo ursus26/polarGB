@@ -214,18 +214,18 @@ void Mmu::loadRom(string fileName)
 }
 
 
-// void Mmu::DMATransfer(u8 index)
-// {
-//     u16 source_address = index << 8;
-//     u16 dest_address = 0xfe00;
-//     u8 data = 0x0;
-//
-//     for(u8 i = 0; i < 0xa0; i++)
-//     {
-//         data = this->read(source_address + i);
-//         this->write(dest_address + i, data);
-//     }
-// }
+void Mmu::DMATransfer(u8 index)
+{
+    u16 source_address = index << 8;
+    u16 dest_address = 0xfe00;
+    u8 data = 0x0;
+
+    for(u8 i = 0; i < 0xa0; i++)
+    {
+        data = this->read(source_address + i);
+        this->write(dest_address + i, data);
+    }
+}
 
 u8 Mmu::readHardwareRegister(u16 addr)
 {
@@ -258,7 +258,7 @@ void Mmu::writeHardwareRegister(u16 addr, u8 data)
         case SCX_ADDR:  video->videoRegisterWrite(RegSCX, data); break;
         case LY_ADDR:   video->videoRegisterWrite(RegLY, data); break;
         case LYC_ADDR:  video->videoRegisterWrite(RegLYC, data); break;
-        case DMA_ADDR:  video->videoRegisterWrite(RegDMA, data); break;
+        case DMA_ADDR:  DMATransfer(data); video->videoRegisterWrite(RegDMA, data); break;
         case BGP_ADDR:  video->videoRegisterWrite(RegBGP, data); break;
         case OBP0_ADDR: video->videoRegisterWrite(RegOBP0, data); break;
         case OBP1_ADDR: video->videoRegisterWrite(RegOBP1, data); break;

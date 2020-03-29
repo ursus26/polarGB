@@ -91,6 +91,7 @@ private:
     unsigned int shaderProgram;
 
     void drawFrame();
+    void updateMatchFlag();
 
     void initShaders();
     void setCurrentMode(u8 newMode);

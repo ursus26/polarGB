@@ -292,6 +292,9 @@ void Video::update(u8 cycles)
             }
             break;
     }
+
+    /* Update the match flag in the STAT register. */
+    updateMatchFlag();
 }
 
 
@@ -300,34 +303,34 @@ void Video::drawFrame()
     if(noWindow)
         return;
 
-    // u16 start_addr = VRAM_START_ADDR;
-    // if((mmu->read(STAT_ADDR) & 0x10) == 0x10)
-    // {
-    //     start_addr = 0x8800;
-    // }
-    //
-    // for(int i = 0; i < 8; i++)
-    // {
-    //     for(int j = 0; j < 8; j++)
-    //     {
-    //         fmt::print("{:x} ", mmu->read(start_addr + 0x10 * 0x2f));
-    //     }
-    //     fmt::print("\n");
-    // }
-    //
-    // unsigned int sum = 0;
-    // for(int i = VRAM_START_ADDR; i <= VRAM_END_ADDR; i++)
-    // {
-    //     u8 data = mmu->read(i);
-    //     sum += data;
-    //     if(data > 0)
-    //     {
-    //         fmt::print("FOUND VRAM DATA AT: VRAM[{:#x}] = {:#x}\n", i, data);
-    //     }
-    // }
-    //
-    // fmt::print("VRAM sum: {:#x}\n", sum);
-    // fmt::print("---------------------------\n");
+    u16 start_addr = 0;
+    if((STAT & 0x10) == 0x10)
+    {
+        start_addr = 0x800;
+    }
+
+    for(int i = 0; i < 8; i++)
+    {
+        for(int j = 0; j < 8; j++)
+        {
+            fmt::print("{:x} ", vramRead(start_addr + 0x10 * 0x2f));
+        }
+        fmt::print("\n");
+    }
+
+    unsigned int sum = 0;
+    for(unsigned int i = 0; i < vram.size; i++)
+    {
+        u8 data = vramRead(i);
+        sum += data;
+        if(data > 0)
+        {
+            fmt::print("FOUND VRAM DATA AT: VRAM[{:#x}] = {:#x}\n", i, data);
+        }
+    }
+
+    fmt::print("VRAM sum: {:#x}\n", sum);
+    fmt::print("---------------------------\n");
 
     float vertices[] =
     {
@@ -398,7 +401,7 @@ bool Video::closeWindow()
 {
     if(noWindow)
         return false;
-        
+
     return glfwWindowShouldClose(this->window);
 }
 
@@ -416,6 +419,19 @@ void Video::setCurrentMode(u8 newMode)
 
     /* Update the mode in the STAT register. */
     this->STAT = (this->STAT & 0xfc) | newMode;
+}
+
+
+void Video::updateMatchFlag()
+{
+    if(LY == LYC)
+    {
+        STAT |= 0x4;
+    }
+    else
+    {
+        STAT &= ~0x4;
+    }
 }
 
 
