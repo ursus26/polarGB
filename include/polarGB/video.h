@@ -18,8 +18,6 @@
 #ifndef VIDEO_H
 #define VIDEO_H
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <string>
 #include "types.h"
 
@@ -59,8 +57,6 @@ public:
 
     void update(u8 cycles);
 
-    bool closeWindow();
-
 private:
     Ram vram;
     u8 LCDC;
@@ -82,23 +78,15 @@ private:
     u64 modeCycles;
 
     bool noWindow;  /* Mainly used for testing in order to not setup OpenGL. */
-    GLFWwindow* window;
     std::string windowName;
     int width;
     int height;
 
-    /* Shaders */
-    unsigned int shaderProgram;
-
     void drawFrame();
     void updateMatchFlag();
 
-    void initShaders();
     void setCurrentMode(u8 newMode);
     // void setCurrentScanline(u8 lineIdx);
-
-    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-    void processInput(GLFWwindow* w);
 };
 
 

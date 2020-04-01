@@ -125,9 +125,9 @@ void Emulator::runFrame()
         this->video->update(cpuCycles);
     }
 
-    /* Check if we should close our window. */
-    if(this->video->closeWindow())
-        this->isRunning = false;
+    // /* Check if we should close our window. */
+    // if(this->video->closeWindow())
+    //     this->isRunning = false;
 
     cyclesCompleted -= INSTRUCTIONS_PER_FRAME;
 }

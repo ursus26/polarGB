@@ -26,7 +26,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Required packages
 find_package(Boost 1.46.1 REQUIRED COMPONENTS program_options)
-find_package(OpenGL REQUIRED)
 
 # Third party
 add_subdirectory(third_party)
@@ -40,7 +39,6 @@ add_library(${PROJECT_LIB_NAME}
     ${PROJECT_SOURCE_DIR}/src/cartridge.cpp
     ${PROJECT_SOURCE_DIR}/src/cpu.cpp
     ${PROJECT_SOURCE_DIR}/src/emulator.cpp
-    ${PROJECT_SOURCE_DIR}/src/glad.cpp
     ${PROJECT_SOURCE_DIR}/src/interrupt_controller.cpp
     ${PROJECT_SOURCE_DIR}/src/log.cpp
     ${PROJECT_SOURCE_DIR}/src/mmu.cpp
@@ -52,18 +50,14 @@ add_library(${PROJECT_LIB_NAME}
 target_include_directories(${PROJECT_LIB_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include)
 # target_include_directories(${PROJECT_LIB_NAME} PRI ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_LIB_NAME} PRIVATE glfw OpenGL::GL X11 pthread Xrandr Xi dl fmt::fmt)
+target_link_libraries(${PROJECT_LIB_NAME} PRIVATE pthread dl fmt::fmt)
 
 target_compile_options(${PROJECT_LIB_NAME} PUBLIC -Wall -Wextra -Wpedantic -D_FORTIFY_SOURCE=2
-                                              -fstack-protector -fPIE)
+                                                  -fstack-protector)
 
 ###############################################################################
 # PROJECT BUILD SPECIFICATION
 ###############################################################################
-
-
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-
 
 # Executable and link it with source files.
 add_executable(${PROJECT_NAME}
@@ -86,14 +80,7 @@ endif()
 # Compile flags
 add_compile_options(-pipe)
 target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -D_FORTIFY_SOURCE=2
-                                              -fstack-protector -fPIE)
-
-
-###############################################################################
-# Third party
-###############################################################################
-
-# add_subdirectory(third_party)
+                                              -fstack-protector)
 
 
 ###############################################################################

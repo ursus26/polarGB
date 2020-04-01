@@ -1,13 +1,15 @@
 To do:
 
-- Continue the rewrite of instruction handling
-- Handle display updates to memory
-- Make a README
-- Transform bits in memory to texture
-- Draw square with OpenGL
-- Write tests for the instruction set.
-- Re-implement logging
-- Remove boost.program_options. It is a very bloated library but it does the job fine.
+- Add more instructions handlers.
+- Draw background
+- Draw objects/UI
+- Draw sprites
+- Add a README.md
 - Implement keyboard input
-- Implement controller input (xbox 360)
-- Research audio (Low priority)
+- Implement controller input
+- Improve file loading
+- Implement save states
+- Remove my implementation of logging
+- Replace bloated boost program options
+- Add support for MBC
+- Audio support
