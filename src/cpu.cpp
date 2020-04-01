@@ -184,7 +184,7 @@ bool Cpu::borrowTest(int val1, int val2)
 }
 
 
-u8 Cpu::loadOperand8bits(Operand* operand)
+u8 Cpu::loadOperand8bits(operand_t* operand)
 {
     switch(operand->type)
     {
@@ -203,7 +203,7 @@ u8 Cpu::loadOperand8bits(Operand* operand)
 }
 
 
-u16 Cpu::loadOperand16bits(Operand* operand)
+u16 Cpu::loadOperand16bits(operand_t* operand)
 {
     switch(operand->type)
     {
@@ -221,7 +221,7 @@ u16 Cpu::loadOperand16bits(Operand* operand)
 }
 
 
-void Cpu::storeOperand8bits(Operand* operand, u8 value)
+void Cpu::storeOperand8bits(operand_t* operand, u8 value)
 {
     switch(operand->type)
     {
@@ -241,7 +241,7 @@ void Cpu::storeOperand8bits(Operand* operand, u8 value)
 }
 
 
-void Cpu::storeOperand16bits(Operand* operand, u16 value)
+void Cpu::storeOperand16bits(operand_t* operand, u16 value)
 {
     switch(operand->type)
     {

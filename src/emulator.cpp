@@ -55,12 +55,12 @@ void Emulator::startUp()
     this->isRunning = true;
     this->cyclesCompleted = 0;
 
+    this->graphicsController = new GraphicsController();
     this->mmu = new Mmu();
-    this->video = new Video();
     this->cpu = new Cpu();
 
-    this->mmu->startUp(this->video);
-    this->video->startUp(false);
+    this->graphicsController->startUp(false);
+    this->mmu->startUp(this->graphicsController);
     this->cpu->startUp(this->mmu);
 }
 
@@ -71,13 +71,13 @@ void Emulator::shutDown()
     delete this->cpu;
     this->cpu = nullptr;
 
-    this->video->shutDown();
-    delete this->video;
-    this->video = nullptr;
-
     this->mmu->shutDown();
     delete this->mmu;
     this->mmu = nullptr;
+
+    this->graphicsController->shutDown();
+    delete this->graphicsController;
+    this->graphicsController = nullptr;
 }
 
 
@@ -122,7 +122,7 @@ void Emulator::runFrame()
         cyclesCompleted += cpuCycles;
 
         /* Update the screen with the same amount of cycles. */
-        this->video->update(cpuCycles);
+        this->graphicsController->update(cpuCycles);
     }
 
     /* Check if we should close our window. */

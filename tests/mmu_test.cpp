@@ -4,14 +4,14 @@
 
 
 /**************************************
- * Video RAM, 0x8000 - 0x9fff
+ * GraphicsController RAM, 0x8000 - 0x9fff
  *************************************/
 TEST(MMUTests, VRAMLowerBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x55;
     u16 testAddr = VRAM_START_ADDR;
@@ -20,16 +20,16 @@ TEST(MMUTests, VRAMLowerBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, VRAMGeneralCase)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0xaa;
     u16 testAddr = VRAM_START_ADDR + 0x1000;
@@ -38,16 +38,16 @@ TEST(MMUTests, VRAMGeneralCase)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, VRAMUpperBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0xa5;
     u16 testAddr = VRAM_END_ADDR;
@@ -56,7 +56,7 @@ TEST(MMUTests, VRAMUpperBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 /**************************************
@@ -64,10 +64,10 @@ TEST(MMUTests, VRAMUpperBoundTest)
  *************************************/
 TEST(MMUTests, ERAMLowerBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x12;
     u16 testAddr = ERAM_START_ADDR;
@@ -76,16 +76,16 @@ TEST(MMUTests, ERAMLowerBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, ERAMGeneralCase)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x23;
     u16 testAddr = ERAM_START_ADDR + 0x1200;
@@ -94,16 +94,16 @@ TEST(MMUTests, ERAMGeneralCase)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, ERAMUpperBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x34;
     u16 testAddr = ERAM_END_ADDR;
@@ -112,7 +112,7 @@ TEST(MMUTests, ERAMUpperBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 /**************************************
@@ -120,10 +120,10 @@ TEST(MMUTests, ERAMUpperBoundTest)
  *************************************/
 TEST(MMUTests, WRAMLowerBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x56;
     u16 testAddr = WRAM_START_ADDR;
@@ -132,16 +132,16 @@ TEST(MMUTests, WRAMLowerBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, WRAMGeneralCase)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x67;
     u16 testAddr = WRAM_START_ADDR + 0x200;
@@ -150,16 +150,16 @@ TEST(MMUTests, WRAMGeneralCase)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, WRAMUpperBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x78;
     u16 testAddr = WRAM_END_ADDR;
@@ -168,7 +168,7 @@ TEST(MMUTests, WRAMUpperBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
@@ -177,10 +177,10 @@ TEST(MMUTests, WRAMUpperBoundTest)
  *************************************/
 TEST(MMUTests, OAMLowerBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x03;
     u16 testAddr = OAM_START_ADDR;
@@ -189,16 +189,16 @@ TEST(MMUTests, OAMLowerBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, OAMGeneralCase)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x04;
     u16 testAddr = OAM_START_ADDR + 0x40;
@@ -207,16 +207,16 @@ TEST(MMUTests, OAMGeneralCase)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, OAMUpperBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0x05;
     u16 testAddr = OAM_END_ADDR;
@@ -225,7 +225,7 @@ TEST(MMUTests, OAMUpperBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
@@ -234,10 +234,10 @@ TEST(MMUTests, OAMUpperBoundTest)
  *************************************/
 TEST(MMUTests, HardwareRegistersLowerBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0xbb;
     u16 testAddr = HARDWARE_REGISTERS_START_ADDR;
@@ -246,16 +246,16 @@ TEST(MMUTests, HardwareRegistersLowerBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, HardwareRegistersGeneralCase)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0xcc;
     u16 testAddr = HARDWARE_REGISTERS_START_ADDR + 0x40;
@@ -264,16 +264,16 @@ TEST(MMUTests, HardwareRegistersGeneralCase)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, HardwareRegistersUpperBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0xdd;
     u16 testAddr = HARDWARE_REGISTERS_END_ADDR;
@@ -282,7 +282,7 @@ TEST(MMUTests, HardwareRegistersUpperBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
@@ -291,10 +291,10 @@ TEST(MMUTests, HardwareRegistersUpperBoundTest)
  *************************************/
 TEST(MMUTests, HRAMLowerBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0xb1;
     u16 testAddr = HRAM_START_ADDR;
@@ -303,16 +303,16 @@ TEST(MMUTests, HRAMLowerBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, HRAMGeneralCase)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0xc1;
     u16 testAddr = HRAM_START_ADDR + 0x40;
@@ -321,16 +321,16 @@ TEST(MMUTests, HRAMGeneralCase)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }
 
 
 TEST(MMUTests, HRAMUpperBoundTest)
 {
-    Video v;
-    v.startUp(true);
+    GraphicsController gc;
+    gc.startUp(true);
     Mmu mmu;
-    mmu.startUp(&v);
+    mmu.startUp(&gc);
 
     u8 testValue = 0xd1;
     u16 testAddr = HRAM_END_ADDR;
@@ -339,5 +339,5 @@ TEST(MMUTests, HRAMUpperBoundTest)
     ASSERT_EQ(mmu.read(testAddr), testValue);
 
     mmu.shutDown();
-    v.shutDown();
+    gc.shutDown();
 }

@@ -15,15 +15,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef VIDEO_H
-#define VIDEO_H
+#ifndef GRAPHICS_CONTROLLER_H
+#define GRAPHICS_CONTROLLER_H
 
 #include <string>
-#include <SDL2/SDL.h>
+#include "graphics_display.h"
 #include "types.h"
 
 
-typedef enum VideoRegister
+typedef enum DisplayRegister
 {
     RegLCDC,
     RegSTAT,
@@ -37,14 +37,14 @@ typedef enum VideoRegister
     RegOBP1,
     RegWY,
     RegWX
-} VideoRegister;
+} displayRegister_t;
 
 
-class Video
+class GraphicsController
 {
 public:
-    Video();
-    ~Video();
+    GraphicsController();
+    ~GraphicsController();
 
     /* Initialization and clean up. */
     void startUp(bool noWindow);
@@ -53,8 +53,8 @@ public:
     /* Video RAM read and write. */
     u8 vramRead(u16 address);
     void vramWrite(u16 address, u8 data);
-    u8 videoRegisterRead(VideoRegister reg);
-    void videoRegisterWrite(VideoRegister reg, u8 data);
+    u8 displayRegisterRead(displayRegister_t reg);
+    void displayRegisterWrite(displayRegister_t reg, u8 data);
 
     void update(u8 cycles);
 
@@ -78,16 +78,13 @@ private:
     u64 modeCycles;
 
     bool noWindow;  /* Mainly used for testing in order to not setup the window. */
-    std::string windowName;
-    int width;
-    int height;
-    SDL_Window* window;
+    GraphicsDisplay* display;
 
-    void drawFrame();
+    // void drawFrame();
     void updateMatchFlag();
 
     void setCurrentMode(u8 newMode);
 };
 
 
-#endif /* VIDEO_H */
+#endif /* GRAPHICS_CONTROLLER_H */

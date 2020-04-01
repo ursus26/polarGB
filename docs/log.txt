@@ -4,6 +4,11 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2020-04-01: - Removed GLFW and GLAD because OpenGL does not work well on pixel graphics.
+            - Added SDL2 as my rendering technology which is much simpler.
+            - Separated and renamed the video class into GraphicsController and GraphicsDisplay.
+              GraphicsController handles all the Gameboy logic related to graphics and
+              GraphicsDisplay handles rendering with SDL2.
 2020-03-29: - Added interrupt check for LY=LYC register.
             - Fixed infinite interrupt loop due to not automatically resetting the flags in the IF
               register.

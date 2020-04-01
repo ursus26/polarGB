@@ -58,7 +58,7 @@ typedef struct Operand
     u16 immediate;
     RegID reg;
     RegID memPtr;
-} Operand;
+} operand_t;
 
 
 class Cpu
@@ -70,8 +70,8 @@ public:
         u8 opcode;                                      /* Opcode on the memory location */
         u8 instructionLength;                           /* Length of the instruction */
         char mnemonic[16];                              /* Mnemonic of the instruction, used for debugging */
-        Operand operandSrc;                             /* Source operand of the instruction */
-        Operand operandDst;                             /* Destination operand of the instruction */
+        operand_t operandSrc;                           /* Source operand of the instruction */
+        operand_t operandDst;                           /* Destination operand of the instruction */
         u8 cycleCost;                                   /* Cost of the instruction in clock cycles */
         u8 extraInfo;                                   /* Additional info used for some execution function */
         void (Cpu::*executionFunction)(Instruction *);  /* Funtion that can execute this instruction. */
@@ -111,10 +111,10 @@ private:
     bool borrowTest(int val1, int val2);
 
     /* Instruction helper functions. */
-    u8 loadOperand8bits(Operand* instr);
-    u16 loadOperand16bits(Operand* instr);
-    void storeOperand8bits(Operand* instr, u8 value);
-    void storeOperand16bits(Operand* instr, u16 value);
+    u8 loadOperand8bits(operand_t* instr);
+    u16 loadOperand16bits(operand_t* instr);
+    void storeOperand8bits(operand_t* instr, u8 value);
+    void storeOperand16bits(operand_t* instr, u16 value);
 
 
     /**

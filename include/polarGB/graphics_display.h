@@ -15,42 +15,32 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef EMULATOR_H
-#define EMULATOR_H
+#ifndef GRAPHICS_DISPLAY_H
+#define GRAPHICS_DISPLAY_H
+
 
 #include <string>
 #include <SDL2/SDL.h>
-#include "types.h"
-#include "mmu.h"
-#include "cpu.h"
-#include "graphics_controller.h"
 
 
-const int CPU_FREQUENCY = 1048576; /* Hz */
-const int INSTRUCTIONS_PER_FRAME = 17556;
-const double FPS = CPU_FREQUENCY / (double)INSTRUCTIONS_PER_FRAME;
-const double FRAME_TIME = 1.0 / FPS;
-
-
-class Emulator
+class GraphicsDisplay
 {
-public:
-    Emulator();
-    ~Emulator();
 
-    int start(std::string cartridgePath);
+public:
+    GraphicsDisplay();
+    ~GraphicsDisplay();
+
+    int startUp();
+    void shutDown();
+
+    void drawFrame();
 
 private:
-    bool isRunning;
-    u64 cyclesCompleted;
-    Mmu* mmu;
-    Cpu* cpu;
-    GraphicsController* graphicsController;
-
-    void startUp();
-    void shutDown();
-    void run();
-    void runFrame();
+    std::string windowName;
+    int width;
+    int height;
+    SDL_Window* window;
 };
 
-#endif /* EMULATOR_H */
+
+#endif /* GRAPHICS_DISPLAY_H */

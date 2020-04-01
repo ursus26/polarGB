@@ -36,7 +36,7 @@ Mmu::~Mmu()
 /**
  * Small boot program that initializes specific memory locations.
  */
-void Mmu::startUp(Video* v)
+void Mmu::startUp(GraphicsController* gc)
 {
     ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
     ERAM.mem = new u8[ERAM.size]();
@@ -53,7 +53,7 @@ void Mmu::startUp(Video* v)
     HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
     HRAM.mem = new u8[HRAM.size]();
 
-    this->video = v;
+    this->graphicsController = gc;
     this->rom.startUp();
 
     /* Reference: http://gbdev.gg8.se/wiki/articles/Power_Up_Sequence */
@@ -97,7 +97,7 @@ void Mmu::startUp(Video* v)
 void Mmu::shutDown()
 {
     this->rom.shutDown();
-    this->video = nullptr;
+    this->graphicsController = nullptr;
 
     delete[] ERAM.mem;
     ERAM.mem = nullptr;
@@ -124,7 +124,7 @@ u8 Mmu::read(u16 addr)
         data = rom.read(addr);
     else if(addr >= VRAM_START_ADDR && addr <= VRAM_END_ADDR) /* VRAM / LCD Display RAM */
     {
-        data = video->vramRead(addr - VRAM_START_ADDR);
+        data = graphicsController->vramRead(addr - VRAM_START_ADDR);
     }
     else if(addr >= ERAM_START_ADDR && addr <= ERAM_END_ADDR) /* Switchable external RAM bank */
         data = ERAM.mem[addr - ERAM_START_ADDR];
@@ -169,7 +169,7 @@ void Mmu::write(u16 addr, u8 data)
         rom.write(addr, data);
     else if(addr >= VRAM_START_ADDR && addr <= VRAM_END_ADDR) /* VRAM / LCD Display RAM */
     {
-        video->vramWrite(addr - VRAM_START_ADDR, data);
+        graphicsController->vramWrite(addr - VRAM_START_ADDR, data);
         // VRAM.mem[addr - VRAM_START_ADDR] = data;
     }
     else if(addr >= ERAM_START_ADDR && addr <= ERAM_END_ADDR) /* Switchable external RAM bank */
@@ -231,18 +231,18 @@ u8 Mmu::readHardwareRegister(u16 addr)
 {
     switch(addr)
     {
-        case LCDC_ADDR: return this->video->videoRegisterRead(RegLCDC);
-        case STAT_ADDR: return this->video->videoRegisterRead(RegSTAT);
-        case SCY_ADDR:  return this->video->videoRegisterRead(RegSCY);
-        case SCX_ADDR:  return this->video->videoRegisterRead(RegSCX);
-        case LY_ADDR:   return this->video->videoRegisterRead(RegLY);
-        case LYC_ADDR:  return this->video->videoRegisterRead(RegLYC);
-        case DMA_ADDR:  return this->video->videoRegisterRead(RegDMA);
-        case BGP_ADDR:  return this->video->videoRegisterRead(RegBGP);
-        case OBP0_ADDR: return this->video->videoRegisterRead(RegOBP0);
-        case OBP1_ADDR: return this->video->videoRegisterRead(RegOBP1);
-        case WY_ADDR:   return this->video->videoRegisterRead(RegWY);
-        case WX_ADDR:   return this->video->videoRegisterRead(RegWX);
+        case LCDC_ADDR: return this->graphicsController->displayRegisterRead(RegLCDC);
+        case STAT_ADDR: return this->graphicsController->displayRegisterRead(RegSTAT);
+        case SCY_ADDR:  return this->graphicsController->displayRegisterRead(RegSCY);
+        case SCX_ADDR:  return this->graphicsController->displayRegisterRead(RegSCX);
+        case LY_ADDR:   return this->graphicsController->displayRegisterRead(RegLY);
+        case LYC_ADDR:  return this->graphicsController->displayRegisterRead(RegLYC);
+        case DMA_ADDR:  return this->graphicsController->displayRegisterRead(RegDMA);
+        case BGP_ADDR:  return this->graphicsController->displayRegisterRead(RegBGP);
+        case OBP0_ADDR: return this->graphicsController->displayRegisterRead(RegOBP0);
+        case OBP1_ADDR: return this->graphicsController->displayRegisterRead(RegOBP1);
+        case WY_ADDR:   return this->graphicsController->displayRegisterRead(RegWY);
+        case WX_ADDR:   return this->graphicsController->displayRegisterRead(RegWX);
         default: return HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR];
     }
 }
@@ -252,18 +252,18 @@ void Mmu::writeHardwareRegister(u16 addr, u8 data)
 {
     switch(addr)
     {
-        case LCDC_ADDR: video->videoRegisterWrite(RegLCDC, data); break;
-        case STAT_ADDR: video->videoRegisterWrite(RegSTAT, data); break;
-        case SCY_ADDR:  video->videoRegisterWrite(RegSCY, data); break;
-        case SCX_ADDR:  video->videoRegisterWrite(RegSCX, data); break;
-        case LY_ADDR:   video->videoRegisterWrite(RegLY, data); break;
-        case LYC_ADDR:  video->videoRegisterWrite(RegLYC, data); break;
-        case DMA_ADDR:  DMATransfer(data); video->videoRegisterWrite(RegDMA, data); break;
-        case BGP_ADDR:  video->videoRegisterWrite(RegBGP, data); break;
-        case OBP0_ADDR: video->videoRegisterWrite(RegOBP0, data); break;
-        case OBP1_ADDR: video->videoRegisterWrite(RegOBP1, data); break;
-        case WY_ADDR:   video->videoRegisterWrite(RegWY, data); break;
-        case WX_ADDR:   video->videoRegisterWrite(RegWX, data); break;
+        case LCDC_ADDR: graphicsController->displayRegisterWrite(RegLCDC, data); break;
+        case STAT_ADDR: graphicsController->displayRegisterWrite(RegSTAT, data); break;
+        case SCY_ADDR:  graphicsController->displayRegisterWrite(RegSCY, data); break;
+        case SCX_ADDR:  graphicsController->displayRegisterWrite(RegSCX, data); break;
+        case LY_ADDR:   graphicsController->displayRegisterWrite(RegLY, data); break;
+        case LYC_ADDR:  graphicsController->displayRegisterWrite(RegLYC, data); break;
+        case DMA_ADDR:  DMATransfer(data); graphicsController->displayRegisterWrite(RegDMA, data); break;
+        case BGP_ADDR:  graphicsController->displayRegisterWrite(RegBGP, data); break;
+        case OBP0_ADDR: graphicsController->displayRegisterWrite(RegOBP0, data); break;
+        case OBP1_ADDR: graphicsController->displayRegisterWrite(RegOBP1, data); break;
+        case WY_ADDR:   graphicsController->displayRegisterWrite(RegWY, data); break;
+        case WX_ADDR:   graphicsController->displayRegisterWrite(RegWX, data); break;
         default:        HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR] = data; break;
     }
 }

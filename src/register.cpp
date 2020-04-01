@@ -35,7 +35,7 @@ Register::Register()
 /**
  * Writes a byte to a register specified by its id. We can only write to A, B, C, D, E, H and L.
  */
-void Register::writeSingle(RegID id, u8 val)
+void Register::writeSingle(regID_t id, u8 val)
 {
     switch(id)
     {
@@ -71,7 +71,7 @@ void Register::writeSingle(RegID id, u8 val)
  * Writes a word to a register specified by its id. We can only write to the register pairs:
  * AF, BC, DE and HL.
  */
-void Register::writeDouble(RegID id, u16 val)
+void Register::writeDouble(regID_t id, u16 val)
 {
     switch(id)
     {
@@ -106,14 +106,14 @@ void Register::writeDouble(RegID id, u16 val)
 /**
  * Copies the value from register src to register dest.
  */
-void Register::copySingle(RegID dest, RegID src)
+void Register::copySingle(regID_t dest, regID_t src)
 {
     u8 srcVal = readSingle(src);
     writeSingle(dest, srcVal);
 }
 
 
-u8 Register::readSingle(RegID id)
+u8 Register::readSingle(regID_t id)
 {
     switch(id)
     {
@@ -147,7 +147,7 @@ u8 Register::readSingle(RegID id)
 }
 
 
-u16 Register::readDouble(RegID id)
+u16 Register::readDouble(regID_t id)
 {
     u16 returnValue = 0x0;
     switch(id)

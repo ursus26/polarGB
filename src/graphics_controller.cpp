@@ -18,15 +18,15 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <fmt/format.h>
-#include "polarGB/video.h"
+#include "polarGB/graphics_controller.h"
 
 
-Video::Video()
+GraphicsController::GraphicsController()
 {
 }
 
 
-Video::~Video()
+GraphicsController::~GraphicsController()
 {
 }
 
@@ -35,7 +35,7 @@ Video::~Video()
  * Initialise GLFW and GLAD. This initialises OpenGL. We also create a Window on which we can draw
  * graphics.
  */
-void Video::startUp(bool noWindow)
+void GraphicsController::startUp(bool noWindow)
 {
     this->noWindow = noWindow;
 
@@ -45,32 +45,14 @@ void Video::startUp(bool noWindow)
     this->mode = 2;
     this->modeCycles = 0;
 
-    this->windowName = "polarGB";
-    this->width = 800;
-    this->height = 600;
-
     if(noWindow == false)
     {
-        if(SDL_Init(SDL_INIT_VIDEO) < 0)
+        display = new GraphicsDisplay();
+        int status = display->startUp();
+        if(status != 0)
         {
-            fmt::print(stderr, "Could not initialize SDL, reason: {}\n", SDL_GetError());
             this->noWindow = true;
-        }
-        else
-        {
-            this->window = SDL_CreateWindow(this->windowName.c_str(),
-                                            SDL_WINDOWPOS_UNDEFINED,
-                                            SDL_WINDOWPOS_UNDEFINED,
-                                            this->width,
-                                            this->height,
-                                            0);
-
-            if(window == NULL)
-            {
-                fmt::print(stderr, "Could not create window, reason: {}\n", SDL_GetError());
-                this->noWindow = true;
-                SDL_Quit();
-            }
+            delete display;
         }
     }
 }
@@ -79,10 +61,10 @@ void Video::startUp(bool noWindow)
 /**
  * Destroy the window and clean up GLFW.
  */
-void Video::shutDown()
+void GraphicsController::shutDown()
 {
-    // fmt::print("Video::shutDown() | Shutting down glfw\n");
-    // fmt::print("Video::shutDown() | STAT: {:#x}\n", mmu->read(STAT_ADDR));
+    // fmt::print("GraphicsController::shutDown() | Shutting down glfw\n");
+    // fmt::print("GraphicsController::shutDown() | STAT: {:#x}\n", mmu->read(STAT_ADDR));
     //
     //
     // u16 start_addr = VRAM_START_ADDR;
@@ -105,12 +87,10 @@ void Video::shutDown()
 
     if(noWindow == false)
     {
-        fmt::print("CLEANING UP\n");
-
-        SDL_DestroyWindow(this->window);
-        window = nullptr;
+        display->shutDown();
+        delete display;
+        display = nullptr;
         this->noWindow = true;
-        SDL_Quit();
     }
 }
 
@@ -119,7 +99,7 @@ void Video::shutDown()
  * Updates the video side of the GB by a given number of cpu cycles.
  * Inspiration and source: http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-GPU-Timings
  */
-void Video::update(u8 cycles)
+void GraphicsController::update(u8 cycles)
 {
     modeCycles += cycles;
 
@@ -136,7 +116,7 @@ void Video::update(u8 cycles)
                 if(LY == 143)
                 {
                     setCurrentMode(1);
-                    drawFrame();
+                    display->drawFrame();
                 }
                 else
                 {
@@ -185,50 +165,50 @@ void Video::update(u8 cycles)
 }
 
 
-void Video::drawFrame()
-{
-    if(noWindow)
-        return;
-
-    // u16 start_addr = 0;
-    // if((STAT & 0x10) == 0x10)
-    // {
-    //     start_addr = 0x800;
-    // }
-    //
-    // for(int i = 0; i < 8; i++)
-    // {
-    //     for(int j = 0; j < 8; j++)
-    //     {
-    //         fmt::print("{:x} ", vramRead(start_addr + 0x10 * 0x2f));
-    //     }
-    //     fmt::print("\n");
-    // }
-    //
-    // unsigned int sum = 0;
-    // for(unsigned int i = 0; i < vram.size; i++)
-    // {
-    //     u8 data = vramRead(i);
-    //     sum += data;
-    //     if(data > 0)
-    //     {
-    //         fmt::print("FOUND VRAM DATA AT: VRAM[{:#x}] = {:#x}\n", i, data);
-    //     }
-    // }
-    //
-    // fmt::print("VRAM sum: {:#x}\n", sum);
-    // fmt::print("---------------------------\n");
-
-
-    SDL_UpdateWindowSurface(this->window);
-}
+// void GraphicsController::drawFrame()
+// {
+//     if(noWindow)
+//         return;
+//
+//     // u16 start_addr = 0;
+//     // if((STAT & 0x10) == 0x10)
+//     // {
+//     //     start_addr = 0x800;
+//     // }
+//     //
+//     // for(int i = 0; i < 8; i++)
+//     // {
+//     //     for(int j = 0; j < 8; j++)
+//     //     {
+//     //         fmt::print("{:x} ", vramRead(start_addr + 0x10 * 0x2f));
+//     //     }
+//     //     fmt::print("\n");
+//     // }
+//     //
+//     // unsigned int sum = 0;
+//     // for(unsigned int i = 0; i < vram.size; i++)
+//     // {
+//     //     u8 data = vramRead(i);
+//     //     sum += data;
+//     //     if(data > 0)
+//     //     {
+//     //         fmt::print("FOUND VRAM DATA AT: VRAM[{:#x}] = {:#x}\n", i, data);
+//     //     }
+//     // }
+//     //
+//     // fmt::print("VRAM sum: {:#x}\n", sum);
+//     // fmt::print("---------------------------\n");
+//
+//
+//     SDL_UpdateWindowSurface(this->window);
+// }
 
 
 /**
  * Switch to a new display mode and push this update to the corresponding STAT display register.
  * Mode can only take the values: 0, 1, 2 or 3.
  */
-void Video::setCurrentMode(u8 newMode)
+void GraphicsController::setCurrentMode(u8 newMode)
 {
     assert(newMode < 4);
 
@@ -240,7 +220,7 @@ void Video::setCurrentMode(u8 newMode)
 }
 
 
-void Video::updateMatchFlag()
+void GraphicsController::updateMatchFlag()
 {
     if(LY == LYC)
     {
@@ -253,7 +233,7 @@ void Video::updateMatchFlag()
 }
 
 
-u8 Video::vramRead(u16 address)
+u8 GraphicsController::vramRead(u16 address)
 {
     assert(address < vram.size);
 
@@ -261,7 +241,7 @@ u8 Video::vramRead(u16 address)
 }
 
 
-void Video::vramWrite(u16 address, u8 data)
+void GraphicsController::vramWrite(u16 address, u8 data)
 {
     assert(address < vram.size);
 
@@ -269,7 +249,7 @@ void Video::vramWrite(u16 address, u8 data)
 }
 
 
-u8 Video::videoRegisterRead(VideoRegister reg)
+u8 GraphicsController::displayRegisterRead(displayRegister_t reg)
 {
     switch(reg) {
         case RegLCDC:
@@ -302,7 +282,7 @@ u8 Video::videoRegisterRead(VideoRegister reg)
 }
 
 
-void Video::videoRegisterWrite(VideoRegister reg, u8 data)
+void GraphicsController::displayRegisterWrite(displayRegister_t reg, u8 data)
 {
     switch(reg) {
         case RegLCDC:

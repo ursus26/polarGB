@@ -21,7 +21,7 @@
 #include <string>
 #include "types.h"
 #include "cartridge.h"
-#include "video.h"
+#include "graphics_controller.h"
 
 
 /* Memory boundaries. */
@@ -64,7 +64,7 @@ public:
     ~Mmu();
 
     /* Small boot program for the mmu. */
-    void startUp(Video* v);
+    void startUp(GraphicsController* gc);
     void shutDown();
 
     /* Read from an address. */
@@ -80,14 +80,13 @@ public:
 
 private:
     Cartridge rom;  /* Game cartridge */
-    // Ram VRAM;       /* Video RAM */
     Ram ERAM;       /* External RAM */
     Ram WRAM;       /* Working RAM */
     Ram OAM;
     Ram HardwareRegisters;
     Ram HRAM;       /* High Ram / CPU working RAM */
 
-    Video* video;
+    GraphicsController* graphicsController;
 
     void DMATransfer(u8 index);
     u8 readHardwareRegister(u16 addr);

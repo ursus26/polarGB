@@ -71,7 +71,7 @@ typedef enum RegID
 
     /* Miscellaneous */
     RegID_MISS  /* Used if a value is not in a register but in memory. */
-} RegID;
+} regID_t;
 
 
 struct RegPair
@@ -87,13 +87,13 @@ public:
     Register();
 
     /* Functions for writing to a register or copying. */
-    void writeSingle(RegID id, u8 val);
-    void writeDouble(RegID id, u16 val);
-    void copySingle(RegID dest, RegID src);
+    void writeSingle(regID_t id, u8 val);
+    void writeDouble(regID_t id, u16 val);
+    void copySingle(regID_t dest, regID_t src);
 
     /* Functions for loading data from a register. */
-    u8 readSingle(RegID id);
-    u16 readDouble(RegID id);
+    u8 readSingle(regID_t id);
+    u16 readDouble(regID_t id);
 
     /* Operations on the program counter. */
     u16 getProgramCounter() const;
