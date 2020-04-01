@@ -125,9 +125,22 @@ void Emulator::runFrame()
         this->video->update(cpuCycles);
     }
 
-    // /* Check if we should close our window. */
-    // if(this->video->closeWindow())
-    //     this->isRunning = false;
+    /* Check if we should close our window. */
+    SDL_Event event;
+    while(SDL_PollEvent(&event) != 0)
+    {
+        if(event.type == SDL_QUIT)
+        {
+            this->isRunning = false;
+        }
+        else if(event.type == SDL_KEYDOWN)
+        {
+            if(event.key.keysym.sym == SDLK_ESCAPE)
+            {
+                this->isRunning = false;
+            }
+        }
+    }
 
     cyclesCompleted -= INSTRUCTIONS_PER_FRAME;
 }

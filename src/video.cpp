@@ -48,6 +48,31 @@ void Video::startUp(bool noWindow)
     this->windowName = "polarGB";
     this->width = 800;
     this->height = 600;
+
+    if(noWindow == false)
+    {
+        if(SDL_Init(SDL_INIT_VIDEO) < 0)
+        {
+            fmt::print(stderr, "Could not initialize SDL, reason: {}\n", SDL_GetError());
+            this->noWindow = true;
+        }
+        else
+        {
+            this->window = SDL_CreateWindow(this->windowName.c_str(),
+                                            SDL_WINDOWPOS_UNDEFINED,
+                                            SDL_WINDOWPOS_UNDEFINED,
+                                            this->width,
+                                            this->height,
+                                            0);
+
+            if(window == NULL)
+            {
+                fmt::print(stderr, "Could not create window, reason: {}\n", SDL_GetError());
+                this->noWindow = true;
+                SDL_Quit();
+            }
+        }
+    }
 }
 
 
@@ -77,6 +102,16 @@ void Video::shutDown()
 
     delete[] vram.mem;
     vram.mem = nullptr;
+
+    if(noWindow == false)
+    {
+        fmt::print("CLEANING UP\n");
+
+        SDL_DestroyWindow(this->window);
+        window = nullptr;
+        this->noWindow = true;
+        SDL_Quit();
+    }
 }
 
 
@@ -183,6 +218,9 @@ void Video::drawFrame()
     //
     // fmt::print("VRAM sum: {:#x}\n", sum);
     // fmt::print("---------------------------\n");
+
+
+    SDL_UpdateWindowSurface(this->window);
 }
 
 

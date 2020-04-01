@@ -26,6 +26,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Required packages
 find_package(Boost 1.46.1 REQUIRED COMPONENTS program_options)
+find_package(SDL2 REQUIRED)
 
 # Third party
 add_subdirectory(third_party)
@@ -47,10 +48,10 @@ add_library(${PROJECT_LIB_NAME}
     ${PROJECT_SOURCE_DIR}/src/video.cpp
 )
 
-target_include_directories(${PROJECT_LIB_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include)
-# target_include_directories(${PROJECT_LIB_NAME} PRI ${Boost_INCLUDE_DIRS})
+message(status ${SDL2_INCLUDE_DIRS})
+target_include_directories(${PROJECT_LIB_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include ${SDL2_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_LIB_NAME} PRIVATE pthread dl fmt::fmt)
+target_link_libraries(${PROJECT_LIB_NAME} PRIVATE pthread dl fmt::fmt ${SDL2_LIBRARIES})
 
 target_compile_options(${PROJECT_LIB_NAME} PUBLIC -Wall -Wextra -Wpedantic -D_FORTIFY_SOURCE=2
                                                   -fstack-protector)

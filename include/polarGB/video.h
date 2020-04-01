@@ -19,6 +19,7 @@
 #define VIDEO_H
 
 #include <string>
+#include <SDL2/SDL.h>
 #include "types.h"
 
 
@@ -72,21 +73,20 @@ private:
     u8 WY;
     u8 WX;
 
-    /* OLD REGISTERS */
-    // u8 scanline;
+    /* Member variables */
     u8 mode;
     u64 modeCycles;
 
-    bool noWindow;  /* Mainly used for testing in order to not setup OpenGL. */
+    bool noWindow;  /* Mainly used for testing in order to not setup the window. */
     std::string windowName;
     int width;
     int height;
+    SDL_Window* window;
 
     void drawFrame();
     void updateMatchFlag();
 
     void setCurrentMode(u8 newMode);
-    // void setCurrentScanline(u8 lineIdx);
 };
 
 

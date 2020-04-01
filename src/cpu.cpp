@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <chrono>
+#include <assert.h>
 #include <fmt/format.h>
 #include "polarGB/cpu.h"
 #include "polarGB/log.h"
@@ -40,6 +41,7 @@ void Cpu::startUp(Mmu* m)
     this->cyclesCompleted = 0;
     this->interruptController.startUp(this->mmu);
     this->interruptController.disableInterrupts();
+    this->currentInstruction = new instruction_t;
 
     /* Initialise the registers. */
     this->reg.writeDouble(RegID_AF, 0x01b0);    /* Initialise AF register. */
@@ -57,6 +59,8 @@ void Cpu::shutDown()
 {
     /* Remove the reference to the memory manager but don't delete it since this object did not
      * create the memory manager. */
+    delete this->currentInstruction;
+    this->currentInstruction = nullptr;
     this->interruptController.shutDown();
     this->mmu = nullptr;
 }
@@ -78,25 +82,9 @@ u8 Cpu::step()
 
     printInstructionInfo(instr);
 
-    // if(instr->memoryLocation == 0x282a)
-    // {
-    //     for(int i = 0; i < 8; i++)
-    //     {
-    //         for(int j = 0; j < 8; j++)
-    //         {
-    //             fmt::print("{:x} ", mmu->read(VRAM_START_ADDR + 0x100));
-    //         }
-    //         fmt::print("\n");
-    //     }
-    //     exit(0);
-    // }
-
     /* Execute the instruction handler. */
     (this->*(instr->executionFunction))(instr);
     u8 cycleCost = instr->cycleCost;
-
-    /* Instruction clean up. */
-    delete instr;
 
     return cycleCost;
 }
@@ -104,19 +92,17 @@ u8 Cpu::step()
 
 Cpu::instruction_t * Cpu::fetchDecode()
 {
-    instruction_t* instr = new instruction_t;
-
     /* Get the program counter. */
     u16 pc = reg.getProgramCounter();
 
     /* Fetch the next instruction from memory. */
     u8 opcode = mmu->read(pc);
 
-    instr->memoryLocation = pc;
-    instr->opcode = opcode;
-    decodeOpcode(instr, opcode);
+    currentInstruction->memoryLocation = pc;
+    currentInstruction->opcode = opcode;
+    decodeOpcode(currentInstruction, opcode);
 
-    return instr;
+    return currentInstruction;
 }
 
 

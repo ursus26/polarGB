@@ -19,6 +19,7 @@
 #define EMULATOR_H
 
 #include <string>
+#include <SDL2/SDL.h>
 #include "types.h"
 #include "mmu.h"
 #include "cpu.h"
