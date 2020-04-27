@@ -4,6 +4,11 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2020-04-26: - Added getting pixel information from vram and update it to display. This gives some
+              visual information however the screen flickers a lot and it seems that the screen is
+              repeating itself after a couple of scanlines.
+2020-04-06: - Started documenting the graphics of the game boy.
+2020-04-04: - Setup pixel transfer to texture.
 2020-04-01: - Removed GLFW and GLAD because OpenGL does not work well on pixel graphics.
             - Added SDL2 as my rendering technology which is much simpler.
             - Separated and renamed the video class into GraphicsController and GraphicsDisplay.

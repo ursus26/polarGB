@@ -59,7 +59,7 @@ public:
     void update(u8 cycles);
 
 private:
-    Ram vram;
+    ram_t vram;
     u8 LCDC;
     u8 STAT;
     u8 SCY;
@@ -84,6 +84,7 @@ private:
     void updateMatchFlag();
 
     void setCurrentMode(u8 newMode);
+    void processScanline();
 };
 
 

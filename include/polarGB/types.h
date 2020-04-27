@@ -29,10 +29,10 @@ typedef int32_t     i32;
 typedef uint64_t    u64;
 typedef int64_t     i64;
 
-typedef struct
+typedef struct Ram
 {
     u8* mem;
     unsigned int size;
-} Ram;
+} ram_t;
 
 #endif /* TYPES_H */

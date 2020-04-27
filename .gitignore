@@ -2,6 +2,7 @@ bin/*
 build/*
 rom/*
 notes.txt
+*.pdf
 
 ### C++ ###
 # Prerequisites

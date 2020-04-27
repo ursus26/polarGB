@@ -21,7 +21,11 @@
 
 #include <string>
 #include <SDL2/SDL.h>
+#include "types.h"
 
+
+const int SCREEN_WIDTH = 160;
+const int SCREEN_HEIGHT = 144;
 
 class GraphicsDisplay
 {
@@ -33,6 +37,7 @@ public:
     int startUp();
     void shutDown();
 
+    void updatePixel(u8 x, u8 y, u8 r, u8 g, u8 b, u8 a);
     void drawFrame();
 
 private:
@@ -40,6 +45,15 @@ private:
     int width;
     int height;
     SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Texture* texture;
+    u8* pixels;
+    void* texturePixels;
+    int pitch;
+
+    bool lockTexture();
+    void unlockTexture();
+    void copyPixelsToTexture();
 };
 
 

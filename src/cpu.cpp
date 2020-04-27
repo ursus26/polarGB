@@ -80,7 +80,7 @@ u8 Cpu::step()
     Instruction* instr = fetchDecode();
     reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
 
-    printInstructionInfo(instr);
+    // printInstructionInfo(instr);
 
     /* Execute the instruction handler. */
     (this->*(instr->executionFunction))(instr);

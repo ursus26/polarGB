@@ -16,6 +16,8 @@
  */
 
 #include <fmt/format.h>
+#include <assert.h>
+#include <cstring>
 #include "polarGB/graphics_display.h"
 
 
@@ -38,8 +40,8 @@ GraphicsDisplay::~GraphicsDisplay()
 int GraphicsDisplay::startUp()
 {
     this->windowName = "polarGB";
-    this->width = 800;
-    this->height = 600;
+    this->width = SCREEN_WIDTH;
+    this->height = SCREEN_HEIGHT;
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
     {
@@ -61,12 +63,35 @@ int GraphicsDisplay::startUp()
         return 1;
     }
 
+    this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
+    if(renderer == NULL)
+    {
+        fmt::print(stderr, "Could not create renderer, reason: {}\n", SDL_GetError());
+        SDL_DestroyWindow(window);
+        window = nullptr;
+        SDL_Quit();
+    }
+
+    SDL_SetRenderDrawColor(this->renderer, 0xff, 0xff, 0xff, 0xff);
+
+    this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+
+    pixels = new u8[width * height * 4];
+    std::memset(pixels, 0x0, width * height * 4);
+    texturePixels = NULL;
+
     return 0;
 }
 
 
 void GraphicsDisplay::shutDown()
 {
+    delete[] pixels;
+    pixels = nullptr;
+
+    SDL_DestroyRenderer(this->renderer);
+    this->renderer = nullptr;
+
     SDL_DestroyWindow(this->window);
     this->window = nullptr;
     SDL_Quit();
@@ -75,5 +100,65 @@ void GraphicsDisplay::shutDown()
 
 void GraphicsDisplay::drawFrame()
 {
+    lockTexture();
+    copyPixelsToTexture();
+    unlockTexture();
 
+    /* Clear the screen. */
+    SDL_RenderClear(this->renderer);
+
+    /* Render ?? */
+    SDL_RenderCopy(this->renderer, this->texture, NULL, NULL);
+
+    /* Update screen. */
+    SDL_RenderPresent(this->renderer);
+}
+
+
+/**
+ * Pixel data is stored in ABGR8888 format.
+ */
+void GraphicsDisplay::updatePixel(u8 x, u8 y, u8 r, u8 g, u8 b, u8 a)
+{
+    assert(x < this->width);
+    assert(y < this->height);
+
+    int index = (y * 4 * this->width) + (4 * x);
+    this->pixels[index] = r;
+    this->pixels[index + 1] = g;
+    this->pixels[index + 2] = b;
+    this->pixels[index + 3] = a;
+}
+
+
+bool GraphicsDisplay::lockTexture()
+{
+    /* Check if texture is already locked. */
+    if(this->texturePixels != NULL)
+        return false;
+
+    if(SDL_LockTexture(this->texture, NULL, &this->texturePixels, &this->pitch) != 0)
+    {
+        fmt::print(stderr, "Could not lock texture, reason: {}\n", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+
+void GraphicsDisplay::unlockTexture()
+{
+    SDL_UnlockTexture(this->texture);
+    this->texturePixels = NULL;
+    this->pitch = 0;
+}
+
+
+void GraphicsDisplay::copyPixelsToTexture()
+{
+    assert(this->texturePixels != NULL);
+    assert(this->pixels != NULL);
+
+    std::memcpy(this->texturePixels, this->pixels, this->pitch * this->height);
 }

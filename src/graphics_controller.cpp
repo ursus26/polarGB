@@ -21,6 +21,12 @@
 #include "polarGB/graphics_controller.h"
 
 
+const u16 TILE_BASE_DATA_SELECT1 = 0;
+const u16 TILE_BASE_DATA_SELECT2 = 0x800;
+const u16 TILE_MAP_DATA1 = 0x9800 - 0x8000;
+const u16 TILE_MAP_DATA2 = 0x9c00 - 0x8000;
+
+
 GraphicsController::GraphicsController()
 {
 }
@@ -31,10 +37,6 @@ GraphicsController::~GraphicsController()
 }
 
 
-/**
- * Initialise GLFW and GLAD. This initialises OpenGL. We also create a Window on which we can draw
- * graphics.
- */
 void GraphicsController::startUp(bool noWindow)
 {
     this->noWindow = noWindow;
@@ -58,9 +60,6 @@ void GraphicsController::startUp(bool noWindow)
 }
 
 
-/**
- * Destroy the window and clean up GLFW.
- */
 void GraphicsController::shutDown()
 {
     // fmt::print("GraphicsController::shutDown() | Shutting down glfw\n");
@@ -101,7 +100,7 @@ void GraphicsController::shutDown()
  */
 void GraphicsController::update(u8 cycles)
 {
-    modeCycles += cycles;
+    this->modeCycles += cycles;
 
     switch(this->mode)
     {
@@ -156,6 +155,7 @@ void GraphicsController::update(u8 cycles)
             {
                 modeCycles -= 43;
                 setCurrentMode(0);
+                processScanline();
             }
             break;
     }
@@ -165,43 +165,122 @@ void GraphicsController::update(u8 cycles)
 }
 
 
-// void GraphicsController::drawFrame()
-// {
-//     if(noWindow)
-//         return;
-//
-//     // u16 start_addr = 0;
-//     // if((STAT & 0x10) == 0x10)
-//     // {
-//     //     start_addr = 0x800;
-//     // }
-//     //
-//     // for(int i = 0; i < 8; i++)
-//     // {
-//     //     for(int j = 0; j < 8; j++)
-//     //     {
-//     //         fmt::print("{:x} ", vramRead(start_addr + 0x10 * 0x2f));
-//     //     }
-//     //     fmt::print("\n");
-//     // }
-//     //
-//     // unsigned int sum = 0;
-//     // for(unsigned int i = 0; i < vram.size; i++)
-//     // {
-//     //     u8 data = vramRead(i);
-//     //     sum += data;
-//     //     if(data > 0)
-//     //     {
-//     //         fmt::print("FOUND VRAM DATA AT: VRAM[{:#x}] = {:#x}\n", i, data);
-//     //     }
-//     // }
-//     //
-//     // fmt::print("VRAM sum: {:#x}\n", sum);
-//     // fmt::print("---------------------------\n");
-//
-//
-//     SDL_UpdateWindowSurface(this->window);
-// }
+/**
+ * Transforms a pixel coordinate to a tile coordinate and then calculate the tile index in memory.
+ * The transformation will make sure that the pixel can be divided by 8 bits by removing bits 0-2.
+ */
+constexpr u8 getTileIdx(u8 x, u8 y)
+{
+    return ((x & 0xf8) / 0x8) + 32 * ((y & 0xf8) / 0x8);
+}
+
+
+void GraphicsController::processScanline()
+{
+    int xPixel = 0;
+    int yPixel = LY;
+    int tileIdx;
+    int chrCode;
+    u16 tileMapBaseAddr = TILE_MAP_DATA1;
+    if(this->LCDC & 0x8)
+        tileMapBaseAddr = TILE_MAP_DATA2;
+    u16 bgBaseAddr = TILE_BASE_DATA_SELECT2;
+    if(this->LCDC & 0x10)
+        bgBaseAddr = TILE_BASE_DATA_SELECT1;
+
+    u8 pixelShade = 0;
+
+    for(int i = 0; i < SCREEN_WIDTH; i++)
+    {
+        /* Calculate the tile idx and fetch the content of the tile. */
+        // tileIdx = getTileIdx(xPixel, yPixel);
+        tileIdx = 0;
+        // chrCode = this->vramRead(tileMapBaseAddr + tileIdx);
+        chrCode = tileIdx;
+        // fmt::print("tileIdx: {}, chrCode: {:#x}\n", tileIdx, chrCode);
+
+        /* Fetch the pixel shade; */
+        int xBlock = xPixel % 8;
+        int yBlock = yPixel % 8;
+        u8 low = this->vramRead(bgBaseAddr + (chrCode * 16) + (yBlock * 2));
+        u8 high = this->vramRead(bgBaseAddr + (chrCode * 16) + (yBlock * 2) + 1);
+        pixelShade = ((low >> xBlock) & 0x1) | (((high >> xBlock) & 0x1) << 1);
+        assert(pixelShade < 4);
+        // fmt::print("shade: {:#x}\n", pixelShade);
+
+        u8 color = 0;
+        switch (pixelShade) {
+            case 0:
+                color = 255;
+                break;
+            case 1:
+                color = 170;
+                break;
+            case 2:
+                color = 85;
+                break;
+            case 3:
+                color = 0;
+                break;
+        }
+
+        // this->display->updatePixel(xPixel, yPixel, 0xaa, 0x0, 0x00, 0xff);
+        this->display->updatePixel(i, LY, color, color, color, 0xff);
+        xPixel = (xPixel + 1) % 256;
+    }
+
+
+    // int xPixel = 0 + SCX;
+    // int yPixel = (LY + SCY) % 256;
+    // int tileIdx;
+    // int chrCode;
+    // u16 tileMapBaseAddr = TILE_MAP_DATA1;
+    // if(this->LCDC & 0x8)
+    //     tileMapBaseAddr = TILE_MAP_DATA2;
+    // u16 bgBaseAddr = TILE_BASE_DATA_SELECT2;
+    // if(this->LCDC & 0x10)
+    //     bgBaseAddr = TILE_BASE_DATA_SELECT1;
+    //
+    // u8 pixelShade = 0;
+    //
+    // fmt::print("SCX: {:#x}, SCY: {:#x}\n", SCX, SCY);
+    //
+    // for(int i = 0; i < SCREEN_WIDTH; i++)
+    // {
+    //     /* Calculate the tile idx and fetch the content of the tile. */
+    //     tileIdx = getTileIdx(xPixel, yPixel);
+    //     chrCode = this->vramRead(tileMapBaseAddr + tileIdx);
+    //     // fmt::print("tileIdx: {}, chrCode: {:#x}\n", tileIdx, chrCode);
+    //
+    //     /* Fetch the pixel shade; */
+    //     int xBlock = xPixel % 8;
+    //     int yBlock = yPixel % 8;
+    //     u8 low = this->vramRead(bgBaseAddr + (chrCode * 16) + (yBlock * 2));
+    //     u8 high = this->vramRead(bgBaseAddr + (chrCode * 16) + (yBlock * 2) + 1);
+    //     pixelShade = ((low >> xBlock) & 0x1) | (((high >> xBlock) & 0x1) << 1);
+    //     // fmt::print("shade: {:#x}\n", pixelShade);
+    //
+    //     u8 color = 0;
+    //     switch (pixelShade) {
+    //         case 0:
+    //             color = 0;
+    //             break;
+    //         case 1:
+    //             color = 85;
+    //             break;
+    //         case 2:
+    //             color = 170;
+    //             break;
+    //         case 3:
+    //             color = 255;
+    //             break;
+    //     }
+    //
+    //     // this->display->updatePixel(xPixel, yPixel, 0xaa, 0x0, 0x00, 0xff);
+    //     this->display->updatePixel(i, LY, color, color, color, 0xff);
+    //     xPixel = (xPixel + 1) % 256;
+    // }
+}
 
 
 /**
@@ -223,13 +302,9 @@ void GraphicsController::setCurrentMode(u8 newMode)
 void GraphicsController::updateMatchFlag()
 {
     if(LY == LYC)
-    {
         STAT |= 0x4;
-    }
     else
-    {
         STAT &= ~0x4;
-    }
 }
 
 
@@ -244,7 +319,6 @@ u8 GraphicsController::vramRead(u16 address)
 void GraphicsController::vramWrite(u16 address, u8 data)
 {
     assert(address < vram.size);
-
     vram.mem[address] = data;
 }
 

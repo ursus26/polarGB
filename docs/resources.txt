@@ -1,6 +1,6 @@
 # List of resources that I use in my project.
 - Gameboy manual:   https://ia801906.us.archive.org/19/items/GameBoyProgManVer1.1/GameBoyProgManVer1.1.pdf
-- Pan Docs:         http://gbdev.gg8.se/wiki/articles/Pan_Docs
+- Pan Docs:         https://gbdev.io/pandocs/
 - Opcode table:     https://gbdev.github.io/gb-opcodes/optables/
 - Memory map:       http://gameboy.mongenel.com/dmg/asmmemmap.html
 - More information: https://github.com/gbdev/awesome-gbdev

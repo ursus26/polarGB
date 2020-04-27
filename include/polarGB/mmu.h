@@ -80,11 +80,11 @@ public:
 
 private:
     Cartridge rom;  /* Game cartridge */
-    Ram ERAM;       /* External RAM */
-    Ram WRAM;       /* Working RAM */
-    Ram OAM;
-    Ram HardwareRegisters;
-    Ram HRAM;       /* High Ram / CPU working RAM */
+    ram_t ERAM;       /* External RAM */
+    ram_t WRAM;       /* Working RAM */
+    ram_t OAM;
+    ram_t HardwareRegisters;
+    ram_t HRAM;       /* High Ram / CPU working RAM */
 
     GraphicsController* graphicsController;
 
