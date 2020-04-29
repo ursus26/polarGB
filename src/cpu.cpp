@@ -319,6 +319,23 @@ void Cpu::executeLD16(instruction_t* instr)
 }
 
 
+void Cpu::executeLDHL(instruction_t* instr)
+{
+        i8 src = (i8) loadOperand8bits(&instr->operandSrc);
+        u16 sp = reg.getStackPointer();
+        u32 result = sp + src;
+        storeOperand16bits(&instr->operandDst, result & 0xffff);
+
+        /* Set or reset the flags. */
+        reg.setFlagZero(false);
+        reg.setFlagSub(false);
+        reg.setFlagCarry(result > 0xffff);
+        reg.setFlagHalfCarry((sp & 0xfff) + (src & 0xfff) > 0xfff);
+
+        this->cyclesCompleted += instr->cycleCost;
+}
+
+
 void Cpu::executeJP(instruction_t* instr)
 {
     bool zero = reg.getFlagZero();
@@ -440,9 +457,6 @@ void Cpu::executeRET(instruction_t* instr)
     {
         instr->cycleCost = 2;
     }
-
-
-
 }
 
 
@@ -821,6 +835,83 @@ void Cpu::executeRES(instruction_t* instr)
 }
 
 
+/**
+ * Execute RR with register A and set the zero flag to false.
+ */
+void Cpu::executeRRA(instruction_t* instr)
+{
+    this->executeRR(instr);
+    reg.setFlagZero(false);
+}
+
+
+/**
+ * Shifts the byte to the right. Note: Bit 0 goes to the carry flag and the carry flag to bit 7.
+ */
+void Cpu::executeRR(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    u8 carry = ((u8) reg.getFlagCarry()) << 7;
+    u8 result = (src >> 1) | carry;
+    storeOperand8bits(&instr->operandDst, result);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry((src & 0x1) == 0x1);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Execite RLC with register A and set the zero flag to false.
+ */
+void Cpu::executeRLCA(instruction_t* instr)
+{
+    this->executeRLC(instr);
+    reg.setFlagZero(false);
+}
+
+
+/**
+ * Shifts the byte to the left. Note: Bit 7 goes to both the carry flag and bit 0.
+ */
+void Cpu::executeRLC(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    u8 result = (src << 1) | (src >> 7);
+    storeOperand8bits(&instr->operandDst, result);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry((src & 0x80) == 0x80);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Execite SRA on a byte. It shifts the contents 1 bit to the right. Bit 7 goes to itself and
+ * bit 6 and bit 0 goes to the carry flag.
+ */
+void Cpu::executeSRL(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    bool carry = (src & 0x1) == 0x1;
+    u8 result = src >> 1;
+    storeOperand8bits(&instr->operandDst, result);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry(carry);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
 
 
 
@@ -892,39 +983,6 @@ void Cpu::executeRES(instruction_t* instr)
 //
 //
 // /**
-//  * Shifts the byte to the right. Note: Bit 0 goes to the carry flag and the carry flag to bit 7.
-//  */
-// u8 Cpu::executeRR(u8 src)
-// {
-//     u8 carry = ((u8) reg.getFlagCarry()) << 7;
-//     u8 result = (src >> 1) | carry;
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry((src & 0x1) == 0x1);
-//
-//     return result;
-// }
-//
-//
-// /**
-//  * Shifts the byte to the left. Note: Bit 7 goes to both the carry flag and bit 0.
-//  */
-// u8 Cpu::executeRLC(u8 src)
-// {
-//     u8 result = (src << 1) | (src >> 7);
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry((src & 0x80) == 0x80);
-//
-//     return result;
-// }
-//
-//
-// /**
 //  * Shifts the byte to the right. Note: Bit 0 goes to both the carry flag and bit 7.
 //  */
 // u8 Cpu::executeRRC(u8 src)
@@ -947,30 +1005,6 @@ void Cpu::executeRES(instruction_t* instr)
 // {
 //     u8 src = reg.read8(RegID_A);
 //     u8 result = executeRL(src);
-//     reg.write8(RegID_A, result);
-//     reg.setFlagZero(false);
-// }
-//
-//
-// /**
-//  * Execite RR with register A and set the zero flag to false.
-//  */
-// void Cpu::executeRRA()
-// {
-//     u8 src = reg.read8(RegID_A);
-//     u8 result = executeRR(src);
-//     reg.write8(RegID_A, result);
-//     reg.setFlagZero(false);
-// }
-//
-//
-// /**
-//  * Execite RLC with register A and set the zero flag to false.
-//  */
-// void Cpu::executeRLCA()
-// {
-//     u8 src = reg.read8(RegID_A);
-//     u8 result = executeRLC(src);
 //     reg.write8(RegID_A, result);
 //     reg.setFlagZero(false);
 // }
@@ -1014,24 +1048,6 @@ void Cpu::executeRES(instruction_t* instr)
 // {
 //     bool carry = (src & 0x1) == 0x1;
 //     u8 result = (src & 0x80) | (src >> 1);
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry(carry);
-//
-//     return result;
-// }
-//
-//
-// /**
-//  * Execite SRA on a byte. It shifts the contents 1 bit to the right. Bit 7 goes to itself and
-//  * bit 6 and bit 0 goes to the carry flag.
-//  */
-// u8 Cpu::executeSRL(u8 src)
-// {
-//     bool carry = (src & 0x1) == 0x1;
-//     u8 result = src >> 1;;
 //
 //     reg.setFlagZero(result == 0);
 //     reg.setFlagSub(false);

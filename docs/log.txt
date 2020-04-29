@@ -4,6 +4,8 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2020-04-29: - Added a few more rotation instructions.
+2020-04-27: - Started testing Blargg test roms. So far I found 2 bugs and added more instructions.
 2020-04-26: - Added getting pixel information from vram and update it to display. This gives some
               visual information however the screen flickers a lot and it seems that the screen is
               repeating itself after a couple of scanlines.

@@ -128,6 +128,7 @@ private:
 
     /* 16-bit load instructions */
     void executeLD16(instruction_t* instr);
+    void executeLDHL(instruction_t* instr);
 
     /* Jump/call instructions */
     void executeJP(instruction_t* instr);
@@ -161,6 +162,11 @@ private:
     /* 8-bit shift, rotate and bit instructions */
     void executeSWAP(instruction_t* instr);
     void executeRES(instruction_t* instr);
+    void executeRRA(instruction_t* instr);
+    void executeRR(instruction_t* instr);
+    void executeRLCA(instruction_t* instr);
+    void executeRLC(instruction_t* instr);
+    void executeSRL(instruction_t* instr);
 
     /* Stack functions */
     void executePUSH(instruction_t* instr);
@@ -172,28 +178,16 @@ private:
     /**
      * OUTDATED instruction functions
      */
-
-    // /* Execute the extended instruction set. */
-    // int executeCB();
-    //
-    // void executeADD16(RegID dest, int val);
-    //
+     
     // /* 	8 bit rotations/shifts and bit instructions */
     // u8 executeSET(u8 src, int bitNumber);
-    // u8 executeRES(u8 src, int bitNumber);
     // void executeBIT(u8 src, int bitNumber);
-    // u8 executeSWAP(u8 src);
     // void executeRLA();
-    // void executeRRA();
     // u8 executeRL(u8 src);
-    // u8 executeRR(u8 src);
-    // void executeRLCA();
     // void executeRRCA();
-    // u8 executeRLC(u8 src);
     // u8 executeRRC(u8 src);
     // u8 executeSLA(u8 src);
     // u8 executeSRA(u8 src);
-    // u8 executeSRL(u8 src);
 };
 
 #endif /* CPU_H */
