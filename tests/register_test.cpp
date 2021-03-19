@@ -60,9 +60,10 @@ TEST(RegisterTest, WriteAndRead16bits)
 
     /* Register AF */
     u16 testNumber = 0x561c;
+    u16 expectedOutput = testNumber & 0xfff0; /* bits 0-4 are always zero for the flag register. */
     reg.writeDouble(RegID_AF, testNumber);
-    EXPECT_EQ(reg.readDouble(RegID_AF), testNumber);
-    EXPECT_EQ(reg.readSingle(RegID_A), (testNumber >> 8) & 0xff);
+    EXPECT_EQ(reg.readDouble(RegID_AF), expectedOutput);
+    EXPECT_EQ(reg.readSingle(RegID_A), (expectedOutput >> 8) & 0xff);
 
     /* Register BC */
     testNumber = 0xc074;

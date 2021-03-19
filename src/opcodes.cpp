@@ -120,15 +120,16 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeRLCA;
             strcpy(instr->mnemonic, "RLCA");
             break;
-        // case 0x8: /* LD a16, SP */
-        //     Log::printVerbose("LD (a16), SP");
-        //     src16 = reg.getStackPointer();
-        //     dest = fetchNext16Bits();
-        //     mmu->write(dest, (u8) (src16 & 0xff));
-        //     dest++;
-        //     mmu->write(dest, (u8) (src16 >> 8));
-        //     cycles = 5;
-        //     break;
+        case 0x8: /* LD (a16), SP */
+            instr->instructionLength = 3;
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_SP;
+            instr->operandDst.type = OP_IMM_PTR;
+            instr->operandDst.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->cycleCost = 5;
+            instr->executionFunction = &Cpu::executeLD16;
+            strcpy(instr->mnemonic, "LD (a16), SP");
+            break;
         case 0x9: /* ADD HL, BC */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_REG;
@@ -189,12 +190,17 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD C, d8");
             break;
-        // case 0xF: /* RRCA */
-        //     Log::printVerbose("RRCA");
-        //     executeRRCA();
-        //     cycles = 1;
-        //     break;
-        // case 0x10:
+        case 0xF: /* RRCA */
+            instr->instructionLength = 1;
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->cycleCost = 1;
+            instr->executionFunction = &Cpu::executeRRCA;
+            strcpy(instr->mnemonic, "RRCA");
+            break;
+        // case 0x10: /* STOP */
             // break;
         case 0x11: /* LD DE, d16 */
             instr->instructionLength = 3;
@@ -256,11 +262,16 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD D, d8");
             break;
-        // case 0x17: /* RLA */
-        //     Log::printVerbose("RLA");
-        //     executeRLA();
-        //     cycles = 1;
-        //     break;
+        case 0x17: /* RLA */
+            instr->instructionLength = 1;
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->cycleCost = 1;
+            instr->executionFunction = &Cpu::executeRLA;
+            strcpy(instr->mnemonic, "RLA");
+            break;
         case 0x18: /* JR r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
@@ -413,8 +424,16 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD H, d8");
             break;
-        // case 0x27:
-        //     break;
+        case 0x27: /* DAA */
+            instr->instructionLength = 1;
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->cycleCost = 1;
+            instr->executionFunction = &Cpu::executeDAA;
+            strcpy(instr->mnemonic, "DAA");
+            break;
         case 0x28: /* JR Z, r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
@@ -567,11 +586,12 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD (HL), d8");
             break;
-        // case 0x37: /* SCF */
-        //     Log::printVerbose("SCF");
-        //     reg.setFlagCarry(true);
-        //     cycles = 1;
-        //     break;
+        case 0x37: /* SCF */
+            instr->instructionLength = 1;
+            instr->cycleCost = 1;
+            instr->executionFunction = &Cpu::executeSCF;
+            strcpy(instr->mnemonic, "SCF");
+            break;
         case 0x38: /* JR C, r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
@@ -643,11 +663,12 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD A, d8");
             break;
-        // case 0x3F: /* CCF */
-        //     Log::printVerbose("CCF");
-        //     reg.setFlagCarry(reg.getFlagCarry() ^ 0x1);
-        //     cycles = 1;
-        //     break;
+        case 0x3F: /* CCF */
+            instr->instructionLength = 1;
+            instr->cycleCost = 1;
+            instr->executionFunction = &Cpu::executeCCF;
+            strcpy(instr->mnemonic, "CCF");
+            break;
         case 0x40: /* LD B, B */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_REG;
@@ -2057,7 +2078,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->extraInfo = COND_C;
             strcpy(instr->mnemonic, "RET C");
             break;
-        case 0xD9:
+        case 0xD9: /* RETI */
             instr->instructionLength = 1;
             instr->cycleCost = 4;
             instr->executionFunction = &Cpu::executeRET;
@@ -2173,12 +2194,16 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeCALL;
             strcpy(instr->mnemonic, "RST 0x20");
             break;
-        // case 0xE8: /* ADD SP, r8 */
-        //     Log::printVerbose("ADD SP, r8");
-        //     r8 = (i8) fetchNextInstruction();
-        //     executeADD16(RegID_HL, r8);
-        //     cycles = 2;
-        //     break;
+        case 0xE8: /* ADD SP, e */
+            instr->instructionLength = 2;
+            instr->operandSrc.type = OP_IMM;
+            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_SP;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeADD16SPe;
+            strcpy(instr->mnemonic, "ADD SP, e");
+            break;
         case 0xE9: /* JP (HL) */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_REG;
@@ -2436,118 +2461,136 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->executionFunction = &Cpu::executeRLC;
             strcpy(instr->mnemonic, "RLC A");
             break;
-//         case 0x8: /* RRC B */
-//             Log::printVerbose("RRC B");
-//             src = reg.read8(RegID_B);
-//             result = executeRRC(src);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0x9: /* RRC C */
-//             Log::printVerbose("RRC C");
-//             src = reg.read8(RegID_C);
-//             result = executeRRC(src);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xA: /* RRC D */
-//             Log::printVerbose("RRC D");
-//             src = reg.read8(RegID_D);
-//             result = executeRRC(src);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xB: /* RRC E */
-//             Log::printVerbose("RRC E");
-//             src = reg.read8(RegID_E);
-//             result = executeRRC(src);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0xC: /* RRC H */
-//             Log::printVerbose("RRC H");
-//             src = reg.read8(RegID_H);
-//             result = executeRRC(src);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xD: /* RRC L */
-//             Log::printVerbose("RRC L");
-//             src = reg.read8(RegID_L);
-//             result = executeRRC(src);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xE: /* RRC (HL) */
-//             Log::printVerbose("RRC (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeRRC(src);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xF: /* RRC A */
-//             Log::printVerbose("RRC A");
-//             src = reg.read8(RegID_A);
-//             result = executeRRC(src);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0x10: /* RL B */
-//             Log::printVerbose("RL B");
-//             src = reg.read8(RegID_B);
-//             result = executeRL(src);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0x11: /* RL C */
-//             Log::printVerbose("RL C");
-//             src = reg.read8(RegID_C);
-//             result = executeRL(src);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0x12: /* RL D */
-//             Log::printVerbose("RL D");
-//             src = reg.read8(RegID_D);
-//             result = executeRL(src);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0x13: /* RL E */
-//             Log::printVerbose("RL E");
-//             src = reg.read8(RegID_E);
-//             result = executeRL(src);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0x14: /* RL H */
-//             Log::printVerbose("RL H");
-//             src = reg.read8(RegID_H);
-//             result = executeRL(src);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0x15: /* RL L */
-//             Log::printVerbose("RL L");
-//             src = reg.read8(RegID_L);
-//             result = executeRL(src);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0x16: /* RL (HL) */
-//             Log::printVerbose("RL (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeRL(src);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0x17: /* RL A */
-//             Log::printVerbose("RL A");
-//             src = reg.read8(RegID_A);
-//             result = executeRL(src);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
+        case 0x8: /* RRC B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->executionFunction = &Cpu::executeRRC;
+            strcpy(instr->mnemonic, "RRC B");
+            break;
+        case 0x9: /* RRC C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->executionFunction = &Cpu::executeRRC;
+            strcpy(instr->mnemonic, "RRC C");
+            break;
+        case 0xA: /* RRC D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->executionFunction = &Cpu::executeRRC;
+            strcpy(instr->mnemonic, "RRC D");
+            break;
+        case 0xB: /* RRC E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->executionFunction = &Cpu::executeRRC;
+            strcpy(instr->mnemonic, "RRC E");
+            break;
+        case 0xC: /* RRC H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->executionFunction = &Cpu::executeRRC;
+            strcpy(instr->mnemonic, "RRC H");
+            break;
+        case 0xD: /* RRC L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->executionFunction = &Cpu::executeRRC;
+            strcpy(instr->mnemonic, "RRC L");
+            break;
+        case 0xE: /* RRC (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeRRC;
+            strcpy(instr->mnemonic, "RRC (HL)");
+            break;
+        case 0xF: /* RRC A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->executionFunction = &Cpu::executeRRC;
+            strcpy(instr->mnemonic, "RRC A");
+            break;
+        case 0x10: /* RL B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->executionFunction = &Cpu::executeRL;
+            strcpy(instr->mnemonic, "RL B");
+            break;
+        case 0x11: /* RL C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->executionFunction = &Cpu::executeRL;
+            strcpy(instr->mnemonic, "RL C");
+            break;
+        case 0x12: /* RL D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->executionFunction = &Cpu::executeRL;
+            strcpy(instr->mnemonic, "RL D");
+            break;
+        case 0x13: /* RL E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->executionFunction = &Cpu::executeRL;
+            strcpy(instr->mnemonic, "RL E");
+            break;
+        case 0x14: /* RL H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->executionFunction = &Cpu::executeRL;
+            strcpy(instr->mnemonic, "RL H");
+            break;
+        case 0x15: /* RL L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->executionFunction = &Cpu::executeRL;
+            strcpy(instr->mnemonic, "RL L");
+            break;
+        case 0x16: /* RL (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeRL;
+            strcpy(instr->mnemonic, "RL (HL)");
+            break;
+        case 0x17: /* RL A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->executionFunction = &Cpu::executeRL;
+            strcpy(instr->mnemonic, "RL A");
+            break;
         case 0x18: /* RR B */
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_B;
@@ -2613,118 +2656,136 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->executionFunction = &Cpu::executeRR;
             strcpy(instr->mnemonic, "RR A");
             break;
-//         case 0x20: /* SLA B */
-//             Log::printVerbose("SLA B");
-//             src = reg.read8(RegID_B);
-//             result = executeSLA(src);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0x21: /* SLA C */
-//             Log::printVerbose("SLA C");
-//             src = reg.read8(RegID_C);
-//             result = executeSLA(src);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0x22: /* SLA D */
-//             Log::printVerbose("SLA D");
-//             src = reg.read8(RegID_D);
-//             result = executeSLA(src);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0x23: /* SLA E */
-//             Log::printVerbose("SLA E");
-//             src = reg.read8(RegID_E);
-//             result = executeSLA(src);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0x24: /* SLA H */
-//             Log::printVerbose("SLA H");
-//             src = reg.read8(RegID_H);
-//             result = executeSLA(src);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0x25: /* SLA L */
-//             Log::printVerbose("SLA L");
-//             src = reg.read8(RegID_L);
-//             result = executeSLA(src);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0x26: /* SLA (HL) */
-//             Log::printVerbose("SLA (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSLA(src);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0x27: /* SLA A */
-//             Log::printVerbose("SLA A");
-//             src = reg.read8(RegID_A);
-//             result = executeSLA(src);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0x28: /* SRA B */
-//             Log::printVerbose("SRA B");
-//             src = reg.read8(RegID_B);
-//             result = executeSRA(src);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0x29: /* SRA C */
-//             Log::printVerbose("SRA C");
-//             src = reg.read8(RegID_C);
-//             result = executeSRA(src);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0x2A: /* SRA D */
-//             Log::printVerbose("SRA D");
-//             src = reg.read8(RegID_D);
-//             result = executeSRA(src);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0x2B: /* SRA E */
-//             Log::printVerbose("SRA E");
-//             src = reg.read8(RegID_E);
-//             result = executeSRA(src);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0x2C: /* SRA H */
-//             Log::printVerbose("SRA H");
-//             src = reg.read8(RegID_H);
-//             result = executeSRA(src);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0x2D: /* SRA L */
-//             Log::printVerbose("SRA L");
-//             src = reg.read8(RegID_L);
-//             result = executeSRA(src);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0x2E: /* SRA (HL) */
-//             Log::printVerbose("SRA (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSRA(src);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0x2F: /* SRA A */
-//             Log::printVerbose("SRA A");
-//             src = reg.read8(RegID_A);
-//             result = executeSRA(src);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
+        case 0x20: /* SLA B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->executionFunction = &Cpu::executeSLA;
+            strcpy(instr->mnemonic, "SLA B");
+            break;
+        case 0x21: /* SLA C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->executionFunction = &Cpu::executeSLA;
+            strcpy(instr->mnemonic, "SLA C");
+            break;
+        case 0x22: /* SLA D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->executionFunction = &Cpu::executeSLA;
+            strcpy(instr->mnemonic, "SLA D");
+            break;
+        case 0x23: /* SLA E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->executionFunction = &Cpu::executeSLA;
+            strcpy(instr->mnemonic, "SLA E");
+            break;
+        case 0x24: /* SLA H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->executionFunction = &Cpu::executeSLA;
+            strcpy(instr->mnemonic, "SLA H");
+            break;
+        case 0x25: /* SLA L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->executionFunction = &Cpu::executeSLA;
+            strcpy(instr->mnemonic, "SLA L");
+            break;
+        case 0x26: /* SLA (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSLA;
+            strcpy(instr->mnemonic, "SLA (HL)");
+            break;
+        case 0x27: /* SLA A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->executionFunction = &Cpu::executeSLA;
+            strcpy(instr->mnemonic, "SLA A");
+            break;
+        case 0x28: /* SRA B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->executionFunction = &Cpu::executeSRA;
+            strcpy(instr->mnemonic, "SRA B");
+            break;
+        case 0x29: /* SRA C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->executionFunction = &Cpu::executeSRA;
+            strcpy(instr->mnemonic, "SRA C");
+            break;
+        case 0x2A: /* SRA D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->executionFunction = &Cpu::executeSRA;
+            strcpy(instr->mnemonic, "SRA D");
+            break;
+        case 0x2B: /* SRA E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->executionFunction = &Cpu::executeSRA;
+            strcpy(instr->mnemonic, "SRA E");
+            break;
+        case 0x2C: /* SRA H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->executionFunction = &Cpu::executeSRA;
+            strcpy(instr->mnemonic, "SRA H");
+            break;
+        case 0x2D: /* SRA L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->executionFunction = &Cpu::executeSRA;
+            strcpy(instr->mnemonic, "SRA L");
+            break;
+        case 0x2E: /* SRA (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSRA;
+            strcpy(instr->mnemonic, "SRA (HL)");
+            break;
+        case 0x2F: /* SRA A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->executionFunction = &Cpu::executeSRA;
+            strcpy(instr->mnemonic, "SRA A");
+            break;
         case 0x30: /* SWAP B */
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_B;
@@ -2855,390 +2916,462 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->executionFunction = &Cpu::executeSRL;
             strcpy(instr->mnemonic, "SRL A");
             break;
-//         case 0x40: /* BIT 0, B */
-//             Log::printVerbose("BIT 0, B");
-//             src = reg.read8(RegID_B);
-//             executeBIT(src, 0);
-//             cycles = 2;
-//             break;
-//         case 0x41: /* BIT 0, C */
-//             Log::printVerbose("BIT 0, C");
-//             src = reg.read8(RegID_C);
-//             executeBIT(src, 0);
-//             cycles = 2;
-//             break;
-//         case 0x42: /* BIT 0, D */
-//             Log::printVerbose("BIT 0, D");
-//             src = reg.read8(RegID_D);
-//             executeBIT(src, 0);
-//             cycles = 2;
-//             break;
-//         case 0x43: /* BIT 0, E */
-//             Log::printVerbose("BIT 0, E");
-//             src = reg.read8(RegID_E);
-//             executeBIT(src, 0);
-//             cycles = 2;
-//             break;
-//         case 0x44: /* BIT 0, H */
-//             Log::printVerbose("BIT 0, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 0);
-//             cycles = 2;
-//             break;
-//         case 0x45: /* BIT 0, L */
-//             Log::printVerbose("BIT 0, L");
-//             src = reg.read8(RegID_L);
-//             executeBIT(src, 0);
-//             cycles = 2;
-//             break;
-//         case 0x46: /* BIT 0, (HL) */
-//             Log::printVerbose("BIT 0, (HL)");
-//             src = readMem(RegID_HL);
-//             executeBIT(src, 0);
-//             cycles = 4;
-//             break;
-//         case 0x47: /* BIT 0, A */
-//             Log::printVerbose("BIT 0, A");
-//             src = reg.read8(RegID_A);
-//             executeBIT(src, 0);
-//             cycles = 2;
-//             break;
-//         case 0x48: /* BIT 1, B */
-//             Log::printVerbose("BIT 1, B");
-//             src = reg.read8(RegID_B);
-//             executeBIT(src, 1);
-//             cycles = 2;
-//             break;
-//         case 0x49: /* BIT 1, C */
-//             Log::printVerbose("BIT 1, C");
-//             src = reg.read8(RegID_C);
-//             executeBIT(src, 1);
-//             cycles = 2;
-//             break;
-//         case 0x4A: /* BIT 1, D */
-//             Log::printVerbose("BIT 1, D");
-//             src = reg.read8(RegID_D);
-//             executeBIT(src, 1);
-//             cycles = 2;
-//             break;
-//         case 0x4B: /* BIT 1, E */
-//             Log::printVerbose("BIT 1, E");
-//             src = reg.read8(RegID_E);
-//             executeBIT(src, 1);
-//             cycles = 2;
-//             break;
-//         case 0x4C: /* BIT 1, H */
-//             Log::printVerbose("BIT 1, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 1);
-//             cycles = 2;
-//             break;
-//         case 0x4D: /* BIT 1, L */
-//             Log::printVerbose("BIT 1, L");
-//             src = reg.read8(RegID_L);
-//             executeBIT(src, 1);
-//             cycles = 2;
-//             break;
-//         case 0x4E: /* BIT 1 (HL) */
-//             Log::printVerbose("BIT 1, (HL)");
-//             src = readMem(RegID_HL);
-//             executeBIT(src, 1);
-//             cycles = 4;
-//             break;
-//         case 0x4F: /* BIT 1, A */
-//             Log::printVerbose("BIT 1, A");
-//             src = reg.read8(RegID_A);
-//             executeBIT(src, 1);
-//             cycles = 2;
-//             break;
-//         case 0x50: /* BIT 2, B */
-//             Log::printVerbose("BIT 2, B");
-//             src = reg.read8(RegID_B);
-//             executeBIT(src, 2);
-//             cycles = 2;
-//             break;
-//         case 0x51: /* BIT 2, C */
-//             Log::printVerbose("BIT 2, C");
-//             src = reg.read8(RegID_C);
-//             executeBIT(src, 2);
-//             cycles = 2;
-//             break;
-//         case 0x52: /* BIT 2, D */
-//             Log::printVerbose("BIT 2, D");
-//             src = reg.read8(RegID_D);
-//             executeBIT(src, 2);
-//             cycles = 2;
-//             break;
-//         case 0x53: /* BIT 2, E */
-//             Log::printVerbose("BIT 2, E");
-//             src = reg.read8(RegID_E);
-//             executeBIT(src, 2);
-//             cycles = 2;
-//             break;
-//         case 0x54: /* BIT 2, H */
-//             Log::printVerbose("BIT 2, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 2);
-//             cycles = 2;
-//             break;
-//         case 0x55: /* BIT 2, L */
-//             Log::printVerbose("BIT 2, L");
-//             src = reg.read8(RegID_L);
-//             executeBIT(src, 2);
-//             cycles = 2;
-//             break;
-//         case 0x56: /* BIT 2, (HL) */
-//             Log::printVerbose("BIT 2, (HL)");
-//             src = readMem(RegID_HL);
-//             executeBIT(src, 2);
-//             cycles = 4;
-//             break;
-//         case 0x57: /* BIT 2, A */
-//             Log::printVerbose("BIT 2, A");
-//             src = reg.read8(RegID_A);
-//             executeBIT(src, 2);
-//             cycles = 2;
-//             break;
-//         case 0x58: /* BIT 3, B */
-//             Log::printVerbose("BIT 3, B");
-//             src = reg.read8(RegID_B);
-//             executeBIT(src, 3);
-//             cycles = 2;
-//             break;
-//         case 0x59: /* BIT 3, C */
-//             Log::printVerbose("BIT 3, C");
-//             src = reg.read8(RegID_C);
-//             executeBIT(src, 3);
-//             cycles = 2;
-//             break;
-//         case 0x5A: /* BIT 3, D */
-//             Log::printVerbose("BIT 3, D");
-//             src = reg.read8(RegID_D);
-//             executeBIT(src, 3);
-//             cycles = 2;
-//             break;
-//         case 0x5B: /* BIT 3, E */
-//             Log::printVerbose("BIT 3, E");
-//             src = reg.read8(RegID_E);
-//             executeBIT(src, 3);
-//             cycles = 2;
-//             break;
-//         case 0x5C: /* BIT 3, H */
-//             Log::printVerbose("BIT 3, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 3);
-//             cycles = 2;
-//             break;
-//         case 0x5D: /* BIT 3, L */
-//             Log::printVerbose("BIT 3, L");
-//             src = reg.read8(RegID_L);
-//             executeBIT(src, 3);
-//             cycles = 2;
-//             break;
-//         case 0x5E: /* BIT 3, (HL) */
-//             Log::printVerbose("BIT 3, (HL)");
-//             src = readMem(RegID_HL);
-//             executeBIT(src, 3);
-//             cycles = 4;
-//             break;
-//         case 0x5F: /* BIT 3, A */
-//             Log::printVerbose("BIT 3, A");
-//             src = reg.read8(RegID_A);
-//             executeBIT(src, 3);
-//             cycles = 2;
-//             break;
-//         case 0x60: /* BIT 4, B */
-//             Log::printVerbose("BIT 4, B");
-//             src = reg.read8(RegID_B);
-//             executeBIT(src, 4);
-//             cycles = 2;
-//             break;
-//         case 0x61: /* BIT 4, C */
-//             Log::printVerbose("BIT 4, C");
-//             src = reg.read8(RegID_C);
-//             executeBIT(src, 4);
-//             cycles = 2;
-//             break;
-//         case 0x62: /* BIT 4, D */
-//             Log::printVerbose("BIT 4, D");
-//             src = reg.read8(RegID_D);
-//             executeBIT(src, 4);
-//             cycles = 2;
-//             break;
-//         case 0x63: /* BIT 4, E */
-//             Log::printVerbose("BIT 4, E");
-//             src = reg.read8(RegID_E);
-//             executeBIT(src, 4);
-//             cycles = 2;
-//             break;
-//         case 0x64: /* BIT 4, H */
-//             Log::printVerbose("BIT 4, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 4);
-//             cycles = 2;
-//             break;
-//         case 0x65: /* BIT 4, L */
-//             Log::printVerbose("BIT 4, L");
-//             src = reg.read8(RegID_L);
-//             executeBIT(src, 4);
-//             cycles = 2;
-//             break;
-//         case 0x66: /* BIT 4, (HL) */
-//             Log::printVerbose("BIT 4, (HL)");
-//             src = readMem(RegID_HL);
-//             executeBIT(src, 4);
-//             cycles = 4;
-//             break;
-//         case 0x67: /* BIT 4, A */
-//             Log::printVerbose("BIT 4, A");
-//             src = reg.read8(RegID_A);
-//             executeBIT(src, 4);
-//             cycles = 2;
-//             break;
-//         case 0x68: /* BIT 5, B */
-//             Log::printVerbose("BIT 5, B");
-//             src = reg.read8(RegID_B);
-//             executeBIT(src, 5);
-//             cycles = 2;
-//             break;
-//         case 0x69: /* BIT 5, C */
-//             Log::printVerbose("BIT 5, C");
-//             src = reg.read8(RegID_C);
-//             executeBIT(src, 5);
-//             cycles = 2;
-//             break;
-//         case 0x6A: /* BIT 5, D */
-//             Log::printVerbose("BIT 5, D");
-//             src = reg.read8(RegID_D);
-//             executeBIT(src, 5);
-//             cycles = 2;
-//             break;
-//         case 0x6B: /* BIT 5, E */
-//             Log::printVerbose("BIT 5, E");
-//             src = reg.read8(RegID_E);
-//             executeBIT(src, 5);
-//             cycles = 2;
-//             break;
-//         case 0x6C: /* BIT 5, H */
-//             Log::printVerbose("BIT 5, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 5);
-//             cycles = 2;
-//             break;
-//         case 0x6D: /* BIT 5, L */
-//             Log::printVerbose("BIT 5, L");
-//             src = reg.read8(RegID_L);
-//             executeBIT(src, 5);
-//             cycles = 2;
-//             break;
-//         case 0x6E: /* BIT 5, (HL) */
-//             Log::printVerbose("BIT 5, (HL)");
-//             src = readMem(RegID_HL);
-//             executeBIT(src, 5);
-//             cycles = 4;
-//             break;
-//         case 0x6F: /* BIT 5, A */
-//             Log::printVerbose("BIT 5, A");
-//             src = reg.read8(RegID_A);
-//             executeBIT(src, 5);
-//             cycles = 2;
-//             break;
-//         case 0x70: /* BIT 6, B */
-//             Log::printVerbose("BIT 6, B");
-//             src = reg.read8(RegID_B);
-//             executeBIT(src, 6);
-//             cycles = 2;
-//             break;
-//         case 0x71: /* BIT 6, C */
-//             Log::printVerbose("BIT 6, C");
-//             src = reg.read8(RegID_C);
-//             executeBIT(src, 6);
-//             cycles = 2;
-//             break;
-//         case 0x72: /* BIT 6, D */
-//             Log::printVerbose("BIT 6, D");
-//             src = reg.read8(RegID_D);
-//             executeBIT(src, 6);
-//             cycles = 2;
-//             break;
-//         case 0x73: /* BIT 6, E */
-//             Log::printVerbose("BIT 6, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 6);
-//             cycles = 2;
-//             break;
-//         case 0x74: /* BIT 6, H */
-//             Log::printVerbose("BIT 6, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 6);
-//             cycles = 2;
-//             break;
-//         case 0x75: /* BIT 6, L */
-//             Log::printVerbose("BIT 6, L");
-//             src = reg.read8(RegID_L);
-//             executeBIT(src, 6);
-//             cycles = 2;
-//             break;
-//         case 0x76: /* BIT 6 (HL) */
-//             Log::printVerbose("BIT 6, (HL)");
-//             src = readMem(RegID_HL);
-//             executeBIT(src, 6);
-//             cycles = 4;
-//             break;
-//         case 0x77: /* BIT 6, A */
-//             Log::printVerbose("BIT 6, A");
-//             src = reg.read8(RegID_A);
-//             executeBIT(src, 6);
-//             cycles = 2;
-//             break;
-//         case 0x78: /* BIT 7, B */
-//             Log::printVerbose("BIT 7, B");
-//             src = reg.read8(RegID_B);
-//             executeBIT(src, 7);
-//             cycles = 2;
-//             break;
-//         case 0x79: /* BIT 7, C */
-//             Log::printVerbose("BIT 7, C");
-//             src = reg.read8(RegID_C);
-//             executeBIT(src, 7);
-//             cycles = 2;
-//             break;
-//         case 0x7A: /* BIT 7, D */
-//             Log::printVerbose("BIT 7, D");
-//             src = reg.read8(RegID_D);
-//             executeBIT(src, 7);
-//             cycles = 2;
-//             break;
-//         case 0x7B: /* BIT 7, E */
-//             Log::printVerbose("BIT 7, E");
-//             src = reg.read8(RegID_E);
-//             executeBIT(src, 7);
-//             cycles = 2;
-//             break;
-//         case 0x7C: /* BIT 7, H */
-//             Log::printVerbose("BIT 7, H");
-//             src = reg.read8(RegID_H);
-//             executeBIT(src, 7);
-//             cycles = 2;
-//             break;
-//         case 0x7D: /* BIT 7, L */
-//             Log::printVerbose("BIT 7, L");
-//             src = reg.read8(RegID_L);
-//             executeBIT(src, 7);
-//             cycles = 2;
-//             break;
-//         case 0x7E: /* BIT 7, (HL) */
-//             Log::printVerbose("BIT 7, (HL)");
-//             src = readMem(RegID_HL);
-//             executeBIT(src, 7);
-//             cycles = 4;
-//             break;
-//         case 0x7F: /* BIT 7, A */
-//             Log::printVerbose("BIT 7, A");
-//             src = reg.read8(RegID_A);
-//             executeBIT(src, 7);
-//             cycles = 2;
-//             break;
+        case 0x40: /* BIT 0, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 0, B");
+            break;
+        case 0x41: /* BIT 0, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 0, C");
+            break;
+        case 0x42: /* BIT 0, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 0, D");
+            break;
+        case 0x43: /* BIT 0, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 0, E");
+            break;
+        case 0x44: /* BIT 0, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 0, H");
+            break;
+        case 0x45: /* BIT 0, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 0, L");
+            break;
+        case 0x46: /* BIT 0, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->extraInfo = 0;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 0, (HL)");
+            break;
+        case 0x47: /* BIT 0, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 0, A");
+            break;
+        case 0x48: /* BIT 1, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 1, B");
+            break;
+        case 0x49: /* BIT 1, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 1, C");
+            break;
+        case 0x4A: /* BIT 1, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 1, D");
+            break;
+        case 0x4B: /* BIT 1, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 1, E");
+            break;
+        case 0x4C: /* BIT 1, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 1, H");
+            break;
+        case 0x4D: /* BIT 1, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 1, L");
+            break;
+        case 0x4E: /* BIT 1 (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->extraInfo = 1;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 1, (HL)");
+            break;
+        case 0x4F: /* BIT 1, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 1, A");
+            break;
+        case 0x50: /* BIT 2, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 2, B");
+            break;
+        case 0x51: /* BIT 2, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 2, C");
+            break;
+        case 0x52: /* BIT 2, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 2, D");
+            break;
+        case 0x53: /* BIT 2, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 2, E");
+            break;
+        case 0x54: /* BIT 2, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 2, H");
+            break;
+        case 0x55: /* BIT 2, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 2, L");
+            break;
+        case 0x56: /* BIT 2, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->extraInfo = 2;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 2, (HL)");
+            break;
+        case 0x57: /* BIT 2, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 2, A");
+            break;
+        case 0x58: /* BIT 3, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 3, B");
+            break;
+        case 0x59: /* BIT 3, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 3, C");
+            break;
+        case 0x5A: /* BIT 3, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 3, D");
+            break;
+        case 0x5B: /* BIT 3, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 3, E");
+            break;
+        case 0x5C: /* BIT 3, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 3, H");
+            break;
+        case 0x5D: /* BIT 3, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 3, L");
+            break;
+        case 0x5E: /* BIT 3, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->extraInfo = 3;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 3, (HL)");
+            break;
+        case 0x5F: /* BIT 3, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 3, A");
+            break;
+        case 0x60: /* BIT 4, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 4, B");
+            break;
+        case 0x61: /* BIT 4, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 4, C");
+            break;
+        case 0x62: /* BIT 4, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 4, D");
+            break;
+        case 0x63: /* BIT 4, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 4, E");
+            break;
+        case 0x64: /* BIT 4, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 4, H");
+            break;
+        case 0x65: /* BIT 4, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 4, L");
+            break;
+        case 0x66: /* BIT 4, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->extraInfo = 4;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 4, (HL)");
+            break;
+        case 0x67: /* BIT 4, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 4, A");
+            break;
+        case 0x68: /* BIT 5, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 5, B");
+            break;
+        case 0x69: /* BIT 5, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 5, C");
+            break;
+        case 0x6A: /* BIT 5, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 5, D");
+            break;
+        case 0x6B: /* BIT 5, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 5, E");
+            break;
+        case 0x6C: /* BIT 5, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 5, H");
+            break;
+        case 0x6D: /* BIT 5, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 5, L");
+            break;
+        case 0x6E: /* BIT 5, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->extraInfo = 5;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 5, (HL)");
+            break;
+        case 0x6F: /* BIT 5, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 5, A");
+            break;
+        case 0x70: /* BIT 6, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 6, B");
+            break;
+        case 0x71: /* BIT 6, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 6, C");
+            break;
+        case 0x72: /* BIT 6, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 6, D");
+            break;
+        case 0x73: /* BIT 6, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 6, E");
+            break;
+        case 0x74: /* BIT 6, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 6, H");
+            break;
+        case 0x75: /* BIT 6, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 6, L");
+            break;
+        case 0x76: /* BIT 6 (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->extraInfo = 6;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 6, (HL)");
+            break;
+        case 0x77: /* BIT 6, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 6, A");
+            break;
+        case 0x78: /* BIT 7, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 7, B");
+            break;
+        case 0x79: /* BIT 7, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 7, C");
+            break;
+        case 0x7A: /* BIT 7, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 7, D");
+            break;
+        case 0x7B: /* BIT 7, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 7, E");
+            break;
+        case 0x7C: /* BIT 7, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 7, H");
+            break;
+        case 0x7D: /* BIT 7, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 7, L");
+            break;
+        case 0x7E: /* BIT 7, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->extraInfo = 7;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 7, (HL)");
+            break;
+        case 0x7F: /* BIT 7, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeBIT;
+            strcpy(instr->mnemonic, "BIT 7, A");
+            break;
         case 0x80: /* RES 0, B */
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_B;
@@ -3823,457 +3956,593 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->executionFunction = &Cpu::executeRES;
             strcpy(instr->mnemonic, "RES 7, A");
             break;
-//         case 0xC0: /* SET 0, B */
-//             Log::printVerbose("SET 0, B");
-//             src = reg.read8(RegID_B);
-//             result = executeSET(src, 0);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0xC1: /* SET 0, C */
-//             Log::printVerbose("SET 0, C");
-//             src = reg.read8(RegID_C);
-//             result = executeSET(src, 0);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xC2: /* SET 0, D */
-//             Log::printVerbose("SET 0, D");
-//             src = reg.read8(RegID_D);
-//             result = executeSET(src, 0);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xC3: /* SET 0, E */
-//             Log::printVerbose("SET 0, E");
-//             src = reg.read8(RegID_E);
-//             result = executeSET(src, 0);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0xC4: /* SET 0, H */
-//             Log::printVerbose("SET 0, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 0);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xC5: /* SET 0, L */
-//             Log::printVerbose("SET 0, L");
-//             src = reg.read8(RegID_L);
-//             result = executeSET(src, 0);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xC6: /* SET 0, (HL) */
-//             Log::printVerbose("SET 0, (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSET(src, 0);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xC7: /* SET 0, A */
-//             Log::printVerbose("SET 0, A");
-//             src = reg.read8(RegID_A);
-//             result = executeSET(src, 0);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0xC8: /* SET 1, B */
-//             Log::printVerbose("SET 1, B");
-//             src = reg.read8(RegID_B);
-//             result = executeSET(src, 1);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0xC9: /* SET 1, C */
-//             Log::printVerbose("SET 1, C");
-//             src = reg.read8(RegID_C);
-//             result = executeSET(src, 1);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xCA: /* SET 1, D */
-//             Log::printVerbose("SET 1, D");
-//             src = reg.read8(RegID_D);
-//             result = executeSET(src, 1);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xCB: /* SET 1, E */
-//             Log::printVerbose("SET 1, E");
-//             src = reg.read8(RegID_E);
-//             result = executeSET(src, 1);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0xCC: /* SET 1, H */
-//             Log::printVerbose("SET 1, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 1);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xCD: /* SET 1, L */
-//             Log::printVerbose("SET 1, L");
-//             src = reg.read8(RegID_L);
-//             result = executeSET(src, 1);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xCE: /* SET 1 (HL) */
-//             Log::printVerbose("SET 1, (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSET(src, 1);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xCF: /* SET 1, A */
-//             Log::printVerbose("SET 1, A");
-//             src = reg.read8(RegID_A);
-//             result = executeSET(src, 1);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0xD0: /* SET 2, B */
-//             Log::printVerbose("SET 2, B");
-//             src = reg.read8(RegID_B);
-//             result = executeSET(src, 2);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0xD1: /* SET 2, C */
-//             Log::printVerbose("SET 2, C");
-//             src = reg.read8(RegID_C);
-//             result = executeSET(src, 2);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xD2: /* SET 2, D */
-//             Log::printVerbose("SET 2, D");
-//             src = reg.read8(RegID_D);
-//             result = executeSET(src, 2);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xD3: /* SET 2, E */
-//             Log::printVerbose("SET 2, E");
-//             src = reg.read8(RegID_E);
-//             result = executeSET(src, 2);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0xD4: /* SET 2, H */
-//             Log::printVerbose("SET 2, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 2);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xD5: /* SET 2, L */
-//             Log::printVerbose("SET 2, L");
-//             src = reg.read8(RegID_L);
-//             result = executeSET(src, 2);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xD6: /* SET 2, (HL) */
-//             Log::printVerbose("SET 2, (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSET(src, 2);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xD7: /* SET 2, A */
-//             Log::printVerbose("SET 2, A");
-//             src = reg.read8(RegID_A);
-//             result = executeSET(src, 2);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0xD8: /* SET 3, B */
-//             Log::printVerbose("SET 3, B");
-//             src = reg.read8(RegID_B);
-//             result = executeSET(src, 3);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0xD9: /* SET 3, C */
-//             Log::printVerbose("SET 3, C");
-//             src = reg.read8(RegID_C);
-//             result = executeSET(src, 3);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xDA: /* SET 3, D */
-//             Log::printVerbose("SET 3, D");
-//             src = reg.read8(RegID_D);
-//             result = executeSET(src, 3);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xDB: /* SET 3, E */
-//             Log::printVerbose("SET 3, E");
-//             src = reg.read8(RegID_E);
-//             result = executeSET(src, 3);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0xDC: /* SET 3, H */
-//             Log::printVerbose("SET 3, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 3);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xDD: /* SET 3, L */
-//             Log::printVerbose("SET 3, L");
-//             src = reg.read8(RegID_L);
-//             result = executeSET(src, 3);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xDE: /* SET 3, (HL) */
-//             Log::printVerbose("SET 3, (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSET(src, 3);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xDF: /* SET 3, A */
-//             Log::printVerbose("SET 3, A");
-//             src = reg.read8(RegID_A);
-//             result = executeSET(src, 3);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0xE0: /* SET 4, B */
-//             Log::printVerbose("SET 4, B");
-//             src = reg.read8(RegID_B);
-//             result = executeSET(src, 4);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0xE1: /* SET 4, C */
-//             Log::printVerbose("SET 4, C");
-//             src = reg.read8(RegID_C);
-//             result = executeSET(src, 4);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xE2: /* SET 4, D */
-//             Log::printVerbose("SET 4, D");
-//             src = reg.read8(RegID_D);
-//             result = executeSET(src, 4);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xE3: /* SET 4, E */
-//             Log::printVerbose("SET 4, E");
-//             src = reg.read8(RegID_E);
-//             result = executeSET(src, 4);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0xE4: /* SET 4, H */
-//             Log::printVerbose("SET 4, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 4);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xE5: /* SET 4, L */
-//             Log::printVerbose("SET 4, L");
-//             src = reg.read8(RegID_L);
-//             result = executeSET(src, 4);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xE6: /* SET 4, (HL) */
-//             Log::printVerbose("SET 4, (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSET(src, 4);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xE7: /* SET 4, A */
-//             Log::printVerbose("SET 4, A");
-//             src = reg.read8(RegID_A);
-//             result = executeSET(src, 4);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0xE8: /* SET 5, B */
-//             Log::printVerbose("SET 5, B");
-//             src = reg.read8(RegID_B);
-//             result = executeSET(src, 5);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0xE9: /* SET 5, C */
-//             Log::printVerbose("SET 5, C");
-//             src = reg.read8(RegID_C);
-//             result = executeSET(src, 5);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xEA: /* SET 5, D */
-//             Log::printVerbose("SET 5, D");
-//             src = reg.read8(RegID_D);
-//             result = executeSET(src, 5);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xEB: /* SET 5, E */
-//             Log::printVerbose("SET 5, E");
-//             src = reg.read8(RegID_E);
-//             result = executeSET(src, 5);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0xEC: /* SET 5, H */
-//             Log::printVerbose("SET 5, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 5);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xED: /* SET 5, L */
-//             Log::printVerbose("SET 5, L");
-//             src = reg.read8(RegID_L);
-//             result = executeSET(src, 5);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xEE: /* SET 5, (HL) */
-//             Log::printVerbose("SET 5, (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSET(src, 5);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xEF: /* SET 5, A */
-//             Log::printVerbose("SET 5, A");
-//             src = reg.read8(RegID_A);
-//             result = executeSET(src, 5);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0xF0: /* SET 6, B */
-//             Log::printVerbose("SET 6, B");
-//             src = reg.read8(RegID_B);
-//             result = executeSET(src, 6);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0xF1: /* SET 6, C */
-//             Log::printVerbose("SET 6, C");
-//             src = reg.read8(RegID_C);
-//             result = executeSET(src, 6);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xF2: /* SET 6, D */
-//             Log::printVerbose("SET 6, D");
-//             src = reg.read8(RegID_D);
-//             result = executeSET(src, 6);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xF3: /* SET 6, E */
-//             Log::printVerbose("SET 6, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 6);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xF4: /* SET 6, H */
-//             Log::printVerbose("SET 6, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 6);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xF5: /* SET 6, L */
-//             Log::printVerbose("SET 6, L");
-//             src = reg.read8(RegID_L);
-//             result = executeSET(src, 6);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xF6: /* SET 6 (HL) */
-//             Log::printVerbose("SET 6, (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSET(src, 6);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xF7: /* SET 6, A */
-//             Log::printVerbose("SET 6, A");
-//             src = reg.read8(RegID_A);
-//             result = executeSET(src, 6);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-//         case 0xF8: /* SET 7, B */
-//             Log::printVerbose("SET 7, B");
-//             src = reg.read8(RegID_B);
-//             result = executeSET(src, 7);
-//             reg.write8(RegID_B, result);
-//             cycles = 2;
-//             break;
-//         case 0xF9: /* SET 7, C */
-//             Log::printVerbose("SET 7, C");
-//             src = reg.read8(RegID_C);
-//             result = executeSET(src, 7);
-//             reg.write8(RegID_C, result);
-//             cycles = 2;
-//             break;
-//         case 0xFA: /* SET 7, D */
-//             Log::printVerbose("SET 7, D");
-//             src = reg.read8(RegID_D);
-//             result = executeSET(src, 7);
-//             reg.write8(RegID_D, result);
-//             cycles = 2;
-//             break;
-//         case 0xFB: /* SET 7, E */
-//             Log::printVerbose("SET 7, E");
-//             src = reg.read8(RegID_E);
-//             result = executeSET(src, 7);
-//             reg.write8(RegID_E, result);
-//             cycles = 2;
-//             break;
-//         case 0xFC: /* SET 7, H */
-//             Log::printVerbose("SET 7, H");
-//             src = reg.read8(RegID_H);
-//             result = executeSET(src, 7);
-//             reg.write8(RegID_H, result);
-//             cycles = 2;
-//             break;
-//         case 0xFD: /* SET 7, L */
-//             Log::printVerbose("SET 7, L");
-//             src = reg.read8(RegID_L);
-//             result = executeSET(src, 7);
-//             reg.write8(RegID_L, result);
-//             cycles = 2;
-//             break;
-//         case 0xFE: /* SET 7, (HL) */
-//             Log::printVerbose("SET 7, (HL)");
-//             src = readMem(RegID_HL);
-//             result = executeSET(src, 7);
-//             writeMem(RegID_HL, result);
-//             cycles = 4;
-//             break;
-//         case 0xFF: /* SET 7, A */
-//             Log::printVerbose("SET 7, A");
-//             src = reg.read8(RegID_A);
-//             result = executeSET(src, 7);
-//             reg.write8(RegID_A, result);
-//             cycles = 2;
-//             break;
-            default:
-                fmt::print(stderr, "Error, unsupported prefixed opcode: cb {:02x}\n", prefixedOpcode);
-                exit(EXIT_FAILURE);
-                break;
+        case 0xC0: /* SET 0, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 0, B");
+            break;
+        case 0xC1: /* SET 0, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 0, C");
+            break;
+        case 0xC2: /* SET 0, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 0, D");
+            break;
+        case 0xC3: /* SET 0, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 0, E");
+            break;
+        case 0xC4: /* SET 0, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 0, H");
+            break;
+        case 0xC5: /* SET 0, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 0, L");
+            break;
+        case 0xC6: /* SET 0, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->extraInfo = 0;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 0, (HL)");
+            break;
+        case 0xC7: /* SET 0, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->extraInfo = 0;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 0, A");
+            break;
+        case 0xC8: /* SET 1, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 1, B");
+            break;
+        case 0xC9: /* SET 1, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 1, C");
+            break;
+        case 0xCA: /* SET 1, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 1, D");
+            break;
+        case 0xCB: /* SET 1, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 1, E");
+            break;
+        case 0xCC: /* SET 1, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 1, H");
+            break;
+        case 0xCD: /* SET 1, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 1, L");
+            break;
+        case 0xCE: /* SET 1 (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->extraInfo = 1;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 1, (HL)");
+            break;
+        case 0xCF: /* SET 1, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->extraInfo = 1;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 1, A");
+            break;
+        case 0xD0: /* SET 2, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 2, B");
+            break;
+        case 0xD1: /* SET 2, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 2, C");
+            break;
+        case 0xD2: /* SET 2, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 2, D");
+            break;
+        case 0xD3: /* SET 2, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 2, E");
+            break;
+        case 0xD4: /* SET 2, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 2, H");
+            break;
+        case 0xD5: /* SET 2, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 2, L");
+            break;
+        case 0xD6: /* SET 2, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->extraInfo = 2;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 2, (HL)");
+            break;
+        case 0xD7: /* SET 2, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->extraInfo = 2;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 2, A");
+            break;
+        case 0xD8: /* SET 3, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 3, B");
+            break;
+        case 0xD9: /* SET 3, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 3, C");
+            break;
+        case 0xDA: /* SET 3, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 3, D");
+            break;
+        case 0xDB: /* SET 3, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 3, E");
+            break;
+        case 0xDC: /* SET 3, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 3, H");
+            break;
+        case 0xDD: /* SET 3, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 3, L");
+            break;
+        case 0xDE: /* SET 3, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->extraInfo = 3;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 3, (HL)");
+            break;
+        case 0xDF: /* SET 3, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->extraInfo = 3;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 3, A");
+            break;
+        case 0xE0: /* SET 4, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 4, B");
+            break;
+        case 0xE1: /* SET 4, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 4, C");
+            break;
+        case 0xE2: /* SET 4, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 4, D");
+            break;
+        case 0xE3: /* SET 4, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 4, E");
+            break;
+        case 0xE4: /* SET 4, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 4, H");
+            break;
+        case 0xE5: /* SET 4, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 4, L");
+            break;
+        case 0xE6: /* SET 4, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->extraInfo = 4;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 4, (HL)");
+            break;
+        case 0xE7: /* SET 4, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->extraInfo = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 4, A");
+            break;
+        case 0xE8: /* SET 5, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 5, B");
+            break;
+        case 0xE9: /* SET 5, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 5, C");
+            break;
+        case 0xEA: /* SET 5, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 5, D");
+            break;
+        case 0xEB: /* SET 5, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 5, E");
+            break;
+        case 0xEC: /* SET 5, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 5, H");
+            break;
+        case 0xED: /* SET 5, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 5, L");
+            break;
+        case 0xEE: /* SET 5, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->extraInfo = 5;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 5, (HL)");
+            break;
+        case 0xEF: /* SET 5, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->extraInfo = 5;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 5, A");
+            break;
+        case 0xF0: /* SET 6, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 6, B");
+            break;
+        case 0xF1: /* SET 6, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 6, C");
+            break;
+        case 0xF2: /* SET 6, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 6, D");
+            break;
+        case 0xF3: /* SET 6, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 6, E");
+            break;
+        case 0xF4: /* SET 6, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 6, H");
+            break;
+        case 0xF5: /* SET 6, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 6, L");
+            break;
+        case 0xF6: /* SET 6 (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->extraInfo = 6;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 6, (HL)");
+            break;
+        case 0xF7: /* SET 6, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->extraInfo = 6;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 6, A");
+            break;
+        case 0xF8: /* SET 7, B */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_B;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_B;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 7, B");
+            break;
+        case 0xF9: /* SET 7, C */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_C;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_C;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 7, C");
+            break;
+        case 0xFA: /* SET 7, D */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_D;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_D;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 7, D");
+            break;
+        case 0xFB: /* SET 7, E */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_E;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_E;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 7, E");
+            break;
+        case 0xFC: /* SET 7, H */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_H;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_H;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 7, H");
+            break;
+        case 0xFD: /* SET 7, L */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_L;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_L;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 7, L");
+            break;
+        case 0xFE: /* SET 7, (HL) */
+            instr->operandSrc.type = OP_MEM;
+            instr->operandSrc.memPtr = RegID_HL;
+            instr->operandDst.type = OP_MEM;
+            instr->operandDst.memPtr = RegID_HL;
+            instr->extraInfo = 7;
+            instr->cycleCost = 4;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 7, (HL)");
+            break;
+        case 0xFF: /* SET 7, A */
+            instr->operandSrc.type = OP_REG;
+            instr->operandSrc.reg = RegID_A;
+            instr->operandDst.type = OP_REG;
+            instr->operandDst.reg = RegID_A;
+            instr->extraInfo = 7;
+            instr->executionFunction = &Cpu::executeSET;
+            strcpy(instr->mnemonic, "SET 7, A");
+            break;
+        default:
+            fmt::print(stderr, "Error, unsupported prefixed opcode: cb {:02x}\n", prefixedOpcode);
+            exit(EXIT_FAILURE);
+            break;
     }
 }

@@ -43,10 +43,6 @@
  */
 
 
-const int IDX_HIGH = 0;
-const int IDX_LOW = 1;
-
-
 typedef enum RegID
 {
     RegID_NONE,
@@ -89,7 +85,6 @@ public:
     /* Functions for writing to a register or copying. */
     void writeSingle(regID_t id, u8 val);
     void writeDouble(regID_t id, u16 val);
-    void copySingle(regID_t dest, regID_t src);
 
     /* Functions for loading data from a register. */
     u8 readSingle(regID_t id);

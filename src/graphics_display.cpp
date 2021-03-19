@@ -74,7 +74,7 @@ int GraphicsDisplay::startUp()
 
     SDL_SetRenderDrawColor(this->renderer, 0xff, 0xff, 0xff, 0xff);
 
-    this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+    this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, this->width, this->height);
 
     pixels = new u8[width * height * 4];
     std::memset(pixels, 0x0, width * height * 4);

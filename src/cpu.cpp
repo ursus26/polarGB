@@ -80,6 +80,10 @@ u8 Cpu::step()
     Instruction* instr = fetchDecode();
     reg.setProgramCounter(reg.getProgramCounter() + instr->instructionLength);
 
+    // if(instr->memoryLocation == 0x028b)
+    // {
+    //     fmt::print("Restarting game\n");
+    // }
     // printInstructionInfo(instr);
 
     /* Execute the instruction handler. */
@@ -205,6 +209,9 @@ u8 Cpu::loadOperand8bits(operand_t* operand)
 
 u16 Cpu::loadOperand16bits(operand_t* operand)
 {
+    assert(operand->type != OP_NONE);
+    assert(operand->type != OP_IMM_PTR);
+
     switch(operand->type)
     {
         case OP_IMM:
@@ -213,8 +220,6 @@ u16 Cpu::loadOperand16bits(operand_t* operand)
             return reg.readDouble(operand->reg);
         case OP_MEM:
             return mmu->read2Bytes(reg.readDouble(operand->memPtr));
-        case OP_NONE:
-        case OP_IMM_PTR:
         default:
             return 0;
     }
@@ -223,6 +228,9 @@ u16 Cpu::loadOperand16bits(operand_t* operand)
 
 void Cpu::storeOperand8bits(operand_t* operand, u8 value)
 {
+    assert(operand->type != OP_NONE);
+    assert(operand->type != OP_IMM);
+
     switch(operand->type)
     {
         case OP_REG:
@@ -321,18 +329,18 @@ void Cpu::executeLD16(instruction_t* instr)
 
 void Cpu::executeLDHL(instruction_t* instr)
 {
-        i8 src = (i8) loadOperand8bits(&instr->operandSrc);
-        u16 sp = reg.getStackPointer();
-        u32 result = sp + src;
-        storeOperand16bits(&instr->operandDst, result & 0xffff);
+    i8 src = (i8) loadOperand8bits(&instr->operandSrc);
+    u16 sp = reg.getStackPointer();
+    u16 result = sp + src;
+    storeOperand16bits(&instr->operandDst, result);
 
-        /* Set or reset the flags. */
-        reg.setFlagZero(false);
-        reg.setFlagSub(false);
-        reg.setFlagCarry(result > 0xffff);
-        reg.setFlagHalfCarry((sp & 0xfff) + (src & 0xfff) > 0xfff);
+    /* Set or reset the flags. */
+    reg.setFlagCarry((result & 0xff) < (sp & 0xff));
+    reg.setFlagHalfCarry((result & 0xf) < (sp & 0xf));
+    reg.setFlagZero(false);
+    reg.setFlagSub(false);
 
-        this->cyclesCompleted += instr->cycleCost;
+    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -400,7 +408,6 @@ void Cpu::executeCALL(instruction_t* instr)
 {
     bool zero = reg.getFlagZero();
     bool carry = reg.getFlagCarry();
-    u16 callLocation = instr->operandSrc.immediate;
     u8 conditionFlag = instr->extraInfo;
 
     /* Execute the call instruction by pushing the PC to the stack and setting a new PC. */
@@ -410,9 +417,13 @@ void Cpu::executeCALL(instruction_t* instr)
     ||(conditionFlag == COND_NC && carry == false)
     ||(conditionFlag == COND_C  && carry == true))
     {
+        /* Push the current PC to the stack. */
         _executePUSH(reg.getProgramCounter());
 
+        /* Set the new program counter. */
+        u16 callLocation = loadOperand16bits(&instr->operandSrc);
         reg.setProgramCounter(callLocation);
+
         this->cyclesCompleted += instr->cycleCost;
     }
     else
@@ -437,19 +448,14 @@ void Cpu::executeRET(instruction_t* instr)
     ||(conditionFlag == COND_NC && carry == false)
     ||(conditionFlag == COND_C  && carry == true))
     {
+        /* Pop the old program counter from the stack. */
+        instr->operandSrc.type = OP_MEM;
+        instr->operandSrc.memPtr = RegID_SP;
         instr->operandDst.type = OP_REG;
         instr->operandDst.reg = RegID_PC;
-
         this->executePOP(instr);
-        // reg.setProgramCounter(val);
 
-        // /* Adjust the stack pointer. */
-        // reg.incStackPointer();
-        // reg.incStackPointer();
-
-        if(conditionFlag != COND_NONE && conditionFlag != COND_IE)
-            instr->cycleCost = 5;
-
+        /* Re-enable the IME flag if the instruction originated from an interrupt. */
         if(conditionFlag == COND_IE)
             interruptController.enableInterrupts(false);
     }
@@ -465,16 +471,15 @@ void Cpu::executeRET(instruction_t* instr)
  */
 void Cpu::executeADD8(instruction_t* instr)
 {
-    /* Add the value of the source to the destination. */
-    u8 result = loadOperand8bits(&(instr->operandSrc)) + loadOperand8bits(&(instr->operandDst));
-    int val1 = (int) loadOperand8bits(&(instr->operandSrc));
-    int val2 = (int) loadOperand8bits(&(instr->operandDst));
+    u16 param1 = (u16)loadOperand8bits(&(instr->operandSrc));
+    u16 param2 = (u16)loadOperand8bits(&(instr->operandDst));
+    u8 result = (u8) (0xff & (param1 + param2));
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0);                       /* Set flag if the result equals 0. */
-    reg.setFlagSub(false);                              /* Always reset the Sub flag. */
-    reg.setFlagHalfCarry(halfCarryTest(val1, val2));
-    reg.setFlagCarry(carryTest(val1, val2));
+    reg.setFlagSub(false);                              /* Always reset the Sub flag. */;
+    reg.setFlagCarry(param1 + param2 > 0xff);
+    reg.setFlagHalfCarry((param1 & 0xf) + (param2 & 0xf) > 0xf);
 
     /* Store the addition. */
     storeOperand8bits(&(instr->operandDst), result);
@@ -489,23 +494,18 @@ void Cpu::executeADD8(instruction_t* instr)
  */
 void Cpu::executeADC(instruction_t* instr)
 {
-    /* Add the value of register 2 to register 1. */
-    int val1 = (int) loadOperand8bits(&(instr->operandSrc));
-    int val2 = (int) loadOperand8bits(&(instr->operandDst));
-
-    u8 carry;
+    u16 param1 = (u16)loadOperand8bits(&(instr->operandSrc));
+    u16 param2 = (u16)loadOperand8bits(&(instr->operandDst));
+    u8 carry = 0;
     if(reg.getFlagCarry())
         carry = 1;
-    else
-        carry = 0;
-
-    u8 result = loadOperand8bits(&(instr->operandSrc)) + loadOperand8bits(&(instr->operandDst));
+    u8 result = (u8) (0xff & (param1 + param2 + carry));
 
     /* Set or reset the flags. */
-    reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
-    reg.setFlagSub(false);               /* Always reset the Sub flag. */
-    reg.setFlagHalfCarry(halfCarryTest(val1, val2 + carry));
-    reg.setFlagCarry(carryTest(val1, val2 + carry));
+    reg.setFlagZero(result == 0);                       /* Set flag if the result equals 0. */
+    reg.setFlagSub(false);                              /* Always reset the Sub flag. */;
+    reg.setFlagCarry(param1 + param2 + carry > 0xff);
+    reg.setFlagHalfCarry((param1 & 0xf) + (param2 & 0xf) + carry > 0xf);
 
     /* Store the addition. */
     storeOperand8bits(&(instr->operandDst), result);
@@ -520,16 +520,15 @@ void Cpu::executeADC(instruction_t* instr)
  */
 void Cpu::executeSUB(instruction_t* instr)
 {
-    /* Add the value of register 2 to register 1. */
-    int val1 = (int) reg.readSingle(RegID_A);
-    int val2 = (int) loadOperand8bits(&(instr->operandSrc));
-    u8 result = reg.readSingle(RegID_A) - loadOperand8bits(&(instr->operandSrc));
+    u8 param1 = reg.readSingle(RegID_A);
+    u8 param2 = loadOperand8bits(&(instr->operandSrc));
+    u8 result = param1 - param2;
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
     reg.setFlagSub(true);               /* Always set the Sub flag. */
-    reg.setFlagHalfCarry(halfBorrowTest(val1, val2));
-    reg.setFlagCarry(borrowTest(val1, val2));
+    reg.setFlagHalfCarry((param2 & 0xf) > (param1 & 0xf));
+    reg.setFlagCarry(param2 > param1);
 
     /* Store the addition. */
     reg.writeSingle(RegID_A, result);
@@ -544,26 +543,21 @@ void Cpu::executeSUB(instruction_t* instr)
  */
 void Cpu::executeSBC(instruction_t* instr)
 {
-    /* Add the value of register 2 to register 1. */
-    int val1 = (int) loadOperand8bits(&(instr->operandSrc));
-    int val2 = (int) loadOperand8bits(&(instr->operandDst));
-
-    u8 carry;
+    u8 param1 = reg.readSingle(RegID_A);
+    u8 param2 = loadOperand8bits(&(instr->operandSrc));
+    u8 carry = 0;
     if(reg.getFlagCarry())
         carry = 1;
-    else
-        carry = 0;
-
-    u8 result = loadOperand8bits(&(instr->operandSrc)) - loadOperand8bits(&(instr->operandDst)) - carry;
+    u8 result = param1 - param2 - carry;
 
     /* Set or reset the flags. */
     reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
-    reg.setFlagSub(true);               /* Always set the Sub flag. */
-    reg.setFlagHalfCarry(halfBorrowTest(val1, val2 - carry));
-    reg.setFlagCarry(borrowTest(val1, val2 - carry));
+    reg.setFlagSub(true); /* Always set the Sub flag. */
+    reg.setFlagHalfCarry((param2 & 0xf) + carry > (param1 & 0xf));
+    reg.setFlagCarry((u16)param2 + (u16)carry > (u16)param1);
 
     /* Store the addition. */
-    storeOperand8bits(&(instr->operandDst), result);
+    reg.writeSingle(RegID_A, result);
 
     /* Clock cycles */
     this->cyclesCompleted += instr->cycleCost;
@@ -646,9 +640,10 @@ void Cpu::executeCP(instruction_t* instr)
     u8 registerA = reg.readSingle(RegID_A);
 
     reg.setFlagZero(registerA == val);
-    reg.setFlagHalfCarry(registerA > val);
-    reg.setFlagCarry(registerA < val);
     reg.setFlagSub(true);
+
+    reg.setFlagHalfCarry((registerA & 0xf) < (val & 0xf));
+    reg.setFlagCarry(registerA < val);
 
     this->cyclesCompleted += instr->cycleCost;
 }
@@ -656,12 +651,12 @@ void Cpu::executeCP(instruction_t* instr)
 
 void Cpu::executeINC8(instruction_t* instr)
 {
-    u8 original = loadOperand8bits(&(instr->operandDst));
-    u8 result = original + 1;
+    u16 param = (u16)loadOperand8bits(&(instr->operandDst));
+    u8 result = (u8) (0xff & (param + 1));
 
     reg.setFlagZero(result == 0);
     reg.setFlagSub(false);
-    reg.setFlagHalfCarry(halfCarryTest(original, 1));
+    reg.setFlagHalfCarry((param & 0xf) == 0xf);
 
     storeOperand8bits(&(instr->operandDst), result);
     this->cyclesCompleted += instr->cycleCost;
@@ -670,12 +665,13 @@ void Cpu::executeINC8(instruction_t* instr)
 
 void Cpu::executeDEC8(instruction_t* instr)
 {
-    u8 original = loadOperand8bits(&(instr->operandDst));
-    u8 result = original - 1;
+    u8 param = loadOperand8bits(&(instr->operandDst));
+    u8 result = param - 1;
 
-    reg.setFlagZero(result == 0);
-    reg.setFlagSub(true);
-    reg.setFlagHalfCarry(halfBorrowTest(original, 1));
+    /* Set or reset the flags. */
+    reg.setFlagZero(result == 0); /* Set flag if the result equals 0. */
+    reg.setFlagSub(true);               /* Always set the Sub flag. */
+    reg.setFlagHalfCarry((param & 0xf) == 0);
 
     storeOperand8bits(&(instr->operandDst), result);
     this->cyclesCompleted += instr->cycleCost;
@@ -700,15 +696,31 @@ void Cpu::executeDEC16(instruction_t* instr)
 
 void Cpu::executeADD16(instruction_t* instr)
 {
-    u32 src1 = loadOperand16bits(&instr->operandSrc);
-    u32 src2 = loadOperand16bits(&instr->operandDst);
+    u16 src1 = loadOperand16bits(&instr->operandSrc);
+    u16 src2 = loadOperand16bits(&instr->operandDst);
+    storeOperand16bits(&instr->operandDst, src1 + src2);
+
     u32 result = src1 + src2;
-    storeOperand16bits(&instr->operandDst, result & 0xffff);
-
-
     reg.setFlagSub(false);
     reg.setFlagCarry(result > 0xffff);
     reg.setFlagHalfCarry((src2 & 0xfff) + (src1 & 0xfff) > 0xfff);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+void Cpu::executeADD16SPe(instruction_t* instr)
+{
+    i8 src = (i8) loadOperand8bits(&instr->operandSrc);
+    u16 sp = reg.getStackPointer();
+    u16 result = sp + src;
+    storeOperand16bits(&instr->operandDst, result);
+
+    /* Set or reset the flags. */
+    reg.setFlagCarry((result & 0xff) < (sp & 0xff));
+    reg.setFlagHalfCarry((result & 0xf) < (sp & 0xf));
+    reg.setFlagZero(false);
+    reg.setFlagSub(false);
 
     this->cyclesCompleted += instr->cycleCost;
 }
@@ -741,30 +753,91 @@ void Cpu::executeCPL(instruction_t* instr)
 
 
 /**
- * Entry point for push instruction.
+ * CCF: Complement Carry Flag.
  */
-void Cpu::executePUSH(instruction_t* instr)
+void Cpu::executeCCF(instruction_t* instr)
 {
-    _executePUSH(reg.readDouble(instr->operandSrc.reg));
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry(!reg.getFlagCarry());
+
     this->cyclesCompleted += instr->cycleCost;
 }
 
 
 /**
- * Pushes the contents of a register pair to the stack. The stack grows down.
+ * SCF: Set Carry Flag.
+ */
+void Cpu::executeSCF(instruction_t* instr)
+{
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry(true);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * DAA: Decimal Adjust Accumulator.
+ */
+void Cpu::executeDAA(instruction_t* instr)
+{
+    u8 src = reg.readSingle(RegID_A);
+    // bool carryFlag = reg.getFlagCarry();
+    bool halfCarryFlag = reg.getFlagHalfCarry();
+    bool carryFlag = reg.getFlagCarry();
+    bool subFlag = reg.getFlagSub();
+    u8 result = src;
+
+
+    if(subFlag == false)
+    {
+        if(halfCarryFlag || (src & 0xf) > 9)
+            result += 0x6;
+        if(carryFlag || (result & 0xf0) > 0x9f)
+        {
+            result += 0x6;
+            reg.setFlagCarry(true);
+        }
+        else
+            reg.setFlagCarry(false);
+    }
+    else
+    {
+        if(carryFlag)
+            result -= 0x60;
+
+        if(halfCarryFlag)
+            result -= 0x6;
+    }
+
+    reg.writeSingle(RegID_A, result);
+    reg.setFlagZero(result == 0);
+    reg.setFlagHalfCarry(false);
+    // reg.setFlagCarry(true);
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Entry point for push instruction.
+ */
+void Cpu::executePUSH(instruction_t* instr)
+{
+    u16 val = loadOperand16bits(&instr->operandSrc);
+    _executePUSH(val);
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Pushes the input argument to the stack. The stack grows down.
  */
 void Cpu::_executePUSH(u16 val)
 {
     /* Fetch stack pointer and check for stack overflow. */
     u16 sp = reg.getStackPointer();
-    // if(sp - 2 < HRAM_START_ADDR)
-    // {
-        // fmt::print("SP: {:#x}\n", sp);
-    //     Log::printError("Error, stack overflow!");
-    //     this->isRunning = false;
-    //     exit(1);
-    //     return;
-    // }
 
     /* Write the value to the stack. */
     mmu->write2Bytes(sp - 2, val);
@@ -780,24 +853,17 @@ void Cpu::_executePUSH(u16 val)
  */
 void Cpu::executePOP(instruction_t* instr)
 {
-    /* Get 2 bytes from the stack and check if we can pop at least 2 bytes from the stack. */
-    u16 sp = reg.getStackPointer();
-    // if(sp >= 0xfffe - 1)
-    // {
-    //     Log::printError("Error, stack underflow!");
-    //     this->isRunning = false;
-    //     return;
-    // }
-
     /* Pop value from stack. */
-    u16 val = mmu->read2Bytes(sp);
+    // u16 sp = reg.getStackPointer();
+    // u16 val = mmu->read2Bytes(sp);
+    u16 val = loadOperand16bits(&instr->operandSrc);
 
     /* Increases the stack pointer by two. */
     reg.incStackPointer();
     reg.incStackPointer();
 
     /* Store result in register. */
-    reg.writeDouble(instr->operandDst.reg, val);
+    storeOperand16bits(&instr->operandDst, val);
     this->cyclesCompleted += instr->cycleCost;
 }
 
@@ -823,6 +889,36 @@ void Cpu::executeSWAP(instruction_t* instr)
 
 
 /**
+ * Get the bit value of a specific bit in a byte and set the zero flag as the complement of
+ * this bit.
+ */
+void Cpu::executeBIT(instruction_t* instr)
+{
+    u8 bitNumber = instr->extraInfo;
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    bool bitValue = (src >> bitNumber) & 0x1;
+
+    reg.setFlagZero(!bitValue);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(true);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Set a specific bit in a byte to 1. The bit number is stored in the extraInfo field.
+ */
+void Cpu::executeSET(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    u8 result = src | (1 << instr->extraInfo);
+    storeOperand8bits(&instr->operandDst, result);
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
  * Set a specific bit of a byte to 0.
  */
 void Cpu::executeRES(instruction_t* instr)
@@ -836,40 +932,41 @@ void Cpu::executeRES(instruction_t* instr)
 
 
 /**
- * Execute RR with register A and set the zero flag to false.
+ * Execute RLC with register A and set the zero flag to false.
  */
-void Cpu::executeRRA(instruction_t* instr)
+void Cpu::executeRLCA(instruction_t* instr)
 {
-    this->executeRR(instr);
+    this->executeRLC(instr);
     reg.setFlagZero(false);
 }
 
 
 /**
- * Shifts the byte to the right. Note: Bit 0 goes to the carry flag and the carry flag to bit 7.
+ * Execute RL with register A and set the zero flag to false.
  */
-void Cpu::executeRR(instruction_t* instr)
+void Cpu::executeRLA(instruction_t* instr)
 {
-    u8 src = loadOperand8bits(&instr->operandSrc);
-    u8 carry = ((u8) reg.getFlagCarry()) << 7;
-    u8 result = (src >> 1) | carry;
-    storeOperand8bits(&instr->operandDst, result);
-
-    reg.setFlagZero(result == 0);
-    reg.setFlagSub(false);
-    reg.setFlagHalfCarry(false);
-    reg.setFlagCarry((src & 0x1) == 0x1);
-
-    this->cyclesCompleted += instr->cycleCost;
+    this->executeRL(instr);
+    reg.setFlagZero(false);
 }
 
 
 /**
- * Execite RLC with register A and set the zero flag to false.
+ * Execute RRCA with register A and set the zero flag to false.
  */
-void Cpu::executeRLCA(instruction_t* instr)
+void Cpu::executeRRCA(instruction_t* instr)
 {
-    this->executeRLC(instr);
+    this->executeRRC(instr);
+    reg.setFlagZero(false);
+}
+
+
+/**
+ * Execute RR with register A and set the zero flag to false.
+ */
+void Cpu::executeRRA(instruction_t* instr)
+{
+    this->executeRR(instr);
     reg.setFlagZero(false);
 }
 
@@ -893,7 +990,103 @@ void Cpu::executeRLC(instruction_t* instr)
 
 
 /**
- * Execite SRA on a byte. It shifts the contents 1 bit to the right. Bit 7 goes to itself and
+ * Shifts the byte to the left. Note: Bit 7 goes to the carry flag and the carry flag to bit 0.
+ */
+void Cpu::executeRL(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    u8 carry = (u8) reg.getFlagCarry();
+    u8 result = (src << 1) | carry;
+    storeOperand8bits(&instr->operandDst, result);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry((src & 0x80) == 0x80);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Shifts the byte to the right. Note: Bit 0 goes to both the carry flag and bit 7.
+ */
+void Cpu::executeRRC(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    u8 result = (src << 7) | (src >> 1);
+    storeOperand8bits(&instr->operandDst, result);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry((src & 0x1) == 0x1);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Shifts the byte to the right. Note: Bit 0 goes to the carry flag and the carry flag to bit 7.
+ */
+void Cpu::executeRR(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    u8 carry = ((u8) reg.getFlagCarry()) << 7;
+    u8 result = (src >> 1) | carry;
+    storeOperand8bits(&instr->operandDst, result);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry((src & 0x1) == 0x1);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Execute SLA on a byte. It shifts the contents 1 bit to the left and bit 7 is stored in the
+ * carry flag.
+ */
+void Cpu::executeSLA(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    bool carry = (src & 0x80) == 0x80;
+    u8 result = src << 1;
+    storeOperand8bits(&instr->operandDst, result);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry(carry);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Execute SRA on a byte. It shifts the contents 1 bit to the right. Bit 7 goes to itself and
+ * bit 6 and bit 0 goes to the carry flag.
+ */
+void Cpu::executeSRA(instruction_t* instr)
+{
+    u8 src = loadOperand8bits(&instr->operandSrc);
+    bool carry = (src & 0x1) == 0x1;
+    u8 result = (src & 0x80) | (src >> 1);
+    storeOperand8bits(&instr->operandDst, result);
+
+    reg.setFlagZero(result == 0);
+    reg.setFlagSub(false);
+    reg.setFlagHalfCarry(false);
+    reg.setFlagCarry(carry);
+
+    this->cyclesCompleted += instr->cycleCost;
+}
+
+
+/**
+ * Execute SRA on a byte. It shifts the contents 1 bit to the right. Bit 7 goes to itself and
  * bit 6 and bit 0 goes to the carry flag.
  */
 void Cpu::executeSRL(instruction_t* instr)
@@ -910,149 +1103,3 @@ void Cpu::executeSRL(instruction_t* instr)
 
     this->cyclesCompleted += instr->cycleCost;
 }
-
-
-
-
-
-
-// void Cpu::executeADD16(RegID dest, int val)
-// {
-//     /* Get the values from the registers and do the addition. */
-//     u16 destVal = reg.read16(dest);
-//     u16 result = val + destVal;
-//
-//     /* Set the flags. */
-//     reg.setFlagSub(false);
-//     if(val < 0)
-//     {
-//         reg.setFlagHalfCarry(halfBorrowTest(destVal, val));
-//         reg.setFlagCarry(borrowTest(destVal, val));
-//     }
-//     else
-//     {
-//         reg.setFlagHalfCarry(halfCarryTest(destVal, val));
-//         reg.setFlagCarry(carryTest(destVal, val));
-//     }
-//     if(dest == RegID_SP)
-//         reg.setFlagZero(false);
-//
-//     /* Store the result. */
-//     reg.writeDouble(dest, result);
-// }
-//
-//
-// /**
-//  * Set a specific bit in a byte to 1.
-//  */
-// u8 Cpu::executeSET(u8 src, int bitNumber)
-// {
-//     return (src | (1 <<bitNumber));
-// }
-//
-//
-// /**
-//  * Get the bit value of a specific bit in a byte and set the zero flag as the complement of
-//  * this bit.
-//  */
-// void Cpu::executeBIT(u8 src, int bitNumber)
-// {
-//     bool bitValue = (src >> bitNumber) & 0x1;
-//
-//     reg.setFlagZero(!bitValue);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(true);
-// }
-//
-//
-// /**
-//  * Shifts the byte to the left. Note: Bit 7 goes to the carry flag and the carry flag to bit 0.
-//  */
-// u8 Cpu::executeRL(u8 src)
-// {
-//     u8 carry = (u8) reg.getFlagCarry();
-//     u8 result = (src << 1) | carry;
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry((src & 0x80) == 0x80);
-//
-//     return result;
-// }
-//
-//
-// /**
-//  * Shifts the byte to the right. Note: Bit 0 goes to both the carry flag and bit 7.
-//  */
-// u8 Cpu::executeRRC(u8 src)
-// {
-//     u8 result = (src << 7) | (src >> 1);
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry((src & 0x1) == 0x1);
-//
-//     return result;
-// }
-//
-//
-// /**
-//  * Execute RL with register A and set the zero flag to false.
-//  */
-// void Cpu::executeRLA()
-// {
-//     u8 src = reg.read8(RegID_A);
-//     u8 result = executeRL(src);
-//     reg.write8(RegID_A, result);
-//     reg.setFlagZero(false);
-// }
-//
-//
-// /**
-//  * Execite RRC with register A and set the zero flag to false.
-//  */
-// void Cpu::executeRRCA()
-// {
-//     u8 src = reg.read8(RegID_A);
-//     u8 result = executeRRC(src);
-//     reg.write8(RegID_A, result);
-//     reg.setFlagZero(false);
-// }
-//
-//
-// /**
-//  * Execite SLA on a byte. It shifts the contents 1 bit to the left and bit 7 is stored in the
-//  * carry flag.
-//  */
-// u8 Cpu::executeSLA(u8 src)
-// {
-//     bool carry = (src & 0x80) == 0x80;
-//     u8 result = src << 1;
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry(carry);
-//
-//     return result;
-// }
-//
-//
-// /**
-//  * Execite SRA on a byte. It shifts the contents 1 bit to the right. Bit 7 goes to itself and
-//  * bit 6 and bit 0 goes to the carry flag.
-//  */
-// u8 Cpu::executeSRA(u8 src)
-// {
-//     bool carry = (src & 0x1) == 0x1;
-//     u8 result = (src & 0x80) | (src >> 1);
-//
-//     reg.setFlagZero(result == 0);
-//     reg.setFlagSub(false);
-//     reg.setFlagHalfCarry(false);
-//     reg.setFlagCarry(carry);
-//
-//     return result;
-// }

@@ -258,6 +258,7 @@ void Mmu::writeHardwareRegister(u16 addr, u8 data)
         case SCX_ADDR:  graphicsController->displayRegisterWrite(RegSCX, data); break;
         case LY_ADDR:   graphicsController->displayRegisterWrite(RegLY, data); break;
         case LYC_ADDR:  graphicsController->displayRegisterWrite(RegLYC, data); break;
+        // case DMA_ADDR:  graphicsController->displayRegisterWrite(RegDMA, data); break;
         case DMA_ADDR:  DMATransfer(data); graphicsController->displayRegisterWrite(RegDMA, data); break;
         case BGP_ADDR:  graphicsController->displayRegisterWrite(RegBGP, data); break;
         case OBP0_ADDR: graphicsController->displayRegisterWrite(RegOBP0, data); break;

@@ -77,7 +77,7 @@ void Register::writeDouble(regID_t id, u16 val)
     {
         case RegID_AF:
             writeSingle(RegID_A, (val >> 8) & 0xff);
-            AF.low = 0xff & val;
+            AF.low = 0xf0 & val;
             break;
         case RegID_BC:
             writeSingle(RegID_B, (val >> 8) & 0xff);
@@ -101,15 +101,6 @@ void Register::writeDouble(regID_t id, u16 val)
             throw std::invalid_argument("Cannot write a word becasue register id was invalid.");
             break;
     }
-}
-
-/**
- * Copies the value from register src to register dest.
- */
-void Register::copySingle(regID_t dest, regID_t src)
-{
-    u8 srcVal = readSingle(src);
-    writeSingle(dest, srcVal);
 }
 
 
@@ -177,7 +168,7 @@ u16 Register::readDouble(regID_t id)
             break;
 
         default:
-            throw std::invalid_argument("Cannot write a word becasue register id was invalid.");
+            throw std::invalid_argument(fmt::format("Cannot read from register becasue RegID {} is invalid.", id));
             break;
     }
 

@@ -152,42 +152,38 @@ private:
     void executeINC16(instruction_t* instr);
     void executeDEC16(instruction_t* instr);
     void executeADD16(instruction_t* instr);
+    void executeADD16SPe(instruction_t* instr);
 
     /* Misc/control instructions */
     void executeNOP(instruction_t* instr);
     void executeDI(instruction_t* instr);
     void executeEI(instruction_t* instr);
     void executeCPL(instruction_t* instr);
+    void executeCCF(instruction_t* instr);
+    void executeSCF(instruction_t* instr);
+    void executeDAA(instruction_t* instr);
 
     /* 8-bit shift, rotate and bit instructions */
     void executeSWAP(instruction_t* instr);
+    void executeBIT(instruction_t* instr);
+    void executeSET(instruction_t* instr);
     void executeRES(instruction_t* instr);
-    void executeRRA(instruction_t* instr);
-    void executeRR(instruction_t* instr);
     void executeRLCA(instruction_t* instr);
+    void executeRLA(instruction_t* instr);
+    void executeRRCA(instruction_t* instr);
+    void executeRRA(instruction_t* instr);
     void executeRLC(instruction_t* instr);
+    void executeRL(instruction_t* instr);
+    void executeRRC(instruction_t* instr);
+    void executeRR(instruction_t* instr);
+    void executeSLA(instruction_t* instr);
+    void executeSRA(instruction_t* instr);
     void executeSRL(instruction_t* instr);
 
     /* Stack functions */
     void executePUSH(instruction_t* instr);
     void _executePUSH(u16 value);   /* Convenient function for the push instr and starting interrupts. */
     void executePOP(instruction_t* instr);
-
-
-
-    /**
-     * OUTDATED instruction functions
-     */
-     
-    // /* 	8 bit rotations/shifts and bit instructions */
-    // u8 executeSET(u8 src, int bitNumber);
-    // void executeBIT(u8 src, int bitNumber);
-    // void executeRLA();
-    // u8 executeRL(u8 src);
-    // void executeRRCA();
-    // u8 executeRRC(u8 src);
-    // u8 executeSLA(u8 src);
-    // u8 executeSRA(u8 src);
 };
 
 #endif /* CPU_H */
