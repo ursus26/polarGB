@@ -4,6 +4,7 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2021-03-21: - Improved register abstraction.
 2021-03-19: - We pass Blargg cpu instruction test 10.
 2021-03-18: - Fixed multiple problems with CPU instructions.
             - We now pass Blargg cpu instr test 9.

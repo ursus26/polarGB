@@ -64,9 +64,6 @@ typedef enum RegID
     RegID_HL,
     RegID_SP,
     RegID_PC,
-
-    /* Miscellaneous */
-    RegID_MISS  /* Used if a value is not in a register but in memory. */
 } regID_t;
 
 
@@ -82,23 +79,9 @@ class Register
 public:
     Register();
 
-    /* Functions for writing to a register or copying. */
-    void writeSingle(regID_t id, u8 val);
-    void writeDouble(regID_t id, u16 val);
-
-    /* Functions for loading data from a register. */
-    u8 readSingle(regID_t id);
-    u16 readDouble(regID_t id);
-
-    /* Operations on the program counter. */
-    u16 getProgramCounter() const;
-    void setProgramCounter(u16 val);
-    void incProgramCounter();
-
-    /* Operations on the stack pointer. */
-    u16 getStackPointer() const;
-    void incStackPointer();
-    void decStackPointer();
+    /* Main functions. */
+    u16 read(regID_t id);
+    void write(regID_t id, u16 value);
 
     /* Functions for getting the flags from register F. */
     bool getFlagZero() const;
@@ -115,6 +98,11 @@ public:
     void printRegister();
 
 private:
+    u8 readSingle(regID_t id);
+    u16 readDouble(regID_t id);
+    void writeSingle(regID_t id, u8 value);
+    void writeDouble(regID_t id, u16 value);
+
     /* Bit flag operations. */
     bool getBitFromFlags(int position) const;
     void setBitFromFlags(int position, bool val);

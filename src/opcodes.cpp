@@ -53,7 +53,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x1: /* LD BC, d16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_BC;
             instr->cycleCost = 3;
@@ -103,7 +103,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x6: /* LD B, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_B;
             instr->cycleCost = 2;
@@ -125,7 +125,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_SP;
             instr->operandDst.type = OP_IMM_PTR;
-            instr->operandDst.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandDst.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 5;
             instr->executionFunction = &Cpu::executeLD16;
             strcpy(instr->mnemonic, "LD (a16), SP");
@@ -183,7 +183,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xE: /* LD C, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_C;
             instr->cycleCost = 2;
@@ -205,7 +205,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x11: /* LD DE, d16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_DE;
             instr->cycleCost = 3;
@@ -255,7 +255,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x16: /* LD D, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_D;
             instr->cycleCost = 2;
@@ -275,7 +275,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x18: /* JR r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_PC;
             instr->cycleCost = 3;
@@ -336,7 +336,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x1E: /* LD E, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_E;
             instr->cycleCost = 2;
@@ -356,7 +356,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x20: /* JR NZ, r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_PC;
             instr->cycleCost = 3;
@@ -367,7 +367,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x21: /* LD HL, d16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_HL;
             instr->cycleCost = 3;
@@ -417,7 +417,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x26: /* LD H, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_H;
             instr->cycleCost = 2;
@@ -437,7 +437,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x28: /* JR Z, r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_PC;
             instr->cycleCost = 3;
@@ -498,7 +498,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x2E: /* LD L, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_L;
             instr->cycleCost = 2;
@@ -518,7 +518,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x30: /* JR NC, r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_PC;
             instr->cycleCost = 3;
@@ -529,7 +529,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x31: /* LD SP, d16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_SP;
             instr->cycleCost = 3;
@@ -579,7 +579,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x36: /* LD (HL), d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_MEM;
             instr->operandDst.memPtr = RegID_HL;
             instr->cycleCost = 3;
@@ -595,7 +595,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x38: /* JR C, r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_PC;
             instr->cycleCost = 3;
@@ -656,7 +656,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0x3E: /* LD A, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 2;
@@ -1883,7 +1883,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xC2: /* JP NZ, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 4;
             instr->extraInfo = COND_NZ;
             instr->executionFunction = &Cpu::executeJP;
@@ -1892,7 +1892,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xC3: /* JP a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 4;
             instr->extraInfo = COND_NONE;
             instr->executionFunction = &Cpu::executeJP;
@@ -1901,7 +1901,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xC4: /* CALL NZ, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_NONE;
             instr->cycleCost = 6;
             instr->extraInfo = COND_NZ;
@@ -1922,7 +1922,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xC6: /* ADD A, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 2;
@@ -1955,7 +1955,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xCA: /* JP Z, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 4;
             instr->extraInfo = COND_Z;
             instr->executionFunction = &Cpu::executeJP;
@@ -1967,7 +1967,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xCC: /* CALL Z, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_NONE;
             instr->cycleCost = 6;
             instr->extraInfo = COND_Z;
@@ -1977,7 +1977,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xCD: /* CALL a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_NONE;
             instr->cycleCost = 6;
             instr->extraInfo = COND_NONE;
@@ -1987,7 +1987,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xCE: /* ADC A, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 2;
@@ -2025,7 +2025,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xD2: /* JP NC, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 4;
             instr->extraInfo = COND_NC;
             instr->executionFunction = &Cpu::executeJP;
@@ -2036,7 +2036,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xD4: /* CALL NC, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 6;
             instr->extraInfo = COND_NC;
             instr->executionFunction = &Cpu::executeCALL;
@@ -2056,7 +2056,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xD6: /* SUB d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeSUB;
             strcpy(instr->mnemonic, "SUB d8");
@@ -2088,7 +2088,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xDA: /* JP C, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 4;
             instr->extraInfo = COND_C;
             instr->executionFunction = &Cpu::executeJP;
@@ -2099,7 +2099,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xDC: /* CALL C, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 6;
             instr->extraInfo = COND_C;
             instr->executionFunction = &Cpu::executeCALL;
@@ -2110,7 +2110,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xDE: /* SBC A, d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 2;
@@ -2132,7 +2132,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_A;
             instr->operandDst.type = OP_IMM_PTR;
-            instr->operandDst.immediate = mmu->read(reg.getProgramCounter() + 1) + 0xff00;
+            instr->operandDst.immediate = mmu->read(reg.read(RegID_PC) + 1) + 0xff00;
             instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD (a8), A");
@@ -2153,7 +2153,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_A;
             instr->operandDst.type = OP_IMM_PTR;
-            instr->operandDst.immediate = reg.readSingle(RegID_C) + 0xff00;
+            instr->operandDst.immediate = reg.read(RegID_C) + 0xff00;
             instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD (C), A");
@@ -2176,7 +2176,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xE6: /* AND d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 2;
@@ -2197,7 +2197,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xE8: /* ADD SP, e */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_SP;
             instr->cycleCost = 4;
@@ -2218,7 +2218,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->operandSrc.type = OP_REG;
             instr->operandSrc.reg = RegID_A;
             instr->operandDst.type = OP_IMM_PTR;
-            instr->operandDst.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandDst.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->cycleCost = 4;
             instr->extraInfo = COND_NONE;
             instr->executionFunction = &Cpu::executeLD8;
@@ -2233,7 +2233,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xEE: /* XOR d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeXOR;
             strcpy(instr->mnemonic, "XOR d8");
@@ -2251,7 +2251,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xF0: /* LD A, (a8) */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM_PTR;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1) + 0xff00;
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1) + 0xff00;
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 3;
@@ -2272,7 +2272,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xF2: /* LD A, (C) */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_IMM_PTR;
-            instr->operandSrc.immediate = reg.readSingle(RegID_C) + 0xff00;
+            instr->operandSrc.immediate = reg.read(RegID_C) + 0xff00;
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 2;
@@ -2301,7 +2301,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xF6: /* OR d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeOR;
             strcpy(instr->mnemonic, "OR d8");
@@ -2319,7 +2319,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xF8: /* LD HL, SP+r8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_HL;
             instr->cycleCost = 3;
@@ -2339,7 +2339,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xFA: /* LD A, a16 */
             instr->instructionLength = 3;
             instr->operandSrc.type = OP_IMM_PTR;
-            instr->operandSrc.immediate = mmu->read2Bytes(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read2Bytes(reg.read(RegID_PC) + 1);
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
             instr->cycleCost = 4;
@@ -2360,7 +2360,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
         case 0xFE: /* CP d8 */
             instr->instructionLength = 2;
             instr->operandSrc.type = OP_IMM;
-            instr->operandSrc.immediate = mmu->read(reg.getProgramCounter() + 1);
+            instr->operandSrc.immediate = mmu->read(reg.read(RegID_PC) + 1);
             instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeCP;
             strcpy(instr->mnemonic, "CP d8");
@@ -2389,7 +2389,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
  */
 void Cpu::decodePrefixedOpcode(instruction_t *instr)
 {
-    u8 prefixedOpcode = mmu->read(reg.getProgramCounter() + 1);
+    u8 prefixedOpcode = mmu->read(reg.read(RegID_PC) + 1);
     instr->instructionLength = 2;
     instr->cycleCost = 2;
 

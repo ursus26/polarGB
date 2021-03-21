@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdexcept>
+#include <assert.h>
 #include <fmt/format.h>
 #include "polarGB/register.h"
 
@@ -33,6 +33,89 @@ Register::Register()
 
 
 /**
+ * Reads the content of a register.
+ */
+u16 Register::read(regID_t id)
+{
+    u16 out = 0;
+
+    switch(id) {
+        case RegID_NONE:
+            assert(false);
+            break;
+
+        /* Single registers. */
+        case RegID_A:
+        case RegID_F:
+        case RegID_B:
+        case RegID_C:
+        case RegID_D:
+        case RegID_E:
+        case RegID_H:
+        case RegID_L:
+            out = readSingle(id);
+            break;
+
+        /* Double sized registers. */
+        case RegID_AF:
+        case RegID_BC:
+        case RegID_DE:
+        case RegID_HL:
+        case RegID_SP:
+        case RegID_PC:
+            out = readDouble(id);
+            break;
+
+        default:
+            assert(false);
+            break;
+    }
+    return out;
+}
+
+
+/**
+ * Writes a value to a register. Note there are restrictions. A 1 byte register can only store 1
+ * byte, not the full 2 byte (u16 type) value argument.
+ */
+void Register::write(regID_t id, u16 value)
+{
+    switch(id) {
+        case RegID_NONE:
+            assert(false);
+            break;
+
+        /* Single registers. */
+        case RegID_A:
+        case RegID_F:
+        case RegID_B:
+        case RegID_C:
+        case RegID_D:
+        case RegID_E:
+        case RegID_H:
+        case RegID_L:
+            assert(value < 0x100);
+            writeSingle(id, (u8)(value & 0xff));
+            break;
+
+        /* Double sized registers. */
+        case RegID_AF:
+        case RegID_BC:
+        case RegID_DE:
+        case RegID_HL:
+        case RegID_SP:
+        case RegID_PC:
+            writeDouble(id, value);
+            break;
+
+        default:
+            assert(false);
+            break;
+    }
+}
+
+
+/**
  * Writes a byte to a register specified by its id. We can only write to A, B, C, D, E, H and L.
  */
 void Register::writeSingle(regID_t id, u8 val)
@@ -41,6 +124,9 @@ void Register::writeSingle(regID_t id, u8 val)
     {
         case RegID_A:
             AF.high = val;
+            break;
+        case RegID_F:
+            AF.low = val & 0xf0;
             break;
         case RegID_B:
             BC.high = val;
@@ -61,7 +147,7 @@ void Register::writeSingle(regID_t id, u8 val)
             HL.low = val;
             break;
         default:
-            throw std::invalid_argument("Cannot write a byte becasue register id was invalid.");
+            assert(false);
             break;
     }
 }
@@ -98,7 +184,7 @@ void Register::writeDouble(regID_t id, u16 val)
             PC = val;
             break;
         default:
-            throw std::invalid_argument("Cannot write a word becasue register id was invalid.");
+            assert(false);
             break;
     }
 }
@@ -110,69 +196,56 @@ u8 Register::readSingle(regID_t id)
     {
         case RegID_A:
             return AF.high;
-
+        case RegID_F:
+            return AF.low & 0xf0;
         case RegID_B:
             return BC.high;
-
         case RegID_C:
             return BC.low;
-
         case RegID_D:
             return DE.high;
-
         case RegID_E:
             return DE.low;
-
         case RegID_H:
             return HL.high;
-
         case RegID_L:
             return HL.low;
-
         default:
-            throw std::invalid_argument("Cannot load byte from register.");
+            assert(false);
             break;
     }
-
     return 0;
 }
 
 
 u16 Register::readDouble(regID_t id)
 {
-    u16 returnValue = 0x0;
+    u16 out = 0;
     switch(id)
     {
         case RegID_AF:
-            returnValue = (readSingle(RegID_A) << 8) + AF.low;
+            out = (readSingle(RegID_A) << 8) + (AF.low & 0xf0);
             break;
-
         case RegID_BC:
-            returnValue = (readSingle(RegID_B) << 8) + readSingle(RegID_C);
+            out = (readSingle(RegID_B) << 8) + readSingle(RegID_C);
             break;
-
         case RegID_DE:
-            returnValue = (readSingle(RegID_D) << 8) + readSingle(RegID_E);
+            out = (readSingle(RegID_D) << 8) + readSingle(RegID_E);
             break;
-
         case RegID_HL:
-            returnValue = (readSingle(RegID_H) << 8) + readSingle(RegID_L);
+            out = (readSingle(RegID_H) << 8) + readSingle(RegID_L);
             break;
-
         case RegID_SP:
-            returnValue = SP;
+            out = SP;
             break;
-
         case RegID_PC:
-            returnValue = PC;
+            out = PC;
             break;
-
         default:
-            throw std::invalid_argument(fmt::format("Cannot read from register becasue RegID {} is invalid.", id));
+            assert(false);
             break;
     }
-
-    return returnValue;
+    return out;
 }
 
 
@@ -197,14 +270,6 @@ bool Register::getFlagHalfCarry() const
 bool Register::getFlagCarry() const
 {
     return getBitFromFlags(4);
-}
-
-/**
- * Return the bit value of a flag in the flags register.
- */
-bool Register::getBitFromFlags(int position) const
-{
-    return (this->AF.low >> position) & 0x1;
 }
 
 
@@ -232,67 +297,27 @@ void Register::setFlagCarry(bool val)
 }
 
 
+/**
+ * Return the bit value of a flag in the flags register.
+ */
+bool Register::getBitFromFlags(int position) const
+{
+    assert(position >= 0);
+    assert(position < 8);
+    return (this->AF.low >> position) & 0x1;
+}
+
+
 void Register::setBitFromFlags(int position, bool val)
 {
+    assert(position >= 0);
+    assert(position < 8);
+
     bool currentVal = getBitFromFlags(position);
 
     /* If the current value is not the desired value then flip the bit. Otherwise do nothing. */
     if(currentVal != val)
         this->AF.low ^= (1 << position);
-}
-
-
-/**
- * Returns the value of the program counter.
- */
-u16 Register::getProgramCounter() const
-{
-    return this->PC;
-}
-
-
-/**
- * Changes the value of the program counter to a new value.
- */
-void Register::setProgramCounter(u16 val)
-{
-    this->PC = val;
-}
-
-
-/**
- * Increases the program counter by 1.
- */
-void Register::incProgramCounter()
-{
-    this->PC++;
-}
-
-
-/**
- * Returns the value of the stack pointer.
- */
-u16 Register::getStackPointer() const
-{
-    return this->SP;
-}
-
-
-/**
- * Increases the stack pointer by 1.
- */
-void Register::incStackPointer()
-{
-    this->SP++;
-}
-
-
-/**
- * Decrease the stack pointer by 1.
- */
-void Register::decStackPointer()
-{
-    this->SP--;
 }
 
 
