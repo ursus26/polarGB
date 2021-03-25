@@ -29,6 +29,8 @@ const u16 TILE_MAP_DATA2 = 0x9c00 - 0x8000;
 
 GraphicsController::GraphicsController()
 {
+    this->interruptController = nullptr;
+    this->display = nullptr;
 }
 
 
@@ -37,9 +39,10 @@ GraphicsController::~GraphicsController()
 }
 
 
-void GraphicsController::startUp(bool noWindow)
+void GraphicsController::startUp(InterruptController* interruptController, bool noWindow)
 {
     this->noWindow = noWindow;
+    this->interruptController = interruptController;
 
     vram.size = 0x2000;
     vram.mem = new u8[vram.size]();
@@ -91,6 +94,8 @@ void GraphicsController::shutDown()
         display = nullptr;
         this->noWindow = true;
     }
+
+    this->interruptController = nullptr;
 }
 
 
@@ -120,6 +125,7 @@ void GraphicsController::update(u8 cycles)
                 else
                 {
                     setCurrentMode(2);
+                    interruptController->requestInterrupt(vertical_blanking);
                 }
             }
             break;

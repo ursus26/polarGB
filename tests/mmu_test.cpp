@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "polarGB/types.h"
+#include "polarGB/interrupt_controller.h"
 #include "polarGB/mmu.h"
 
 
@@ -8,10 +9,11 @@
  *************************************/
 TEST(MMUTests, VRAMLowerBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x55;
     u16 testAddr = VRAM_START_ADDR;
@@ -26,10 +28,11 @@ TEST(MMUTests, VRAMLowerBoundTest)
 
 TEST(MMUTests, VRAMGeneralCase)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0xaa;
     u16 testAddr = VRAM_START_ADDR + 0x1000;
@@ -44,10 +47,11 @@ TEST(MMUTests, VRAMGeneralCase)
 
 TEST(MMUTests, VRAMUpperBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0xa5;
     u16 testAddr = VRAM_END_ADDR;
@@ -59,15 +63,17 @@ TEST(MMUTests, VRAMUpperBoundTest)
     gc.shutDown();
 }
 
+
 /**************************************
  * Extended RAM, 0xa000 - 0xbfff
  *************************************/
 TEST(MMUTests, ERAMLowerBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x12;
     u16 testAddr = ERAM_START_ADDR;
@@ -82,10 +88,11 @@ TEST(MMUTests, ERAMLowerBoundTest)
 
 TEST(MMUTests, ERAMGeneralCase)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x23;
     u16 testAddr = ERAM_START_ADDR + 0x1200;
@@ -100,10 +107,11 @@ TEST(MMUTests, ERAMGeneralCase)
 
 TEST(MMUTests, ERAMUpperBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x34;
     u16 testAddr = ERAM_END_ADDR;
@@ -115,15 +123,17 @@ TEST(MMUTests, ERAMUpperBoundTest)
     gc.shutDown();
 }
 
+
 /**************************************
  * Working RAM, 0xc000 - 0xdfff
  *************************************/
 TEST(MMUTests, WRAMLowerBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x56;
     u16 testAddr = WRAM_START_ADDR;
@@ -138,10 +148,11 @@ TEST(MMUTests, WRAMLowerBoundTest)
 
 TEST(MMUTests, WRAMGeneralCase)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x67;
     u16 testAddr = WRAM_START_ADDR + 0x200;
@@ -156,10 +167,11 @@ TEST(MMUTests, WRAMGeneralCase)
 
 TEST(MMUTests, WRAMUpperBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x78;
     u16 testAddr = WRAM_END_ADDR;
@@ -177,10 +189,11 @@ TEST(MMUTests, WRAMUpperBoundTest)
  *************************************/
 TEST(MMUTests, OAMLowerBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x03;
     u16 testAddr = OAM_START_ADDR;
@@ -195,10 +208,11 @@ TEST(MMUTests, OAMLowerBoundTest)
 
 TEST(MMUTests, OAMGeneralCase)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x04;
     u16 testAddr = OAM_START_ADDR + 0x40;
@@ -213,10 +227,11 @@ TEST(MMUTests, OAMGeneralCase)
 
 TEST(MMUTests, OAMUpperBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0x05;
     u16 testAddr = OAM_END_ADDR;
@@ -234,10 +249,11 @@ TEST(MMUTests, OAMUpperBoundTest)
  *************************************/
 TEST(MMUTests, HardwareRegistersLowerBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0xbb;
     u16 testAddr = HARDWARE_REGISTERS_START_ADDR;
@@ -252,10 +268,11 @@ TEST(MMUTests, HardwareRegistersLowerBoundTest)
 
 TEST(MMUTests, HardwareRegistersGeneralCase)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0xcc;
     u16 testAddr = HARDWARE_REGISTERS_START_ADDR + 0x40;
@@ -270,10 +287,11 @@ TEST(MMUTests, HardwareRegistersGeneralCase)
 
 TEST(MMUTests, HardwareRegistersUpperBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0xdd;
     u16 testAddr = HARDWARE_REGISTERS_END_ADDR;
@@ -291,10 +309,11 @@ TEST(MMUTests, HardwareRegistersUpperBoundTest)
  *************************************/
 TEST(MMUTests, HRAMLowerBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0xb1;
     u16 testAddr = HRAM_START_ADDR;
@@ -309,10 +328,11 @@ TEST(MMUTests, HRAMLowerBoundTest)
 
 TEST(MMUTests, HRAMGeneralCase)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0xc1;
     u16 testAddr = HRAM_START_ADDR + 0x40;
@@ -327,10 +347,11 @@ TEST(MMUTests, HRAMGeneralCase)
 
 TEST(MMUTests, HRAMUpperBoundTest)
 {
+    InterruptController ic;
     GraphicsController gc;
-    gc.startUp(true);
+    gc.startUp(&ic, true);
     Mmu mmu;
-    mmu.startUp(&gc);
+    mmu.startUp(&gc, &ic);
 
     u8 testValue = 0xd1;
     u16 testAddr = HRAM_END_ADDR;

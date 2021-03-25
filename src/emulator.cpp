@@ -55,13 +55,14 @@ void Emulator::startUp()
     this->isRunning = true;
     this->cyclesCompleted = 0;
 
+    this->interruptController = new InterruptController();
     this->graphicsController = new GraphicsController();
     this->mmu = new Mmu();
     this->cpu = new Cpu();
 
-    this->graphicsController->startUp(false);
-    this->mmu->startUp(this->graphicsController);
-    this->cpu->startUp(this->mmu);
+    this->graphicsController->startUp(this->interruptController, false);
+    this->mmu->startUp(this->graphicsController, this->interruptController);
+    this->cpu->startUp(this->mmu, this->interruptController);
 }
 
 

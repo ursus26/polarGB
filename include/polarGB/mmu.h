@@ -21,6 +21,7 @@
 #include <string>
 #include "types.h"
 #include "cartridge.h"
+#include "interrupt_controller.h"
 #include "graphics_controller.h"
 
 
@@ -64,7 +65,7 @@ public:
     ~Mmu();
 
     /* Small boot program for the mmu. */
-    void startUp(GraphicsController* gc);
+    void startUp(GraphicsController* gc, InterruptController* interruptController);
     void shutDown();
 
     /* Read from an address. */
@@ -86,6 +87,7 @@ private:
     ram_t HardwareRegisters;
     ram_t HRAM;       /* High Ram / CPU working RAM */
 
+    InterruptController* interruptController;
     GraphicsController* graphicsController;
 
     void DMATransfer(u8 index);

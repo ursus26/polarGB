@@ -20,7 +20,17 @@
 
 #include <bitset>
 #include "types.h"
-#include "mmu.h"
+
+
+typedef enum InterruptSignal
+{
+    vertical_blanking = 0x1,
+    lcdc = 0x2,
+    timer_overflow = 0x4,
+    serial_transfer_completion = 0x8,
+    joypad = 0x10
+} interrupt_t;
+
 
 
 const u8 INTERRUPT_VERTICAL_BLANKING            = 0x1;
@@ -42,7 +52,7 @@ public:
     InterruptController();
     ~InterruptController();
 
-    void startUp(Mmu* mmuInstanceCopy);
+    void startUp();
     void shutDown();
 
     void disableInterrupts();
@@ -52,9 +62,19 @@ public:
     void resetInterruptFlag(u8 interruptFlag);
     u16 getInterruptVector(u8 interruptSignal);
 
+    void requestInterrupt(interrupt_t interruptSignal);
+
+    u8 getIF() const;
+    u8 getIE() const;
+    void setIF(u8 value);
+    void setIE(u8 value);
+
 private:
-    Mmu* mmu;
-    bool ime;   /* Interrupt Master Enable. 0: disable all interrupts, 1: enable all interrupts. */
+    /* Interrupt registers. */
+    u8 IF; /* Address: 0xff0f*/
+    u8 IE; /* Address: 0xffff*/
+    bool IME; /* Interrupt Master Enable. 0: disable all interrupts, 1: enable all interrupts. */
+
     bool delayed_enable;
 
     bool verticalBlankRequested;

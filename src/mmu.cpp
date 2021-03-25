@@ -36,7 +36,7 @@ Mmu::~Mmu()
 /**
  * Small boot program that initializes specific memory locations.
  */
-void Mmu::startUp(GraphicsController* gc)
+void Mmu::startUp(GraphicsController* gc, InterruptController* interruptController)
 {
     ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
     ERAM.mem = new u8[ERAM.size]();
@@ -53,6 +53,7 @@ void Mmu::startUp(GraphicsController* gc)
     HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
     HRAM.mem = new u8[HRAM.size]();
 
+    this->interruptController = interruptController;
     this->graphicsController = gc;
     this->rom.startUp();
 
@@ -98,6 +99,7 @@ void Mmu::shutDown()
 {
     this->rom.shutDown();
     this->graphicsController = nullptr;
+    this->interruptController = nullptr;
 
     delete[] ERAM.mem;
     ERAM.mem = nullptr;
@@ -243,6 +245,8 @@ u8 Mmu::readHardwareRegister(u16 addr)
         case OBP1_ADDR: return this->graphicsController->displayRegisterRead(RegOBP1);
         case WY_ADDR:   return this->graphicsController->displayRegisterRead(RegWY);
         case WX_ADDR:   return this->graphicsController->displayRegisterRead(RegWX);
+        case IF_ADDR:   return this->interruptController->getIF();
+        case IE_ADDR:   return this->interruptController->getIE();
         default: return HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR];
     }
 }
@@ -265,6 +269,8 @@ void Mmu::writeHardwareRegister(u16 addr, u8 data)
         case OBP1_ADDR: graphicsController->displayRegisterWrite(RegOBP1, data); break;
         case WY_ADDR:   graphicsController->displayRegisterWrite(RegWY, data); break;
         case WX_ADDR:   graphicsController->displayRegisterWrite(RegWX, data); break;
+        case IF_ADDR:   interruptController->setIF(data); break;
+        case IE_ADDR:   interruptController->setIE(data); break;
         default:        HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR] = data; break;
     }
 }

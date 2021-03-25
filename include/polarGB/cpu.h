@@ -80,7 +80,7 @@ public:
     Cpu();
     ~Cpu();
 
-    void startUp(Mmu* m);
+    void startUp(Mmu* m, InterruptController* interruptController);
     void shutDown();
 
     u8 step();
@@ -89,7 +89,7 @@ private:
     /* Member variables. */
     Register reg;
     Mmu* mmu;
-    InterruptController interruptController;
+    InterruptController* interruptController;
     bool isRunning;
     int cyclesCompleted = 0;
     instruction_t* currentInstruction;
@@ -104,18 +104,11 @@ private:
     void decodePrefixedOpcode(instruction_t *instr);
     void printInstructionInfo(instruction_t *instr);
 
-    /* Half-carry and carry test for 8-bit operations!!!!. */
-    bool halfCarryTest(int val1, int val2);
-    bool halfBorrowTest(int val1, int val2);
-    bool carryTest(int val1, int val2);
-    bool borrowTest(int val1, int val2);
-
     /* Instruction helper functions. */
     u8 loadOperand8bits(operand_t* instr);
     u16 loadOperand16bits(operand_t* instr);
     void storeOperand8bits(operand_t* instr, u8 value);
     void storeOperand16bits(operand_t* instr, u16 value);
-
 
     /**
      * Instruction functions

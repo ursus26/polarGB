@@ -19,8 +19,9 @@
 #define GRAPHICS_CONTROLLER_H
 
 #include <string>
-#include "graphics_display.h"
 #include "types.h"
+#include "interrupt_controller.h"
+#include "graphics_display.h"
 
 
 typedef enum DisplayRegister
@@ -47,7 +48,7 @@ public:
     ~GraphicsController();
 
     /* Initialization and clean up. */
-    void startUp(bool noWindow);
+    void startUp(InterruptController* interruptController, bool noWindow);
     void shutDown();
 
     /* Video RAM read and write. */
@@ -79,6 +80,7 @@ private:
 
     bool noWindow;  /* Mainly used for testing in order to not setup the window. */
     GraphicsDisplay* display;
+    InterruptController* interruptController;
 
     // void drawFrame();
     void updateMatchFlag();

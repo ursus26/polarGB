@@ -21,9 +21,10 @@
 #include <string>
 #include <SDL2/SDL.h>
 #include "types.h"
+#include "interrupt_controller.h"
+#include "graphics_controller.h"
 #include "mmu.h"
 #include "cpu.h"
-#include "graphics_controller.h"
 
 
 const int CPU_FREQUENCY = 1048576; /* Hz */
@@ -46,6 +47,7 @@ private:
     Mmu* mmu;
     Cpu* cpu;
     GraphicsController* graphicsController;
+    InterruptController* interruptController;
 
     void startUp();
     void shutDown();

@@ -34,13 +34,13 @@ Cpu::~Cpu()
 }
 
 
-void Cpu::startUp(Mmu* m)
+void Cpu::startUp(Mmu* m, InterruptController* interruptController)
 {
     this->mmu = m;
+    this->interruptController = interruptController;
     this->isRunning = true;
     this->cyclesCompleted = 0;
-    this->interruptController.startUp(this->mmu);
-    this->interruptController.disableInterrupts();
+    this->interruptController->disableInterrupts();
     this->currentInstruction = new instruction_t;
 
     /* Initialise the registers. */
@@ -59,7 +59,7 @@ void Cpu::shutDown()
      * create the memory manager. */
     delete this->currentInstruction;
     this->currentInstruction = nullptr;
-    this->interruptController.shutDown();
+    this->interruptController = nullptr;
     this->mmu = nullptr;
 }
 
@@ -70,10 +70,6 @@ void Cpu::shutDown()
  */
 u8 Cpu::step()
 {
-    /* Check for interrupts before fetching the next instruction. This possibly changes the
-     * program counter in order to execute a signal. */
-    this->checkSignals();
-
     /* Fetch the next instruction. */
     Instruction* instr = fetchDecode();
     reg.write(RegID_PC, reg.read(RegID_PC) + instr->instructionLength);
@@ -87,6 +83,10 @@ u8 Cpu::step()
     /* Execute the instruction handler. */
     (this->*(instr->executionFunction))(instr);
     u8 cycleCost = instr->cycleCost;
+
+    /* Check for interrupts before fetching the next instruction. This possibly changes the
+     * program counter in order to execute a signal. */
+    this->checkSignals();
 
     return cycleCost;
 }
@@ -111,7 +111,7 @@ Cpu::instruction_t * Cpu::fetchDecode()
 void Cpu::checkSignals()
 {
     /* Check for an interrupt signal. */
-    u16 interruptSignal = this->interruptController.checkForInterrupts();
+    u16 interruptSignal = this->interruptController->checkForInterrupts();
     if(interruptSignal == 0x0)
         return;
     else
@@ -125,9 +125,9 @@ void Cpu::checkSignals()
  */
 void Cpu::setupSignalExecution(u8 interruptSignal)
 {
-    interruptController.disableInterrupts();
-    interruptController.resetInterruptFlag(interruptSignal);
-    u16 interruptVector = interruptController.getInterruptVector(interruptSignal);
+    interruptController->disableInterrupts();
+    interruptController->resetInterruptFlag(interruptSignal);
+    u16 interruptVector = interruptController->getInterruptVector(interruptSignal);
 
     _executePUSH(reg.read(RegID_PC));
     reg.write(RegID_PC, interruptVector);
@@ -155,34 +155,6 @@ void Cpu::printInstructionInfo(instruction_t *instr)
     }
 
     fmt::print("\t{}\n", instr->mnemonic);
-}
-
-
-bool Cpu::halfCarryTest(int val1, int val2)
-{
-    int test = ((val1 & 0xf) + (val2 & 0xf)) & 0x1;
-    return (test == 0x1);
-}
-
-
-bool Cpu::halfBorrowTest(int val1, int val2)
-{
-    int test = ((val1 & 0x1f) - (val2 & 0x1f)) & 0x8;
-    return (test == 0x8);
-}
-
-
-bool Cpu::carryTest(int val1, int val2)
-{
-    int test = ((val1 & 0xff) + (val2 & 0xff)) & 0x10;
-    return (test == 0x10);
-}
-
-
-bool Cpu::borrowTest(int val1, int val2)
-{
-    int test = ((val1 & 0x1ff) + (val2 & 0x1ff)) & 0x80;
-    return (test == 0x80);
 }
 
 
@@ -454,7 +426,7 @@ void Cpu::executeRET(instruction_t* instr)
 
         /* Re-enable the IME flag if the instruction originated from an interrupt. */
         if(conditionFlag == COND_IE)
-            interruptController.enableInterrupts(false);
+            interruptController->enableInterrupts(false);
     }
     else
     {
@@ -723,14 +695,14 @@ void Cpu::executeADD16SPe(instruction_t* instr)
 
 void Cpu::executeDI(instruction_t* instr)
 {
-    this->interruptController.disableInterrupts();
+    this->interruptController->disableInterrupts();
     this->cyclesCompleted += instr->cycleCost;
 }
 
 
 void Cpu::executeEI(instruction_t* instr)
 {
-    this->interruptController.enableInterrupts(true);
+    this->interruptController->enableInterrupts(true);
     this->cyclesCompleted += instr->cycleCost;
 }
 

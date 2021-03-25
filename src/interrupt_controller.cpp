@@ -30,17 +30,15 @@ InterruptController::~InterruptController()
 }
 
 
-void InterruptController::startUp(Mmu* mmuInstanceCopy)
+void InterruptController::startUp()
 {
-    this->ime = false;
+    this->IME = false;
     this->delayed_enable = false;
-    this->mmu = mmuInstanceCopy;
 }
 
 
 void InterruptController::shutDown()
 {
-    this->mmu = nullptr;
 }
 
 
@@ -50,7 +48,7 @@ void InterruptController::shutDown()
  */
 void InterruptController::disableInterrupts()
 {
-    this->ime = false;
+    this->IME = false;
 }
 
 
@@ -61,7 +59,7 @@ void InterruptController::disableInterrupts()
 void InterruptController::enableInterrupts(bool delayed_enable)
 {
     if(!delayed_enable)
-        this->ime = true;
+        this->IME = true;
     else
         this->delayed_enable = true;
 }
@@ -76,8 +74,8 @@ void InterruptController::resetInterruptFlag(u8 interruptFlag)
 {
     assert(interruptFlag <= INTERRUPT_JOYPAD);
 
-    u8 interruptFlags = this->mmu->read(IF_ADDR) & ~interruptFlag;
-    this->mmu->write(IF_ADDR, interruptFlags);
+    u8 interruptFlags = this->IF & ~interruptFlag;
+    this->IF = interruptFlags;
 }
 
 
@@ -98,13 +96,13 @@ u8 InterruptController::checkForInterrupts()
     /* Enable the IME for the next instruction after EI instruction is encountered. */
     if(this->delayed_enable)
     {
-        this->ime = true;
+        this->IME = true;
         this->delayed_enable = false;
         return 0x0;
     }
 
     /* Stop if IME is not enabled. */
-    if(!this->ime)
+    if(!this->IME)
         return 0x0;
 
     /* Read the flags from IF and IE registers. */
@@ -128,8 +126,8 @@ u8 InterruptController::checkForInterrupts()
 
 void InterruptController::processInterruptRegister()
 {
-    u8 interruptFlags = this->mmu->read(IF_ADDR);
-    u8 interruptEnable = this->mmu->read(IE_ADDR);
+    u8 interruptFlags = this->IF;
+    u8 interruptEnable = this->IE;
 
     this->verticalBlankRequested = (interruptFlags & INTERRUPT_VERTICAL_BLANKING) == INTERRUPT_VERTICAL_BLANKING;
     this->verticalBlankEnabled = (interruptEnable & INTERRUPT_VERTICAL_BLANKING) == INTERRUPT_VERTICAL_BLANKING;
@@ -166,4 +164,34 @@ u16 InterruptController::getInterruptVector(u8 signal)
             fmt::print(stderr, "InterruptController::getInterruptVector | Probably multiple signals are given at the same time\n");
             exit(EXIT_FAILURE);
     }
+}
+
+
+void InterruptController::requestInterrupt(interrupt_t interruptSignal)
+{
+    this->IF |= interruptSignal;
+}
+
+
+u8 InterruptController::getIF() const
+{
+    return this->IF;
+}
+
+
+u8 InterruptController::getIE() const
+{
+    return this->IE;
+}
+
+
+void InterruptController::setIF(u8 value)
+{
+    this->IF = value & 0x1f;
+}
+
+
+void InterruptController::setIE(u8 value)
+{
+    this->IE = value & 0x1f;
 }
