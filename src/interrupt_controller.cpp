@@ -22,22 +22,14 @@
 
 InterruptController::InterruptController()
 {
-}
-
-
-InterruptController::~InterruptController()
-{
-}
-
-
-void InterruptController::startUp()
-{
+    this->IF = 0;
+    this->IE = 0;
     this->IME = false;
     this->delayed_enable = false;
 }
 
 
-void InterruptController::shutDown()
+InterruptController::~InterruptController()
 {
 }
 
@@ -105,40 +97,30 @@ u8 InterruptController::checkForInterrupts()
     if(!this->IME)
         return 0x0;
 
-    /* Read the flags from IF and IE registers. */
-    this->processInterruptRegister();
+    /* Check for interrupts in order of priority. */
+    for(int i = 0; i < 5; i++)
+    {
+        bool flag = (this->IF >> i) & 0x1;
+        bool enabled = (this->IE >> i) & 0x1;
 
-    /* Check the 5 interrupts that need to processed in order of priority. */
-    if(this->verticalBlankEnabled && this->verticalBlankRequested)
-        return INTERRUPT_VERTICAL_BLANKING;
-    else if(this->LCDCEnabled && this->LCDCRequested)
-        return INTERRUPT_LCDC;
-    else if(this->timerOverflowEnabled && this->timerOverflowRequested)
-        return INTERRUPT_TIMER_OVERFLOW;
-    else if(this->serialEnabled && this->serialRequested)
-        return INTERRUPT_SERIAL_TRANSFER_COMPLETION;
-    else if(this->joypadEnabled && this->joypadRequested)
-        return INTERRUPT_JOYPAD;
-    else
-        return 0x0;
-}
+        if(flag && enabled)
+        {
+            switch(i) {
+                case 0:
+                    return INTERRUPT_VERTICAL_BLANKING;
+                case 1:
+                    return INTERRUPT_LCDC;
+                case 2:
+                    return INTERRUPT_TIMER_OVERFLOW;
+                case 3:
+                    return INTERRUPT_SERIAL_TRANSFER_COMPLETION;
+                case 4:
+                    return INTERRUPT_JOYPAD;
+            }
+        }
+    }
 
-
-void InterruptController::processInterruptRegister()
-{
-    u8 interruptFlags = this->IF;
-    u8 interruptEnable = this->IE;
-
-    this->verticalBlankRequested = (interruptFlags & INTERRUPT_VERTICAL_BLANKING) == INTERRUPT_VERTICAL_BLANKING;
-    this->verticalBlankEnabled = (interruptEnable & INTERRUPT_VERTICAL_BLANKING) == INTERRUPT_VERTICAL_BLANKING;
-    this->LCDCRequested = (interruptFlags & INTERRUPT_LCDC) == INTERRUPT_LCDC;
-    this->LCDCEnabled = (interruptEnable & INTERRUPT_LCDC) == INTERRUPT_LCDC;
-    this->timerOverflowRequested = (interruptFlags & INTERRUPT_TIMER_OVERFLOW) == INTERRUPT_TIMER_OVERFLOW;
-    this->timerOverflowEnabled = (interruptEnable & INTERRUPT_TIMER_OVERFLOW) == INTERRUPT_TIMER_OVERFLOW;
-    this->serialRequested = (interruptFlags & INTERRUPT_SERIAL_TRANSFER_COMPLETION) == INTERRUPT_SERIAL_TRANSFER_COMPLETION;
-    this->serialEnabled = (interruptEnable & INTERRUPT_SERIAL_TRANSFER_COMPLETION) == INTERRUPT_SERIAL_TRANSFER_COMPLETION;
-    this->joypadRequested = (interruptFlags & INTERRUPT_JOYPAD) == INTERRUPT_JOYPAD;
-    this->joypadEnabled = (interruptEnable & INTERRUPT_JOYPAD) == INTERRUPT_JOYPAD;
+    return 0;
 }
 
 
@@ -175,13 +157,13 @@ void InterruptController::requestInterrupt(interrupt_t interruptSignal)
 
 u8 InterruptController::getIF() const
 {
-    return this->IF;
+    return this->IF & 0x1f;
 }
 
 
 u8 InterruptController::getIE() const
 {
-    return this->IE;
+    return this->IE & 0x1f;
 }
 
 

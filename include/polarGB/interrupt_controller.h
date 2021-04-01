@@ -52,9 +52,6 @@ public:
     InterruptController();
     ~InterruptController();
 
-    void startUp();
-    void shutDown();
-
     void disableInterrupts();
     void enableInterrupts(bool delayed_enable);
 
@@ -74,25 +71,7 @@ private:
     u8 IF; /* Address: 0xff0f*/
     u8 IE; /* Address: 0xffff*/
     bool IME; /* Interrupt Master Enable. 0: disable all interrupts, 1: enable all interrupts. */
-
     bool delayed_enable;
-
-    bool verticalBlankRequested;
-    bool verticalBlankEnabled;
-
-    bool LCDCRequested;
-    bool LCDCEnabled;
-
-    bool timerOverflowRequested;
-    bool timerOverflowEnabled;
-
-    bool serialRequested;
-    bool serialEnabled;
-
-    bool joypadRequested;
-    bool joypadEnabled;
-
-    void processInterruptRegister();
 };
 
 

@@ -79,6 +79,9 @@ void Emulator::shutDown()
     this->graphicsController->shutDown();
     delete this->graphicsController;
     this->graphicsController = nullptr;
+
+    delete this->interruptController;
+    this->interruptController = nullptr;
 }
 
 

@@ -54,8 +54,7 @@ target_include_directories(${PROJECT_LIB_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/inc
 
 target_link_libraries(${PROJECT_LIB_NAME} PRIVATE pthread dl fmt::fmt ${SDL2_LIBRARIES})
 
-target_compile_options(${PROJECT_LIB_NAME} PUBLIC -Wall -Wextra -Wpedantic -D_FORTIFY_SOURCE=2
-                                                  -fstack-protector)
+target_compile_options(${PROJECT_LIB_NAME} PUBLIC -Wall -Wextra -Wpedantic -ggdb3)
 
 ###############################################################################
 # PROJECT BUILD SPECIFICATION
