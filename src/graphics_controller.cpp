@@ -29,6 +29,23 @@ const u16 TILE_MAP_DATA2 = 0x9c00 - 0x8000;
 
 GraphicsController::GraphicsController()
 {
+    this->LCDC = 0;
+    this->STAT = 0;
+    this->SCY = 0;
+    this->SCX = 0;
+    this->LY = 0;
+    this->LYC = 0;
+    this->DMA = 0;
+    this->BGP = 0;
+    this->OBP0 = 0;
+    this->OBP1 = 0;
+    this->WY = 0;
+    this->WX = 0;
+    vram.size = 0;
+    vram.mem = nullptr;
+    this->mode = 2;
+    this->modeCycles = 0;
+    this->noWindow = false;
     this->interruptController = nullptr;
     this->display = nullptr;
 }
@@ -65,27 +82,9 @@ void GraphicsController::startUp(InterruptController* interruptController, bool 
 
 void GraphicsController::shutDown()
 {
-    // fmt::print("GraphicsController::shutDown() | Shutting down glfw\n");
-    // fmt::print("GraphicsController::shutDown() | STAT: {:#x}\n", mmu->read(STAT_ADDR));
-    //
-    //
-    // u16 start_addr = VRAM_START_ADDR;
-    // if((mmu->read(STAT_ADDR) & 0x10) == 0x10)
-    // {
-    //     start_addr = 0x8800;
-    // }
-    //
-    // for(int i = 0; i < 8; i++)
-    // {
-    //     for(int j = 0; j < 8; j++)
-    //     {
-    //         fmt::print("{:x} ", mmu->read(start_addr));
-    //     }
-    //     fmt::print("\n");
-    // }
-
     delete[] vram.mem;
     vram.mem = nullptr;
+    vram.size = 0;
 
     if(noWindow == false)
     {
@@ -111,21 +110,27 @@ void GraphicsController::update(u8 cycles)
     {
         /* Horizontal blanking. */
         case 0:
-            if(modeCycles >= 60)
+            if(modeCycles >= 51)
             {
-                modeCycles -= 60;
+                modeCycles -= 51;
                 LY++;
 
                 /* Check if we enter V-Blank or go to mode 2. */
-                if(LY == 143)
+                if(LY == 144)
                 {
                     setCurrentMode(1);
                     display->drawFrame();
+                    interruptController->requestInterrupt(vertical_blanking);
+
+                    if(STAT & 0x10)
+                        interruptController->requestInterrupt(lcdc);
                 }
                 else
                 {
                     setCurrentMode(2);
-                    interruptController->requestInterrupt(vertical_blanking);
+
+                    if(STAT & 0x20)
+                        interruptController->requestInterrupt(lcdc);
                 }
             }
             break;
@@ -141,7 +146,8 @@ void GraphicsController::update(u8 cycles)
                 {
                     setCurrentMode(2);
                     LY = 0;
-                    // fmt::print("NEW FRAME\n");
+                    if(STAT & 0x20)
+                        interruptController->requestInterrupt(lcdc);
                 }
 
             }
@@ -163,6 +169,9 @@ void GraphicsController::update(u8 cycles)
                 modeCycles -= 43;
                 setCurrentMode(0);
                 processScanline();
+
+                if(STAT & 0x8)
+                    interruptController->requestInterrupt(lcdc);
             }
             break;
     }
@@ -311,6 +320,7 @@ void GraphicsController::processScanline()
         }
 
         // this->display->updatePixel(xPixel, yPixel, 0xaa, 0x0, 0x00, 0xff);
+        assert(LY < 144);
         this->display->updatePixel(i, LY, color, color, color, 0xff);
         xPixel = (xPixel + 1) % 256;
     }
@@ -339,12 +349,16 @@ void GraphicsController::updateMatchFlag()
         STAT |= 0x4;
     else
         STAT &= ~0x4;
+
+    if(STAT & 0x40 && STAT & 0x4)
+        interruptController->requestInterrupt(lcdc);
 }
 
 
 u8 GraphicsController::vramRead(u16 address)
 {
     assert(address < vram.size);
+    assert(vram.mem != nullptr);
 
     return vram.mem[address];
 }
@@ -353,6 +367,8 @@ u8 GraphicsController::vramRead(u16 address)
 void GraphicsController::vramWrite(u16 address, u8 data)
 {
     assert(address < vram.size);
+    assert(vram.mem != nullptr);
+
     vram.mem[address] = data;
 }
 
@@ -398,7 +414,7 @@ void GraphicsController::displayRegisterWrite(displayRegister_t reg, u8 data)
             LCDC = data;
             break;
         case RegSTAT:
-            STAT = data;
+            STAT = data & 0x7c;
             break;
         case RegSCY:
             SCY = data;

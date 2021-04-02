@@ -27,6 +27,10 @@ using namespace std;
 
 Cpu::Cpu()
 {
+    this->mmu = nullptr;
+    this->interruptController = nullptr;
+    this->isRunning = false;
+    this->currentInstruction = nullptr;
 }
 
 Cpu::~Cpu()
@@ -39,7 +43,6 @@ void Cpu::startUp(Mmu* m, InterruptController* interruptController)
     this->mmu = m;
     this->interruptController = interruptController;
     this->isRunning = true;
-    this->cyclesCompleted = 0;
     this->interruptController->disableInterrupts();
     this->currentInstruction = new instruction_t;
 
@@ -78,7 +81,7 @@ u8 Cpu::step()
     // {
     //     fmt::print("Restarting game\n");
     // }
-    // printInstructionInfo(instr);
+    printInstructionInfo(instr);
 
     /* Execute the instruction handler. */
     (this->*(instr->executionFunction))(instr);
@@ -239,9 +242,8 @@ void Cpu::storeOperand16bits(operand_t* operand, u16 value)
 }
 
 
-void Cpu::executeNOP(instruction_t* instr)
+void Cpu::executeNOP(instruction_t*)
 {
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -250,9 +252,6 @@ void Cpu::executeLD8(instruction_t* instr)
     /* Load and store 1 byte of information. */
     u8 value = loadOperand8bits(&(instr->operandSrc));
     storeOperand8bits(&(instr->operandDst), value);
-
-    /* Add the amount of cycles used. */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -265,9 +264,6 @@ void Cpu::executeLD8Inc(instruction_t* instr)
     /* Incrementing the HL register. */
     u16 result = reg.read(RegID_HL) + 1;
     reg.write(RegID_HL, result);
-
-    /* Add the amount of cycles used. */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -280,9 +276,6 @@ void Cpu::executeLD8Dec(instruction_t* instr)
     /* Incrementing the HL register. */
     u16 result = reg.read(RegID_HL) - 1;
     reg.write(RegID_HL, result);
-
-    /* Add the amount of cycles used. */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -291,9 +284,6 @@ void Cpu::executeLD16(instruction_t* instr)
     /* Load and store 2 byte of information. */
     u16 value = loadOperand16bits(&(instr->operandSrc));
     storeOperand16bits(&(instr->operandDst), value);
-
-    /* Add the amount of cycles used. */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -309,8 +299,6 @@ void Cpu::executeLDHL(instruction_t* instr)
     reg.setFlagHalfCarry((result & 0xf) < (sp & 0xf));
     reg.setFlagZero(false);
     reg.setFlagSub(false);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -324,7 +312,6 @@ void Cpu::executeJP(instruction_t* instr)
     if(conditionFlag == COND_HL)
     {
         reg.write(RegID_PC, reg.read(RegID_HL));
-        this->cyclesCompleted += instr->cycleCost;
     }
     else
     {
@@ -337,7 +324,6 @@ void Cpu::executeJP(instruction_t* instr)
         ||(conditionFlag == COND_C  && carry == true))
         {
             reg.write(RegID_PC, jumpLocation);
-            this->cyclesCompleted += instr->cycleCost;
         }
         else
         {
@@ -363,11 +349,9 @@ void Cpu::executeJR(instruction_t* instr)
     ||(conditionFlag == COND_C  && carry == true))
     {
         reg.write(RegID_PC, reg.read(RegID_PC) + step);
-        this->cyclesCompleted += instr->cycleCost;
     }
     else
     {
-        this->cyclesCompleted += 2;
         instr->cycleCost = 2;
     }
 }
@@ -392,13 +376,10 @@ void Cpu::executeCALL(instruction_t* instr)
         /* Set the new program counter. */
         u16 callLocation = loadOperand16bits(&instr->operandSrc);
         reg.write(RegID_PC, callLocation);
-
-        this->cyclesCompleted += instr->cycleCost;
     }
     else
     {
         instr->cycleCost = 3;
-        this->cyclesCompleted += 2;
     }
 }
 
@@ -452,9 +433,6 @@ void Cpu::executeADD8(instruction_t* instr)
 
     /* Store the addition. */
     storeOperand8bits(&(instr->operandDst), result);
-
-    /* Clock cycles */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -478,9 +456,6 @@ void Cpu::executeADC(instruction_t* instr)
 
     /* Store the addition. */
     storeOperand8bits(&(instr->operandDst), result);
-
-    /* Clock cycles */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -501,9 +476,6 @@ void Cpu::executeSUB(instruction_t* instr)
 
     /* Store the addition. */
     reg.write(RegID_A, result);
-
-    /* Clock cycles */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -527,9 +499,6 @@ void Cpu::executeSBC(instruction_t* instr)
 
     /* Store the addition. */
     reg.write(RegID_A, result);
-
-    /* Clock cycles */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -549,9 +518,6 @@ void Cpu::executeAND(instruction_t* instr)
 
     /* Store the result. */
     reg.write(RegID_A, result);
-
-    /* Clock cycles */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -571,9 +537,6 @@ void Cpu::executeXOR(instruction_t* instr)
 
     /* Store the result. */
     reg.write(RegID_A, result);
-
-    /* Clock cycles */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -593,9 +556,6 @@ void Cpu::executeOR(instruction_t* instr)
 
     /* Store the result. */
     reg.write(RegID_A, result);
-
-    /* Clock cycles */
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -613,8 +573,6 @@ void Cpu::executeCP(instruction_t* instr)
 
     reg.setFlagHalfCarry((registerA & 0xf) < (val & 0xf));
     reg.setFlagCarry(registerA < val);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -628,7 +586,6 @@ void Cpu::executeINC8(instruction_t* instr)
     reg.setFlagHalfCarry((param & 0xf) == 0xf);
 
     storeOperand8bits(&(instr->operandDst), result);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -643,21 +600,18 @@ void Cpu::executeDEC8(instruction_t* instr)
     reg.setFlagHalfCarry((param & 0xf) == 0);
 
     storeOperand8bits(&(instr->operandDst), result);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
 void Cpu::executeINC16(instruction_t* instr)
 {
     reg.write(instr->operandDst.reg, reg.read(instr->operandDst.reg) + 1);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
 void Cpu::executeDEC16(instruction_t* instr)
 {
     reg.write(instr->operandDst.reg, reg.read(instr->operandDst.reg) - 1);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -671,8 +625,6 @@ void Cpu::executeADD16(instruction_t* instr)
     reg.setFlagSub(false);
     reg.setFlagCarry(result > 0xffff);
     reg.setFlagHalfCarry((src2 & 0xfff) + (src1 & 0xfff) > 0xfff);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -688,75 +640,63 @@ void Cpu::executeADD16SPe(instruction_t* instr)
     reg.setFlagHalfCarry((result & 0xf) < (sp & 0xf));
     reg.setFlagZero(false);
     reg.setFlagSub(false);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
-void Cpu::executeDI(instruction_t* instr)
+void Cpu::executeDI(instruction_t*)
 {
     this->interruptController->disableInterrupts();
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
-void Cpu::executeEI(instruction_t* instr)
+void Cpu::executeEI(instruction_t*)
 {
     this->interruptController->enableInterrupts(true);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
-void Cpu::executeCPL(instruction_t* instr)
+void Cpu::executeCPL(instruction_t*)
 {
     u8 value = ~reg.read(RegID_A);
     reg.write(RegID_A, value);
 
     reg.setFlagSub(true);
     reg.setFlagHalfCarry(true);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
 /**
  * CCF: Complement Carry Flag.
  */
-void Cpu::executeCCF(instruction_t* instr)
+void Cpu::executeCCF(instruction_t*)
 {
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry(!reg.getFlagCarry());
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
 /**
  * SCF: Set Carry Flag.
  */
-void Cpu::executeSCF(instruction_t* instr)
+void Cpu::executeSCF(instruction_t*)
 {
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry(true);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
 /**
  * DAA: Decimal Adjust Accumulator.
  */
-void Cpu::executeDAA(instruction_t* instr)
+void Cpu::executeDAA(instruction_t*)
 {
     u8 src = reg.read(RegID_A);
-    // bool carryFlag = reg.getFlagCarry();
     bool halfCarryFlag = reg.getFlagHalfCarry();
     bool carryFlag = reg.getFlagCarry();
     bool subFlag = reg.getFlagSub();
     u8 result = src;
-
 
     if(subFlag == false)
     {
@@ -782,8 +722,6 @@ void Cpu::executeDAA(instruction_t* instr)
     reg.write(RegID_A, result);
     reg.setFlagZero(result == 0);
     reg.setFlagHalfCarry(false);
-    // reg.setFlagCarry(true);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -794,7 +732,6 @@ void Cpu::executePUSH(instruction_t* instr)
 {
     u16 val = loadOperand16bits(&instr->operandSrc);
     _executePUSH(val);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -827,7 +764,6 @@ void Cpu::executePOP(instruction_t* instr)
 
     /* Store result in register. */
     storeOperand16bits(&instr->operandDst, val);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -847,7 +783,6 @@ void Cpu::executeSWAP(instruction_t* instr)
     reg.setFlagCarry(false);
 
     storeOperand8bits(&instr->operandDst, result);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -864,8 +799,6 @@ void Cpu::executeBIT(instruction_t* instr)
     reg.setFlagZero(!bitValue);
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(true);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -877,7 +810,6 @@ void Cpu::executeSET(instruction_t* instr)
     u8 src = loadOperand8bits(&instr->operandSrc);
     u8 result = src | (1 << instr->extraInfo);
     storeOperand8bits(&instr->operandDst, result);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -890,7 +822,6 @@ void Cpu::executeRES(instruction_t* instr)
     u8 srcVal = loadOperand8bits(&instr->operandSrc);
     u8 dstVal = (srcVal & ~(1 << bitNumber));
     storeOperand8bits(&instr->operandDst, dstVal);
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -947,8 +878,6 @@ void Cpu::executeRLC(instruction_t* instr)
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry((src & 0x80) == 0x80);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -966,8 +895,6 @@ void Cpu::executeRL(instruction_t* instr)
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry((src & 0x80) == 0x80);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -984,8 +911,6 @@ void Cpu::executeRRC(instruction_t* instr)
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry((src & 0x1) == 0x1);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -1003,8 +928,6 @@ void Cpu::executeRR(instruction_t* instr)
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry((src & 0x1) == 0x1);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -1023,8 +946,6 @@ void Cpu::executeSLA(instruction_t* instr)
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry(carry);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -1043,8 +964,6 @@ void Cpu::executeSRA(instruction_t* instr)
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry(carry);
-
-    this->cyclesCompleted += instr->cycleCost;
 }
 
 
@@ -1063,6 +982,4 @@ void Cpu::executeSRL(instruction_t* instr)
     reg.setFlagSub(false);
     reg.setFlagHalfCarry(false);
     reg.setFlagCarry(carry);
-
-    this->cyclesCompleted += instr->cycleCost;
 }

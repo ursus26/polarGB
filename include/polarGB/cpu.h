@@ -91,7 +91,6 @@ private:
     Mmu* mmu;
     InterruptController* interruptController;
     bool isRunning;
-    int cyclesCompleted = 0;
     instruction_t* currentInstruction;
 
     /* Signal handling. */

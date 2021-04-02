@@ -4,6 +4,12 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2021-04-02: - Fixed more uninitialized class variables.
+            - Removed unused variables and parameters in the cpu class.
+            - Fixed reading and writing to IE register.
+2021-04-01: - Fixed uninitialized variables in the interrupt controller.
+            - Fixed h-blank cycle timing. There is still a problem with the state machine. A pixel
+              is processed sometimes with an incorrect value of LY.
 2021-03-21: - Improved register abstraction.
 2021-03-19: - We pass Blargg cpu instruction test 10.
 2021-03-18: - Fixed multiple problems with CPU instructions.

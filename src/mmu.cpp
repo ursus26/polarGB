@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <cstring>
+#include <assert.h>
 #include <fmt/format.h>
 #include "polarGB/mmu.h"
 
@@ -26,6 +27,19 @@ using namespace std;
 
 Mmu::Mmu()
 {
+    this->interruptController = nullptr;
+    this->graphicsController = nullptr;
+
+    this->ERAM.size = 0;
+    this->ERAM.mem = nullptr;
+    this->WRAM.size = 0;
+    this->WRAM.mem = nullptr;
+    this->OAM.size = 0;
+    this->OAM.mem = nullptr;
+    this->HardwareRegisters.size = 0;
+    this->HardwareRegisters.mem = nullptr;
+    this->HRAM.size = 0;
+    this->HRAM.mem = nullptr;
 }
 
 Mmu::~Mmu()
@@ -103,18 +117,23 @@ void Mmu::shutDown()
 
     delete[] ERAM.mem;
     ERAM.mem = nullptr;
+    ERAM.size = 0;
 
     delete[] WRAM.mem;
     WRAM.mem = nullptr;
+    WRAM.size = 0;
 
     delete[] OAM.mem;
     OAM.mem = nullptr;
+    OAM.size = 0;
 
     delete[] HardwareRegisters.mem;
     HardwareRegisters.mem = nullptr;
+    HardwareRegisters.size = 0;
 
     delete[] HRAM.mem;
     HRAM.mem = nullptr;
+    HRAM.size = 0;
 }
 
 
@@ -125,9 +144,7 @@ u8 Mmu::read(u16 addr)
     if(addr <= ROM_END_ADDR) /* ROM banks */
         data = rom.read(addr);
     else if(addr >= VRAM_START_ADDR && addr <= VRAM_END_ADDR) /* VRAM / LCD Display RAM */
-    {
         data = graphicsController->vramRead(addr - VRAM_START_ADDR);
-    }
     else if(addr >= ERAM_START_ADDR && addr <= ERAM_END_ADDR) /* Switchable external RAM bank */
         data = ERAM.mem[addr - ERAM_START_ADDR];
     else if(addr >= WRAM_START_ADDR && addr <= WRAM_END_ADDR) /* Working RAM bank 0 */
@@ -139,11 +156,11 @@ u8 Mmu::read(u16 addr)
     else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTERS_START_ADDR) /* Not usable */
         fmt::print(stderr, "Error, read request for unusable memory at address: {:#x}\n", addr);
     else if(addr >= HARDWARE_REGISTERS_START_ADDR && addr <= HARDWARE_REGISTERS_END_ADDR) /* I/O Ports */
-    {
         data = readHardwareRegister(addr);
-    }
-    else if(addr >= HRAM_START_ADDR) /* High RAM (HRAM) */
+    else if(addr >= HRAM_START_ADDR && addr <= HRAM_END_ADDR) /* High RAM (HRAM) */
         data = HRAM.mem[addr - HRAM_START_ADDR];
+    else if(addr == IE_ADDR)
+        data = this->interruptController->getIE();
 
     return data;
 }
@@ -171,8 +188,8 @@ void Mmu::write(u16 addr, u8 data)
         rom.write(addr, data);
     else if(addr >= VRAM_START_ADDR && addr <= VRAM_END_ADDR) /* VRAM / LCD Display RAM */
     {
+        assert(graphicsController != nullptr);
         graphicsController->vramWrite(addr - VRAM_START_ADDR, data);
-        // VRAM.mem[addr - VRAM_START_ADDR] = data;
     }
     else if(addr >= ERAM_START_ADDR && addr <= ERAM_END_ADDR) /* Switchable external RAM bank */
         ERAM.mem[addr - ERAM_START_ADDR] = data;
@@ -188,11 +205,11 @@ void Mmu::write(u16 addr, u8 data)
     // else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTER_START_ADDR) /* Not usable */
         // fmt::print(stderr, "Error, write request for unusable memory at address: {:#x}, data: {:#x}\n", addr, data);
     else if(addr >= HARDWARE_REGISTERS_START_ADDR && addr <= HARDWARE_REGISTERS_END_ADDR) /* I/O Ports */
-    {
         writeHardwareRegister(addr, data);
-    }
-    else if(addr >= HRAM_START_ADDR) /* High RAM (HRAM) */
+    else if(addr >= HRAM_START_ADDR && addr <= HRAM_END_ADDR) /* High RAM (HRAM) */
         HRAM.mem[addr - HRAM_START_ADDR] = data;
+    else if(addr == IE_ADDR)
+        this->interruptController->setIE(data);
 }
 
 
@@ -231,6 +248,11 @@ void Mmu::DMATransfer(u8 index)
 
 u8 Mmu::readHardwareRegister(u16 addr)
 {
+    assert(graphicsController != nullptr);
+    assert(interruptController != nullptr);
+    assert(addr >= HARDWARE_REGISTERS_START_ADDR);
+    assert(addr <= HARDWARE_REGISTERS_END_ADDR);
+
     switch(addr)
     {
         case LCDC_ADDR: return this->graphicsController->displayRegisterRead(RegLCDC);
@@ -254,6 +276,11 @@ u8 Mmu::readHardwareRegister(u16 addr)
 
 void Mmu::writeHardwareRegister(u16 addr, u8 data)
 {
+    assert(graphicsController != nullptr);
+    assert(interruptController != nullptr);
+    assert(addr >= HARDWARE_REGISTERS_START_ADDR);
+    assert(addr <= HARDWARE_REGISTERS_END_ADDR);
+
     switch(addr)
     {
         case LCDC_ADDR: graphicsController->displayRegisterWrite(RegLCDC, data); break;

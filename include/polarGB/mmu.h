@@ -38,7 +38,7 @@ const u16 OAM_END_ADDR                  = 0xfe9f;
 const u16 HARDWARE_REGISTERS_START_ADDR  = 0xff00;
 const u16 HARDWARE_REGISTERS_END_ADDR    = 0xff7f;
 const u16 HRAM_START_ADDR               = 0xff80;
-const u16 HRAM_END_ADDR                 = 0xffff;
+const u16 HRAM_END_ADDR                 = 0xfffe;
 
 /* LCD display registers addresses. */
 const u16 LCDC_ADDR     = 0xff40;

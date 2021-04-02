@@ -26,6 +26,12 @@ using namespace std;
 
 Emulator::Emulator()
 {
+    this->isRunning = false;
+    this->cyclesCompleted = 0;
+    this->mmu = nullptr;
+    this->cpu = nullptr;
+    this->graphicsController = nullptr;
+    this->interruptController = nullptr;
 }
 
 Emulator::~Emulator()

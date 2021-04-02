@@ -79,6 +79,7 @@ int GraphicsDisplay::startUp()
     pixels = new u8[width * height * 4];
     std::memset(pixels, 0x0, width * height * 4);
     texturePixels = NULL;
+    pitch = 0;
 
     return 0;
 }

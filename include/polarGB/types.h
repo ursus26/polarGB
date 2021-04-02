@@ -31,8 +31,8 @@ typedef int64_t     i64;
 
 typedef struct Ram
 {
-    u8* mem;
     unsigned int size;
+    u8* mem;
 } ram_t;
 
 #endif /* TYPES_H */

@@ -26,6 +26,17 @@ using namespace std;
 
 Cartridge::Cartridge()
 {
+    this->mem = nullptr;
+    this->size = 0;
+
+    this->gameTitle = "";
+    this->CGBFlag = 0;
+    this->SGBFlag = false;
+    this->cartridgeType = 0;
+    this->romSize = 0;
+    this->ramSize = 0;
+    this->destinationCode = 0;
+
 }
 
 Cartridge::~Cartridge()
