@@ -32,6 +32,7 @@ Emulator::Emulator()
     this->cpu = nullptr;
     this->graphicsController = nullptr;
     this->interruptController = nullptr;
+    this->timer = nullptr;
 }
 
 Emulator::~Emulator()
@@ -62,13 +63,14 @@ void Emulator::startUp()
     this->cyclesCompleted = 0;
 
     this->interruptController = new InterruptController();
+    this->timer = new Timer(this->interruptController);
     this->graphicsController = new GraphicsController();
     this->mmu = new Mmu();
     this->cpu = new Cpu();
 
     this->graphicsController->startUp(this->interruptController, false);
-    this->mmu->startUp(this->graphicsController, this->interruptController);
-    this->cpu->startUp(this->mmu, this->interruptController);
+    this->mmu->startUp(this->graphicsController, this->interruptController, this->timer);
+    this->cpu->startUp(this->mmu, this->interruptController, this->timer);
 }
 
 
@@ -85,6 +87,9 @@ void Emulator::shutDown()
     this->graphicsController->shutDown();
     delete this->graphicsController;
     this->graphicsController = nullptr;
+
+    delete this->timer;
+    this->timer = nullptr;
 
     delete this->interruptController;
     this->interruptController = nullptr;
@@ -130,6 +135,8 @@ void Emulator::runFrame()
         /* CPU step. */
         cpuCycles = this->cpu->step();
         cyclesCompleted += cpuCycles;
+
+        this->timer->update(cpuCycles);
 
         /* Update the screen with the same amount of cycles. */
         this->graphicsController->update(cpuCycles);

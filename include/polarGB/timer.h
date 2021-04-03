@@ -15,47 +15,45 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef EMULATOR_H
-#define EMULATOR_H
+#ifndef TIMER_H
+#define TIMER_H
 
-#include <string>
-#include <SDL2/SDL.h>
 #include "types.h"
 #include "interrupt_controller.h"
-#include "timer.h"
-#include "graphics_controller.h"
-#include "mmu.h"
-#include "cpu.h"
 
 
-const int CPU_FREQUENCY = 1048576; /* Hz */
-const int INSTRUCTIONS_PER_FRAME = 17556;
-const double FPS = CPU_FREQUENCY / (double)INSTRUCTIONS_PER_FRAME;
-const double FRAME_TIME = 1.0 / FPS;
+typedef enum TimerRegister
+{
+    RegDIV = 0xff04,
+    RegTIMA = 0xff05,
+    RegTMA = 0xff06,
+    RegTAC = 0xff07,
+} timerRegister_t;
 
 
-class Emulator
+class Timer
 {
 public:
-    Emulator();
-    ~Emulator();
+    Timer(InterruptController* interruptController);
+    ~Timer();
 
-    int start(std::string cartridgePath);
+    void update(u8 cycles);
+    u8 read(timerRegister_t reg) const;
+    void write(timerRegister_t reg, u8 value);
 
 private:
-    bool isRunning;
-    u64 cyclesCompleted;
+    /* Registers */
+    u8 DIV;     /* Address: 0xff04 */
+    u8 TIMA;    /* Address: 0xff05 */
+    u8 TMA;     /* Address: 0xff06 */
+    u8 TAC;     /* Address: 0xff07 */
+    unsigned int timaClock;
+    unsigned int divClock;
 
     InterruptController* interruptController;
-    Timer* timer;
-    GraphicsController* graphicsController;
-    Mmu* mmu;
-    Cpu* cpu;
 
-    void startUp();
-    void shutDown();
-    void run();
-    void runFrame();
+    void updateDivider(u8 cycles);
+    void updateTimer(u8 cycles);
 };
 
 #endif /* EMULATOR_H */

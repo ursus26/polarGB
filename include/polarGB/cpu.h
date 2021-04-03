@@ -22,6 +22,7 @@
 #include "register.h"
 #include "mmu.h"
 #include "interrupt_controller.h"
+#include "timer.h"
 
 
 // const int FPS = 60;
@@ -80,7 +81,7 @@ public:
     Cpu();
     ~Cpu();
 
-    void startUp(Mmu* m, InterruptController* interruptController);
+    void startUp(Mmu* m, InterruptController* interruptController, Timer* timer);
     void shutDown();
 
     u8 step();
@@ -92,6 +93,7 @@ private:
     InterruptController* interruptController;
     bool isRunning;
     instruction_t* currentInstruction;
+    Timer* timer;
 
     /* Signal handling. */
     void checkSignals();

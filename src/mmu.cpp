@@ -29,6 +29,7 @@ Mmu::Mmu()
 {
     this->interruptController = nullptr;
     this->graphicsController = nullptr;
+    this->timer = nullptr;
 
     this->ERAM.size = 0;
     this->ERAM.mem = nullptr;
@@ -50,8 +51,12 @@ Mmu::~Mmu()
 /**
  * Small boot program that initializes specific memory locations.
  */
-void Mmu::startUp(GraphicsController* gc, InterruptController* interruptController)
+void Mmu::startUp(GraphicsController* gc, InterruptController* interruptController, Timer* timer)
 {
+    assert(gc != nullptr);
+    assert(interruptController != nullptr);
+    assert(timer != nullptr);
+
     ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
     ERAM.mem = new u8[ERAM.size]();
 
@@ -68,6 +73,7 @@ void Mmu::startUp(GraphicsController* gc, InterruptController* interruptControll
     HRAM.mem = new u8[HRAM.size]();
 
     this->interruptController = interruptController;
+    this->timer = timer;
     this->graphicsController = gc;
     this->rom.startUp();
 
@@ -114,6 +120,7 @@ void Mmu::shutDown()
     this->rom.shutDown();
     this->graphicsController = nullptr;
     this->interruptController = nullptr;
+    this->timer = nullptr;
 
     delete[] ERAM.mem;
     ERAM.mem = nullptr;
@@ -255,6 +262,10 @@ u8 Mmu::readHardwareRegister(u16 addr)
 
     switch(addr)
     {
+        case DIV_ADDR:  return timer->read(RegDIV);
+        case TIMA_ADDR: return timer->read(RegTIMA);
+        case TMA_ADDR:  return timer->read(RegTMA);
+        case TAC_ADDR:  return timer->read(RegTAC);
         case LCDC_ADDR: return this->graphicsController->displayRegisterRead(RegLCDC);
         case STAT_ADDR: return this->graphicsController->displayRegisterRead(RegSTAT);
         case SCY_ADDR:  return this->graphicsController->displayRegisterRead(RegSCY);
@@ -283,6 +294,10 @@ void Mmu::writeHardwareRegister(u16 addr, u8 data)
 
     switch(addr)
     {
+        case DIV_ADDR:  timer->write(RegDIV, data); break;
+        case TIMA_ADDR: timer->write(RegTIMA, data); break;
+        case TMA_ADDR:  timer->write(RegTMA, data); break;
+        case TAC_ADDR:  timer->write(RegTAC, data); break;
         case LCDC_ADDR: graphicsController->displayRegisterWrite(RegLCDC, data); break;
         case STAT_ADDR: graphicsController->displayRegisterWrite(RegSTAT, data); break;
         case SCY_ADDR:  graphicsController->displayRegisterWrite(RegSCY, data); break;

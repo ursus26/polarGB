@@ -47,6 +47,7 @@ add_library(${PROJECT_LIB_NAME}
     ${PROJECT_SOURCE_DIR}/src/mmu.cpp
     ${PROJECT_SOURCE_DIR}/src/opcodes.cpp
     ${PROJECT_SOURCE_DIR}/src/register.cpp
+    ${PROJECT_SOURCE_DIR}/src/timer.cpp
 )
 
 message(status ${SDL2_INCLUDE_DIRS})

@@ -23,6 +23,7 @@
 #include "cartridge.h"
 #include "interrupt_controller.h"
 #include "graphics_controller.h"
+#include "timer.h"
 
 
 /* Memory boundaries. */
@@ -39,6 +40,12 @@ const u16 HARDWARE_REGISTERS_START_ADDR  = 0xff00;
 const u16 HARDWARE_REGISTERS_END_ADDR    = 0xff7f;
 const u16 HRAM_START_ADDR               = 0xff80;
 const u16 HRAM_END_ADDR                 = 0xfffe;
+
+/* Timer registers */
+const u16 DIV_ADDR = 0xff04;
+const u16 TIMA_ADDR = 0xff05;
+const u16 TMA_ADDR = 0xff06;
+const u16 TAC_ADDR = 0xff07;
 
 /* LCD display registers addresses. */
 const u16 LCDC_ADDR     = 0xff40;
@@ -58,6 +65,7 @@ const u16 WX_ADDR       = 0xff4b;
 const u16 IF_ADDR = 0xff0f;
 const u16 IE_ADDR = 0xffff;
 
+
 class Mmu
 {
 public:
@@ -65,7 +73,7 @@ public:
     ~Mmu();
 
     /* Small boot program for the mmu. */
-    void startUp(GraphicsController* gc, InterruptController* interruptController);
+    void startUp(GraphicsController* gc, InterruptController* interruptController, Timer* timer);
     void shutDown();
 
     /* Read from an address. */
@@ -89,6 +97,7 @@ private:
 
     InterruptController* interruptController;
     GraphicsController* graphicsController;
+    Timer* timer;
 
     void DMATransfer(u8 index);
     u8 readHardwareRegister(u16 addr);

@@ -31,6 +31,7 @@ Cpu::Cpu()
     this->interruptController = nullptr;
     this->isRunning = false;
     this->currentInstruction = nullptr;
+    this->timer = nullptr;
 }
 
 Cpu::~Cpu()
@@ -38,13 +39,18 @@ Cpu::~Cpu()
 }
 
 
-void Cpu::startUp(Mmu* m, InterruptController* interruptController)
+void Cpu::startUp(Mmu* m, InterruptController* interruptController, Timer* timer)
 {
+    assert(m != nullptr);
+    assert(interruptController != nullptr);
+    assert(timer != nullptr);
+
     this->mmu = m;
     this->interruptController = interruptController;
     this->isRunning = true;
     this->interruptController->disableInterrupts();
     this->currentInstruction = new instruction_t;
+    this->timer = timer;
 
     /* Initialise the registers. */
     this->reg.write(RegID_AF, 0x01b0);    /* Initialise AF register. */
@@ -58,11 +64,11 @@ void Cpu::startUp(Mmu* m, InterruptController* interruptController)
 
 void Cpu::shutDown()
 {
-    /* Remove the reference to the memory manager but don't delete it since this object did not
-     * create the memory manager. */
     delete this->currentInstruction;
     this->currentInstruction = nullptr;
+
     this->interruptController = nullptr;
+    this->timer = nullptr;
     this->mmu = nullptr;
 }
 
@@ -81,7 +87,7 @@ u8 Cpu::step()
     // {
     //     fmt::print("Restarting game\n");
     // }
-    printInstructionInfo(instr);
+    // printInstructionInfo(instr);
 
     /* Execute the instruction handler. */
     (this->*(instr->executionFunction))(instr);
