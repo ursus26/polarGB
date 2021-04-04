@@ -1209,9 +1209,12 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->executionFunction = &Cpu::executeLD8;
             strcpy(instr->mnemonic, "LD (HL), L");
             break;
-        // case 0x76: /* HALT */
-        //     /* TODO */
-        //     break;
+        case 0x76: /* HALT */
+            instr->instructionLength = 1;
+            instr->cycleCost = 1;
+            instr->executionFunction = &Cpu::executeHALT;
+            strcpy(instr->mnemonic, "HALT");
+            break;
         case 0x77: /* LD (HL), A */
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_REG;
@@ -1514,7 +1517,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
-            instr->cycleCost = 1;
+            instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeSUB;
             strcpy(instr->mnemonic, "SUB B");
             break;
@@ -1592,7 +1595,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->operandSrc.memPtr = RegID_HL;
             instr->operandDst.type = OP_REG;
             instr->operandDst.reg = RegID_A;
-            instr->cycleCost = 1;
+            instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeSBC;
             strcpy(instr->mnemonic, "SBC A, (HL)");
             break;
@@ -1786,7 +1789,7 @@ void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
             instr->instructionLength = 1;
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
-            instr->cycleCost = 1;
+            instr->cycleCost = 2;
             instr->executionFunction = &Cpu::executeOR;
             strcpy(instr->mnemonic, "OR (HL)");
             break;
@@ -2962,7 +2965,7 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
             instr->extraInfo = 0;
-            instr->cycleCost = 4;
+            instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeBIT;
             strcpy(instr->mnemonic, "BIT 0, (HL)");
             break;
@@ -3019,7 +3022,7 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
             instr->extraInfo = 1;
-            instr->cycleCost = 4;
+            instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeBIT;
             strcpy(instr->mnemonic, "BIT 1, (HL)");
             break;
@@ -3076,7 +3079,7 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
             instr->extraInfo = 2;
-            instr->cycleCost = 4;
+            instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeBIT;
             strcpy(instr->mnemonic, "BIT 2, (HL)");
             break;
@@ -3133,7 +3136,7 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
             instr->extraInfo = 3;
-            instr->cycleCost = 4;
+            instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeBIT;
             strcpy(instr->mnemonic, "BIT 3, (HL)");
             break;
@@ -3190,7 +3193,7 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
             instr->extraInfo = 4;
-            instr->cycleCost = 4;
+            instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeBIT;
             strcpy(instr->mnemonic, "BIT 4, (HL)");
             break;
@@ -3247,7 +3250,7 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
             instr->extraInfo = 5;
-            instr->cycleCost = 4;
+            instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeBIT;
             strcpy(instr->mnemonic, "BIT 5, (HL)");
             break;
@@ -3304,7 +3307,7 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
             instr->extraInfo = 6;
-            instr->cycleCost = 4;
+            instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeBIT;
             strcpy(instr->mnemonic, "BIT 6, (HL)");
             break;
@@ -3361,7 +3364,7 @@ void Cpu::decodePrefixedOpcode(instruction_t *instr)
             instr->operandSrc.type = OP_MEM;
             instr->operandSrc.memPtr = RegID_HL;
             instr->extraInfo = 7;
-            instr->cycleCost = 4;
+            instr->cycleCost = 3;
             instr->executionFunction = &Cpu::executeBIT;
             strcpy(instr->mnemonic, "BIT 7, (HL)");
             break;

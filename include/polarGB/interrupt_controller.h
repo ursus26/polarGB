@@ -55,7 +55,7 @@ public:
     void disableInterrupts();
     void enableInterrupts(bool delayed_enable);
 
-    u8 checkForInterrupts();
+    u8 checkInterrupts(bool cpuHalted);
     void resetInterruptFlag(u8 interruptFlag);
     u16 getInterruptVector(u8 interruptSignal);
 

@@ -29,9 +29,9 @@ Cpu::Cpu()
 {
     this->mmu = nullptr;
     this->interruptController = nullptr;
-    this->isRunning = false;
     this->currentInstruction = nullptr;
     this->timer = nullptr;
+    this->isHalted = false;
 }
 
 Cpu::~Cpu()
@@ -47,10 +47,10 @@ void Cpu::startUp(Mmu* m, InterruptController* interruptController, Timer* timer
 
     this->mmu = m;
     this->interruptController = interruptController;
-    this->isRunning = true;
     this->interruptController->disableInterrupts();
     this->currentInstruction = new instruction_t;
     this->timer = timer;
+    this->isHalted = false;
 
     /* Initialise the registers. */
     this->reg.write(RegID_AF, 0x01b0);    /* Initialise AF register. */
@@ -79,23 +79,24 @@ void Cpu::shutDown()
  */
 u8 Cpu::step()
 {
-    /* Fetch the next instruction. */
-    Instruction* instr = fetchDecode();
-    reg.write(RegID_PC, reg.read(RegID_PC) + instr->instructionLength);
+    u8 cycleCost = 1;
 
-    // if(instr->memoryLocation == 0x028b)
-    // {
-    //     fmt::print("Restarting game\n");
-    // }
-    // printInstructionInfo(instr);
+    if(!this->isHalted)
+    {
+        /* Fetch the next instruction. */
+        Instruction* instr = fetchDecode();
+        reg.write(RegID_PC, reg.read(RegID_PC) + instr->instructionLength);
 
-    /* Execute the instruction handler. */
-    (this->*(instr->executionFunction))(instr);
-    u8 cycleCost = instr->cycleCost;
+        printInstructionInfo(instr);
+
+        /* Execute the instruction handler. */
+        (this->*(instr->executionFunction))(instr);
+        cycleCost = instr->cycleCost;
+    }
 
     /* Check for interrupts before fetching the next instruction. This possibly changes the
      * program counter in order to execute a signal. */
-    this->checkSignals();
+    this->checkInterrupts();
 
     return cycleCost;
 }
@@ -117,14 +118,17 @@ Cpu::instruction_t * Cpu::fetchDecode()
 }
 
 
-void Cpu::checkSignals()
+void Cpu::checkInterrupts()
 {
     /* Check for an interrupt signal. */
-    u16 interruptSignal = this->interruptController->checkForInterrupts();
-    if(interruptSignal == 0x0)
+    u16 interruptSignal = this->interruptController->checkInterrupts(this->isHalted);
+
+    if(interruptSignal > 0 && this->isHalted)
+        this->isHalted = false;
+    else if(interruptSignal == 0x0)
         return;
     else
-        setupSignalExecution(interruptSignal);
+        setupInterruptExecution(interruptSignal);
 }
 
 
@@ -132,7 +136,7 @@ void Cpu::checkSignals()
  * Pushes the current program counter on the stack and updates the program counter to the signal
  * address.
  */
-void Cpu::setupSignalExecution(u8 interruptSignal)
+void Cpu::setupInterruptExecution(u8 interruptSignal)
 {
     interruptController->disableInterrupts();
     interruptController->resetInterruptFlag(interruptSignal);
@@ -658,6 +662,12 @@ void Cpu::executeDI(instruction_t*)
 void Cpu::executeEI(instruction_t*)
 {
     this->interruptController->enableInterrupts(true);
+}
+
+
+void Cpu::executeHALT(instruction_t*)
+{
+    this->isHalted = true;
 }
 
 

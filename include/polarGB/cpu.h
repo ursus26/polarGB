@@ -91,13 +91,14 @@ private:
     Register reg;
     Mmu* mmu;
     InterruptController* interruptController;
-    bool isRunning;
     instruction_t* currentInstruction;
     Timer* timer;
 
-    /* Signal handling. */
-    void checkSignals();
-    void setupSignalExecution(u8 interruptSignal);
+    bool isHalted;
+
+    /* Interrupt handling. */
+    void checkInterrupts();
+    void setupInterruptExecution(u8 interruptSignal);
 
     /* Instruction decoding.  */
     instruction_t* fetchDecode();
@@ -152,6 +153,7 @@ private:
     void executeNOP(instruction_t* instr);
     void executeDI(instruction_t* instr);
     void executeEI(instruction_t* instr);
+    void executeHALT(instruction_t* instr);
     void executeCPL(instruction_t* instr);
     void executeCCF(instruction_t* instr);
     void executeSCF(instruction_t* instr);

@@ -4,6 +4,10 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2021-04-04: - Implemented halt mode.
+2021-04-03: - Implemented the game boy timer.
+            - Updated library fmt to version 7.1.3
+            - Fixed instruction cycle count.
 2021-04-02: - Fixed more uninitialized class variables.
             - Removed unused variables and parameters in the cpu class.
             - Fixed reading and writing to IE register.

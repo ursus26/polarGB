@@ -82,45 +82,42 @@ void InterruptController::resetInterruptFlag(u8 interruptFlag)
  * - INTERRUPT_JOYPAD                     = 0x10
  *
  * In case no interrupt has to be processed we return 0.
+ * If the cpu is halted then we ignore the IME.
  */
-u8 InterruptController::checkForInterrupts()
+u8 InterruptController::checkInterrupts(bool cpuHalted)
 {
+    u8 returnCode = 0;
+
+    if(this->IME || cpuHalted)
+    {
+        /* Check for interrupts in order of priority. */
+        for(int i = 0; i < 5; i++)
+        {
+            bool flag = (this->IF >> i) & 0x1;
+            bool enabled = (this->IE >> i) & 0x1;
+
+            if(flag && enabled)
+            {
+                switch(i)
+                {
+                    case 0: returnCode = INTERRUPT_VERTICAL_BLANKING; break;
+                    case 1: returnCode = INTERRUPT_LCDC; break;
+                    case 2: returnCode = INTERRUPT_TIMER_OVERFLOW; break;
+                    case 3: returnCode = INTERRUPT_SERIAL_TRANSFER_COMPLETION; break;
+                    case 4: returnCode = INTERRUPT_JOYPAD; break;
+                }
+            }
+        }
+    }
+
     /* Enable the IME for the next instruction after EI instruction is encountered. */
     if(this->delayed_enable)
     {
         this->IME = true;
         this->delayed_enable = false;
-        return 0x0;
     }
 
-    /* Stop if IME is not enabled. */
-    if(!this->IME)
-        return 0x0;
-
-    /* Check for interrupts in order of priority. */
-    for(int i = 0; i < 5; i++)
-    {
-        bool flag = (this->IF >> i) & 0x1;
-        bool enabled = (this->IE >> i) & 0x1;
-
-        if(flag && enabled)
-        {
-            switch(i) {
-                case 0:
-                    return INTERRUPT_VERTICAL_BLANKING;
-                case 1:
-                    return INTERRUPT_LCDC;
-                case 2:
-                    return INTERRUPT_TIMER_OVERFLOW;
-                case 3:
-                    return INTERRUPT_SERIAL_TRANSFER_COMPLETION;
-                case 4:
-                    return INTERRUPT_JOYPAD;
-            }
-        }
-    }
-
-    return 0;
+    return returnCode;
 }
 
 
