@@ -18,26 +18,19 @@
 #ifndef INTERRUPT_CONTROLLER_H
 #define INTERRUPT_CONTROLLER_H
 
-#include <bitset>
+
 #include "types.h"
 
 
 typedef enum InterruptSignal
 {
-    vertical_blanking = 0x1,
-    lcdc = 0x2,
-    timer_overflow = 0x4,
-    serial_transfer_completion = 0x8,
-    joypad = 0x10
+    int_vblank = 0x1,
+    int_stat = 0x2,
+    int_timer_overflow = 0x4,
+    int_serial_transfer_completion = 0x8,
+    int_joypad = 0x10
 } interrupt_t;
 
-
-
-const u8 INTERRUPT_VERTICAL_BLANKING            = 0x1;
-const u8 INTERRUPT_LCDC                         = 0x2;
-const u8 INTERRUPT_TIMER_OVERFLOW               = 0x4;
-const u8 INTERRUPT_SERIAL_TRANSFER_COMPLETION   = 0x8;
-const u8 INTERRUPT_JOYPAD                       = 0x10;
 
 const u16 INTERRUPT_VERTICAL_BLANKING_ADDR          = 0x40;
 const u16 INTERRUPT_LCDC_ADDR                       = 0x48;
@@ -52,6 +45,7 @@ public:
     InterruptController();
     ~InterruptController();
 
+    /* DI and EI instructions. */
     void disableInterrupts();
     void enableInterrupts(bool delayed_enable);
 

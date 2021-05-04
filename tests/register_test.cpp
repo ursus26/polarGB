@@ -13,7 +13,7 @@
  */
 
 
-TEST(RegisterTest, WriteAndRead8bits)
+TEST(RegisterTest, ReadWrite1Byte)
 {
     Register reg;
     u8 testByte = 0x81;
@@ -54,7 +54,7 @@ TEST(RegisterTest, WriteAndRead8bits)
 }
 
 
-TEST(RegisterTest, WriteAndRead16bits)
+TEST(RegisterTest, ReadWrite2Bytes)
 {
     Register reg;
 
@@ -91,4 +91,48 @@ TEST(RegisterTest, WriteAndRead16bits)
     reg.write(RegID_SP, testNumber);
     EXPECT_EQ(reg.read(RegID_SP), testNumber);
     EXPECT_EQ(reg.read(RegID_SP), testNumber);
+}
+
+
+TEST(RegisterTest, FlagsTrue)
+{
+    Register reg = Register();
+
+    reg.setFlagZero(true);
+    ASSERT_EQ(reg.getFlagZero(), true);
+    ASSERT_EQ(reg.read(RegID_F) & 0x80, 0x80);
+
+    reg.setFlagSub(true);
+    ASSERT_EQ(reg.getFlagSub(), true);
+    ASSERT_EQ(reg.read(RegID_F) & 0x40, 0x40);
+
+    reg.setFlagHalfCarry(true);
+    ASSERT_EQ(reg.getFlagHalfCarry(), true);
+    ASSERT_EQ(reg.read(RegID_F) & 0x20, 0x20);
+
+    reg.setFlagCarry(true);
+    ASSERT_EQ(reg.getFlagCarry(), true);
+    ASSERT_EQ(reg.read(RegID_F) & 0x10, 0x10);
+}
+
+
+TEST(RegisterTest, FlagsFalse)
+{
+    Register reg = Register();
+
+    reg.setFlagZero(false);
+    ASSERT_EQ(reg.getFlagZero(), false);
+    ASSERT_EQ(reg.read(RegID_F) & 0x80, 0);
+
+    reg.setFlagSub(false);
+    ASSERT_EQ(reg.getFlagSub(), false);
+    ASSERT_EQ(reg.read(RegID_F) & 0x40, 0);
+
+    reg.setFlagHalfCarry(false);
+    ASSERT_EQ(reg.getFlagHalfCarry(), false);
+    ASSERT_EQ(reg.read(RegID_F) & 0x20, 0);
+
+    reg.setFlagCarry(false);
+    ASSERT_EQ(reg.getFlagCarry(), false);
+    ASSERT_EQ(reg.read(RegID_F) & 0x10, 0);
 }

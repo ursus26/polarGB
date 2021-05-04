@@ -137,7 +137,7 @@ void Timer::updateTimer(u8 cycles)
             this->timaClock -= clockFreq;
             if(this->TIMA == 255)
             {
-                this->interruptController->requestInterrupt(timer_overflow);
+                this->interruptController->requestInterrupt(int_timer_overflow);
                 this->TIMA = this->TMA;
             }
             else

@@ -64,7 +64,7 @@ void InterruptController::enableInterrupts(bool delayed_enable)
  */
 void InterruptController::resetInterruptFlag(u8 interruptFlag)
 {
-    assert(interruptFlag <= INTERRUPT_JOYPAD);
+    assert(interruptFlag <= int_joypad);
 
     u8 interruptFlags = this->IF & ~interruptFlag;
     this->IF = interruptFlags;
@@ -90,22 +90,15 @@ u8 InterruptController::checkInterrupts(bool cpuHalted)
 
     if(this->IME || cpuHalted)
     {
-        /* Check for interrupts in order of priority. */
-        for(int i = 0; i < 5; i++)
-        {
-            bool flag = (this->IF >> i) & 0x1;
-            bool enabled = (this->IE >> i) & 0x1;
+        u8 interrupts = this->IF & this->IE;
 
-            if(flag && enabled)
+        /* Check for interrupts in order of priority. */
+        for(auto i = 1; i <= int_joypad; i <<= 1)
+        {
+            if(interrupts & i)
             {
-                switch(i)
-                {
-                    case 0: returnCode = INTERRUPT_VERTICAL_BLANKING; break;
-                    case 1: returnCode = INTERRUPT_LCDC; break;
-                    case 2: returnCode = INTERRUPT_TIMER_OVERFLOW; break;
-                    case 3: returnCode = INTERRUPT_SERIAL_TRANSFER_COMPLETION; break;
-                    case 4: returnCode = INTERRUPT_JOYPAD; break;
-                }
+                returnCode = i;
+                break;
             }
         }
     }
@@ -123,20 +116,20 @@ u8 InterruptController::checkInterrupts(bool cpuHalted)
 
 u16 InterruptController::getInterruptVector(u8 signal)
 {
-    assert(signal <= INTERRUPT_JOYPAD);
+    assert(signal <= int_joypad);
     assert(signal != 0);
 
     switch(signal)
     {
-        case INTERRUPT_VERTICAL_BLANKING:
+        case int_vblank:
             return INTERRUPT_VERTICAL_BLANKING_ADDR;
-        case INTERRUPT_LCDC:
-            return INTERRUPT_LCDC;
-        case INTERRUPT_TIMER_OVERFLOW:
+        case int_stat:
+            return INTERRUPT_LCDC_ADDR;
+        case int_timer_overflow:
             return INTERRUPT_TIMER_OVERFLOW_ADDR;
-        case INTERRUPT_SERIAL_TRANSFER_COMPLETION:
+        case int_serial_transfer_completion:
             return INTERRUPT_SERIAL_TRANSFER_COMPLETION_ADDR;
-        case INTERRUPT_JOYPAD:
+        case int_joypad:
             return INTERRUPT_JOYPAD_ADDR;
         default:
             fmt::print(stderr, "InterruptController::getInterruptVector | Signal: {:#x} is an invalid signal.\n", signal);

@@ -120,17 +120,17 @@ void GraphicsController::update(u8 cycles)
                 {
                     setCurrentMode(1);
                     display->drawFrame();
-                    interruptController->requestInterrupt(vertical_blanking);
+                    interruptController->requestInterrupt(int_vblank);
 
                     if(STAT & 0x10)
-                        interruptController->requestInterrupt(lcdc);
+                        interruptController->requestInterrupt(int_stat);
                 }
                 else
                 {
                     setCurrentMode(2);
 
                     if(STAT & 0x20)
-                        interruptController->requestInterrupt(lcdc);
+                        interruptController->requestInterrupt(int_stat);
                 }
             }
             break;
@@ -147,7 +147,7 @@ void GraphicsController::update(u8 cycles)
                     setCurrentMode(2);
                     LY = 0;
                     if(STAT & 0x20)
-                        interruptController->requestInterrupt(lcdc);
+                        interruptController->requestInterrupt(int_stat);
                 }
 
             }
@@ -171,7 +171,7 @@ void GraphicsController::update(u8 cycles)
                 processScanline();
 
                 if(STAT & 0x8)
-                    interruptController->requestInterrupt(lcdc);
+                    interruptController->requestInterrupt(int_stat);
             }
             break;
     }
@@ -351,7 +351,7 @@ void GraphicsController::updateMatchFlag()
         STAT &= ~0x4;
 
     if(STAT & 0x40 && STAT & 0x4)
-        interruptController->requestInterrupt(lcdc);
+        interruptController->requestInterrupt(int_stat);
 }
 
 
@@ -410,7 +410,7 @@ void GraphicsController::displayRegisterWrite(displayRegister_t reg, u8 data)
 {
     switch(reg) {
         case RegLCDC:
-            fmt::print("UPDATE LCDC, old: {:#x}, new: {:#x}\n", LCDC, data);
+            // fmt::print("UPDATE LCDC, old: {:#x}, new: {:#x}\n", LCDC, data);
             LCDC = data;
             break;
         case RegSTAT:

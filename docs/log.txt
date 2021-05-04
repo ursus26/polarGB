@@ -4,6 +4,7 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2021-04-09: - Added interrupt tests.
 2021-04-04: - Implemented halt mode.
 2021-04-03: - Implemented the game boy timer.
             - Updated library fmt to version 7.1.3
