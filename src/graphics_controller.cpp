@@ -21,10 +21,10 @@
 #include "polarGB/graphics_controller.h"
 
 
-const u16 TILE_BASE_DATA_SELECT1 = 0;
-const u16 TILE_BASE_DATA_SELECT2 = 0x800;
-const u16 TILE_MAP_DATA1 = 0x9800 - 0x8000;
-const u16 TILE_MAP_DATA2 = 0x9c00 - 0x8000;
+const u16 TILE_DATA_AREA_1 = 0x800;
+const u16 TILE_DATA_AREA_2 = 0;
+const u16 TILE_MAP_AREA_1 = 0x9800 - 0x8000;
+const u16 TILE_MAP_AREA_2 = 0x9c00 - 0x8000;
 
 
 GraphicsController::GraphicsController()
@@ -58,6 +58,8 @@ GraphicsController::~GraphicsController()
 
 void GraphicsController::startUp(InterruptController* interruptController, bool noWindow)
 {
+    assert(interruptController != nullptr);
+
     this->noWindow = noWindow;
     this->interruptController = interruptController;
 
@@ -69,12 +71,13 @@ void GraphicsController::startUp(InterruptController* interruptController, bool 
 
     if(noWindow == false)
     {
-        display = new GraphicsDisplay();
-        int status = display->startUp();
+        this->display = new GraphicsDisplay();
+        int status = this->display->startUp();
         if(status != 0)
         {
             this->noWindow = true;
             delete display;
+            this->display = nullptr;
         }
     }
 }
@@ -119,7 +122,7 @@ void GraphicsController::update(u8 cycles)
                 if(LY == 144)
                 {
                     setCurrentMode(1);
-                    display->drawFrame();
+                    this->display->drawFrame();
                     interruptController->requestInterrupt(int_vblank);
 
                     if(STAT & 0x10)
@@ -185,7 +188,7 @@ void GraphicsController::update(u8 cycles)
  * Transforms a pixel coordinate to a tile coordinate and then calculate the tile index in memory.
  * The transformation will make sure that the pixel can be divided by 8 bits by removing bits 0-2.
  */
-constexpr u8 getTileIdx(u8 x, u8 y)
+constexpr int getTileIdx(u8 x, u8 y)
 {
     return ((x & 0xf8) / 0x8) + 32 * ((y & 0xf8) / 0x8);
 }
@@ -193,107 +196,27 @@ constexpr u8 getTileIdx(u8 x, u8 y)
 
 void GraphicsController::processScanline()
 {
-    // int xPixel = 0;
-    // int yPixel = LY;
-    // int tileIdx;
-    // int chrCode;
-    // u16 tileMapBaseAddr = TILE_MAP_DATA1;
-    // bool bgAndWindowDisplayPriority = LCDC & 0x1;
-    // if((this->LCDC & 0x8) == 0x8)
-    //     tileMapBaseAddr = TILE_MAP_DATA2;
-    // u16 bgBaseAddr = TILE_BASE_DATA_SELECT2;
-    // if((this->LCDC & 0x10) == 0x10)
-    //     bgBaseAddr = TILE_BASE_DATA_SELECT1;
-    //
-    // u8 pixelShade = 0;
-    //
-    // // fmt::print("LCDC: {:#x}\n", this->LCDC);
-    //
-    // for(int i = 0; i < SCREEN_WIDTH; i++)
-    // {
-    //     if(bgAndWindowDisplayPriority == false)
-    //    {
-    //        this->display->updatePixel(i, LY, 0xff, 0xff, 0xff, 0xff);
-    //        continue;
-    //    }
-    //
-    //     /* Calculate the tile idx and fetch the content of the tile. */
-    //     tileIdx = getTileIdx(i, yPixel);
-    //     // tileIdx = 2;
-    //     chrCode = this->vramRead(tileMapBaseAddr + tileIdx);
-    //     // chrCode = tileIdx;
-    //     // fmt::print("tileIdx: {}, chrCode: {:#x}\n", tileIdx, chrCode);
-    //
-    //     /* Fetch the pixel shade; */
-    //     int xBlock = 8 - xPixel % 8;
-    //     int yBlock = yPixel % 8;
-    //     u16 addr = bgBaseAddr + (chrCode * 16) + (yBlock * 2);
-    //     u8 low = this->vramRead(addr);
-    //     u8 high = this->vramRead(addr + 1);
-    //
-    //     // fmt::print("Addr: {:#x}, low: {:#x}, high: {:#x}\n", addr, low, high);
-    //     pixelShade = ((low >> xBlock) & 0x1) | (((high >> xBlock) & 0x1) << 1);
-    //     assert(pixelShade < 4);
-    //     // fmt::print("shade: {:#x}\n", pixelShade);
-    //
-    //     u8 color = 0;
-    //     switch (pixelShade) {
-    //         case 0:
-    //             color = 255;
-    //             break;
-    //         case 1:
-    //             color = 170;
-    //             break;
-    //         case 2:
-    //             color = 85;
-    //             break;
-    //         case 3:
-    //             color = 0;
-    //             break;
-    //     }
-    //
-    //     // this->display->updatePixel(xPixel, yPixel, 0xaa, 0x0, 0x00, 0xff);
-    //     this->display->updatePixel(i, LY, color, color, color, 0xff);
-    //     xPixel = (xPixel + 1) % 256;
-    // }
-
-    //
-    // this->LCDC = 0xd3;
-    bool bgAndWindowDisplayPriority = LCDC & 0x1;
-    int xPixel = 0 + SCX;
-    int yPixel = (LY + SCY) % 256;
-    // fmt::print("LY: {:#x}, SCY: {:#x}, yPixel: {}\n", LY, SCY, yPixel);
-    // fmt::print("LY: {:#x},\n", LY);
-    // if(yPixel > 255)
-    // {
-    //     // fmt::print("yPixel is greater than 255, LY: \n");
-    // }
-    // yPixel = LY;
-    int tileIdx;
-    int chrCode;
-    u16 tileMapBaseAddr = TILE_MAP_DATA1;
+    bool backgroundAndWindowEnabled = LCDC & 0x1;
+    u16 backgroundTileMapAddr = TILE_MAP_AREA_1;
     if(this->LCDC & 0x8)
-        tileMapBaseAddr = TILE_MAP_DATA2;
-    u16 bgBaseAddr = TILE_BASE_DATA_SELECT2;
+        backgroundTileMapAddr = TILE_MAP_AREA_2;
+    u16 bgBaseAddr = TILE_DATA_AREA_1;
     if(this->LCDC & 0x10)
-        bgBaseAddr = TILE_BASE_DATA_SELECT1;
-
+        bgBaseAddr = TILE_DATA_AREA_2;
+    int xPixel = 0 + SCX;
+    int yPixel = ((int)LY + (int)SCY) % 256;
     u8 pixelShade = 0;
-
-    // fmt::print("SCX: {:#x}, SCY: {:#x}\n", SCX, SCY);
 
     for(int i = 0; i < SCREEN_WIDTH; i++)
     {
-        if(bgAndWindowDisplayPriority == false)
+        if(backgroundAndWindowEnabled)
         {
             this->display->updatePixel(i, LY, 0xff, 0xff, 0xff, 0xff);
-            continue;
         }
 
-        /* Calculate the tile idx and fetch the content of the tile. */
-        tileIdx = getTileIdx(xPixel, yPixel);
-        chrCode = this->vramRead(tileMapBaseAddr + tileIdx);
-        // fmt::print("tileIdx: {}, chrCode: {:#x}\n", tileIdx, chrCode);
+        /* Select current tile. */
+        int tileIdx = getTileIdx(xPixel, yPixel);
+        int chrCode = this->vramRead(backgroundTileMapAddr + tileIdx);
 
         /* Fetch the pixel shade; */
         int xBlock = 8 - (xPixel % 8);
@@ -319,7 +242,6 @@ void GraphicsController::processScanline()
                 break;
         }
 
-        // this->display->updatePixel(xPixel, yPixel, 0xaa, 0x0, 0x00, 0xff);
         assert(LY < 144);
         this->display->updatePixel(i, LY, color, color, color, 0xff);
         xPixel = (xPixel + 1) % 256;

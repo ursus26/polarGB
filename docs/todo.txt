@@ -1,9 +1,8 @@
 To do:
 
-- Add more instructions handlers.
 - Draw background
-- Draw objects/UI
-- Draw sprites
+- Draw window
+- Draw objects
 - Add a README.md
 - Implement keyboard input
 - Implement controller input
