@@ -8,6 +8,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 ###############################################################################
 # COMPILER SETTINGS
@@ -25,7 +27,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ###############################################################################
 
 # Required packages
-find_package(Boost 1.46.1 REQUIRED COMPONENTS program_options)
+find_package(Boost 1.71.0 REQUIRED COMPONENTS program_options)
 find_package(SDL2 REQUIRED)
 
 # Third party
@@ -83,7 +85,6 @@ endif()
 add_compile_options(-pipe)
 target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -D_FORTIFY_SOURCE=2
                                               -fstack-protector)
-
 
 ###############################################################################
 # TESTS
