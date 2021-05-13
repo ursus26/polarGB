@@ -87,7 +87,7 @@ u8 Cpu::step()
         Instruction* instr = fetchDecode();
         reg.write(RegID_PC, reg.read(RegID_PC) + instr->instructionLength);
 
-        printInstructionInfo(instr);
+        // printInstructionInfo(instr);
 
         /* Execute the instruction handler. */
         (this->*(instr->executionFunction))(instr);
@@ -716,11 +716,12 @@ void Cpu::executeDAA(instruction_t*)
 
     if(subFlag == false)
     {
-        if(halfCarryFlag || (src & 0xf) > 9)
+        if(halfCarryFlag || (src & 0xf) > 0x9)
             result += 0x6;
-        if(carryFlag || (result & 0xf0) > 0x9f)
+
+        if(carryFlag || src >= 0x9a)
         {
-            result += 0x6;
+            result += 0x60;
             reg.setFlagCarry(true);
         }
         else
