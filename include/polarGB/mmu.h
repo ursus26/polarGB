@@ -91,7 +91,6 @@ private:
     Cartridge rom;  /* Game cartridge */
     ram_t ERAM;       /* External RAM */
     ram_t WRAM;       /* Working RAM */
-    ram_t OAM;
     ram_t HardwareRegisters;
     ram_t HRAM;       /* High Ram / CPU working RAM */
 

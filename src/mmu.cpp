@@ -35,8 +35,6 @@ Mmu::Mmu()
     this->ERAM.mem = nullptr;
     this->WRAM.size = 0;
     this->WRAM.mem = nullptr;
-    this->OAM.size = 0;
-    this->OAM.mem = nullptr;
     this->HardwareRegisters.size = 0;
     this->HardwareRegisters.mem = nullptr;
     this->HRAM.size = 0;
@@ -62,9 +60,6 @@ void Mmu::startUp(GraphicsController* gc, InterruptController* interruptControll
 
     WRAM.size = WRAM_END_ADDR - WRAM_START_ADDR + 1;
     WRAM.mem = new u8[WRAM.size]();
-
-    OAM.size = OAM_END_ADDR - OAM_START_ADDR + 1;
-    OAM.mem = new u8[OAM.size]();
 
     HardwareRegisters.size = HARDWARE_REGISTERS_END_ADDR - HARDWARE_REGISTERS_START_ADDR + 1;
     HardwareRegisters.mem = new u8[HardwareRegisters.size]();
@@ -130,10 +125,6 @@ void Mmu::shutDown()
     WRAM.mem = nullptr;
     WRAM.size = 0;
 
-    delete[] OAM.mem;
-    OAM.mem = nullptr;
-    OAM.size = 0;
-
     delete[] HardwareRegisters.mem;
     HardwareRegisters.mem = nullptr;
     HardwareRegisters.size = 0;
@@ -146,12 +137,14 @@ void Mmu::shutDown()
 
 u8 Mmu::read(u16 addr)
 {
+    assert(this->graphicsController != nullptr);
+
     u8 data = 0;
 
     if(addr <= ROM_END_ADDR) /* ROM banks */
         data = rom.read(addr);
     else if(addr >= VRAM_START_ADDR && addr <= VRAM_END_ADDR) /* VRAM / LCD Display RAM */
-        data = graphicsController->vramRead(addr - VRAM_START_ADDR);
+        data = this->graphicsController->vramRead(addr - VRAM_START_ADDR);
     else if(addr >= ERAM_START_ADDR && addr <= ERAM_END_ADDR) /* Switchable external RAM bank */
         data = ERAM.mem[addr - ERAM_START_ADDR];
     else if(addr >= WRAM_START_ADDR && addr <= WRAM_END_ADDR) /* Working RAM bank 0 */
@@ -159,7 +152,7 @@ u8 Mmu::read(u16 addr)
     else if(addr > WRAM_END_ADDR && addr < OAM_START_ADDR) /* Echo ram, typically not used. */
         fmt::print(stderr, "Error, read request for echo RAM is not supported\n");
     else if(addr >= OAM_START_ADDR && addr <= OAM_END_ADDR) /* Sprite attribute table / OAM (Object Actribute Mem) */
-        data = OAM.mem[addr - OAM_START_ADDR];
+        data = this->graphicsController->oamRead(addr - OAM_START_ADDR);
     else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTERS_START_ADDR) /* Not usable */
         fmt::print(stderr, "Error, read request for unusable memory at address: {:#x}\n", addr);
     else if(addr >= HARDWARE_REGISTERS_START_ADDR && addr <= HARDWARE_REGISTERS_END_ADDR) /* I/O Ports */
@@ -191,13 +184,12 @@ u16 Mmu::read2Bytes(u16 addr)
 
 void Mmu::write(u16 addr, u8 data)
 {
+    assert(graphicsController != nullptr);
+
     if(addr <= ROM_END_ADDR) /* ROM banks */
         rom.write(addr, data);
     else if(addr >= VRAM_START_ADDR && addr <= VRAM_END_ADDR) /* VRAM / LCD Display RAM */
-    {
-        assert(graphicsController != nullptr);
-        graphicsController->vramWrite(addr - VRAM_START_ADDR, data);
-    }
+        this->graphicsController->vramWrite(addr - VRAM_START_ADDR, data);
     else if(addr >= ERAM_START_ADDR && addr <= ERAM_END_ADDR) /* Switchable external RAM bank */
         ERAM.mem[addr - ERAM_START_ADDR] = data;
     else if(addr >= WRAM_START_ADDR && addr <= WRAM_END_ADDR) /* Working RAM bank 0 */
@@ -208,7 +200,7 @@ void Mmu::write(u16 addr, u8 data)
         exit(EXIT_FAILURE);
     }
     else if(addr >= OAM_START_ADDR && addr <= OAM_END_ADDR) /* Sprite attribute table / OAM (Object Actribute Mem) */
-        OAM.mem[addr - OAM_START_ADDR] = data;
+        this->graphicsController->oamWrite(addr - OAM_START_ADDR, data);
     // else if(addr > OAM_END_ADDR && addr < HARDWARE_REGISTER_START_ADDR) /* Not usable */
         // fmt::print(stderr, "Error, write request for unusable memory at address: {:#x}, data: {:#x}\n", addr, data);
     else if(addr >= HARDWARE_REGISTERS_START_ADDR && addr <= HARDWARE_REGISTERS_END_ADDR) /* I/O Ports */

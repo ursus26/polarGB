@@ -41,8 +41,9 @@ GraphicsController::GraphicsController()
     this->OBP1 = 0;
     this->WY = 0;
     this->WX = 0;
-    vram.size = 0;
-    vram.mem = nullptr;
+    this->vram.size = 0;
+    this->vram.mem = nullptr;
+    this->oam = {0};
     this->mode = 2;
     this->modeCycles = 0;
     this->noWindow = false;
@@ -65,6 +66,8 @@ void GraphicsController::startUp(InterruptController* interruptController, bool 
 
     vram.size = 0x2000;
     vram.mem = new u8[vram.size]();
+
+    this->oam = {0};
 
     this->mode = 2;
     this->modeCycles = 0;
@@ -328,6 +331,18 @@ void GraphicsController::vramWrite(u16 address, u8 data)
     assert(vram.mem != nullptr);
 
     vram.mem[address] = data;
+}
+
+
+u8 GraphicsController::oamRead(u16 address)
+{
+    return this->oam.at(address);
+}
+
+
+void GraphicsController::oamWrite(u16 address, u8 data)
+{
+    this->oam.at(address) = data;
 }
 
 

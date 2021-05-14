@@ -18,6 +18,7 @@
 #ifndef GRAPHICS_CONTROLLER_H
 #define GRAPHICS_CONTROLLER_H
 
+#include <array>
 #include <string>
 #include "types.h"
 #include "interrupt_controller.h"
@@ -54,6 +55,8 @@ public:
     /* Video RAM read and write. */
     u8 vramRead(u16 address);
     void vramWrite(u16 address, u8 data);
+    u8 oamRead(u16 address);
+    void oamWrite(u16 address, u8 data);
     u8 displayRegisterRead(displayRegister_t reg);
     void displayRegisterWrite(displayRegister_t reg, u8 data);
 
@@ -61,6 +64,7 @@ public:
 
 private:
     ram_t vram;
+    std::array<u8, 40 *4> oam; /* 40 objects of size 32 bits. */
     u8 LCDC;
     u8 STAT;
     u8 SCY;
