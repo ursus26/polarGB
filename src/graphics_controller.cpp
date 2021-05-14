@@ -196,27 +196,60 @@ constexpr int getTileIdx(u8 x, u8 y)
 
 void GraphicsController::processScanline()
 {
-    bool backgroundAndWindowEnabled = LCDC & 0x1;
+    bool LCDEnabled = (this->LCDC & 0x80) == 0x80;
+
+    if(LCDEnabled)
+    {
+        bool backgroundAndWindowEnabled = this->LCDC & 0x1;
+        for(int i = 0; i < SCREEN_WIDTH; i++)
+        {
+            if(backgroundAndWindowEnabled)
+                processBackgroundPixel(i);
+            else
+                this->display->updatePixel(i, this->LY, 0xff, 0xff, 0xff, 0xff);
+
+            processObjectPixel();
+        }
+
+    }
+    else
+    {
+        for(auto i = 0; i < SCREEN_WIDTH; i++)
+            this->display->updatePixel(i, this->LY, 0xff, 0xff, 0xff, 0xff);
+    }
+}
+
+
+void GraphicsController::processBackgroundPixel(u8 x)
+{
+    assert(LCDC & 0x1);
+    assert((LCDC & 0x80) == 0x80);
+
     u16 backgroundTileMapAddr = TILE_MAP_AREA_1;
     if(this->LCDC & 0x8)
         backgroundTileMapAddr = TILE_MAP_AREA_2;
     u16 bgBaseAddr = TILE_DATA_AREA_1;
     if(this->LCDC & 0x10)
         bgBaseAddr = TILE_DATA_AREA_2;
-    int xPixel = 0 + SCX;
-    int yPixel = ((int)LY + (int)SCY) % 256;
-    u8 pixelShade = 0;
 
-    for(int i = 0; i < SCREEN_WIDTH; i++)
+    if(this->LCDC & 0x20 && x >= (this->WX - 6) && this->LY >= this->WY)
     {
-        if(backgroundAndWindowEnabled)
-        {
-            this->display->updatePixel(i, LY, 0xff, 0xff, 0xff, 0xff);
-        }
+        /* Window */
+    }
+    else
+    {
+        /* Background */
 
-        /* Select current tile. */
+        /* Get background coordinate. */
+        int xPixel = (this->SCX + x) % 256;
+        int yPixel = ((int)this->LY + (int)this->SCY) % 256;
+        // int yPixel = this->LY;
+
+        /* Get tile id. */
         int tileIdx = getTileIdx(xPixel, yPixel);
         int chrCode = this->vramRead(backgroundTileMapAddr + tileIdx);
+
+        // fmt::print("LCDC: {:x}, x: {}, y: {}, map_addr: {:x}, tile_index: {:x}, tile address: {:x}\n", this->LCDC, x, this->LY, backgroundTileMapAddr + tileIdx, chrCode, bgBaseAddr + (16 * chrCode));
 
         /* Fetch the pixel shade; */
         int xBlock = 8 - (xPixel % 8);
@@ -224,7 +257,7 @@ void GraphicsController::processScanline()
         u16 addr = bgBaseAddr + (chrCode * 16) + (yBlock * 2);
         u8 low = this->vramRead(addr);
         u8 high = this->vramRead(addr + 1);
-        pixelShade = ((low >> xBlock) & 0x1) | (((high >> xBlock) & 0x1) << 1);
+        u8 pixelShade = ((low >> xBlock) & 0x1) | (((high >> xBlock) & 0x1) << 1);
 
         u8 color = 0;
         switch (pixelShade) {
@@ -242,10 +275,13 @@ void GraphicsController::processScanline()
                 break;
         }
 
-        assert(LY < 144);
-        this->display->updatePixel(i, LY, color, color, color, 0xff);
-        xPixel = (xPixel + 1) % 256;
+        this->display->updatePixel(x, this->LY, color, color, color, 0xff);
     }
+}
+
+
+void GraphicsController::processObjectPixel()
+{
 }
 
 
@@ -332,7 +368,6 @@ void GraphicsController::displayRegisterWrite(displayRegister_t reg, u8 data)
 {
     switch(reg) {
         case RegLCDC:
-            // fmt::print("UPDATE LCDC, old: {:#x}, new: {:#x}\n", LCDC, data);
             LCDC = data;
             break;
         case RegSTAT:
@@ -345,7 +380,6 @@ void GraphicsController::displayRegisterWrite(displayRegister_t reg, u8 data)
             SCX = data;
             break;
         case RegLY:
-            LY = data;
             break;
         case RegLYC:
             LYC = data;

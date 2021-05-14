@@ -87,6 +87,8 @@ private:
 
     void setCurrentMode(u8 newMode);
     void processScanline();
+    void processBackgroundPixel(u8 x);
+    void processObjectPixel();
 };
 
 
