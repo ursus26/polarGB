@@ -234,14 +234,12 @@ void Mmu::loadRom(string fileName)
 
 void Mmu::DMATransfer(u8 index)
 {
-    u16 source_address = index << 8;
-    u16 dest_address = 0xfe00;
-    u8 data = 0x0;
-
+    u16 sourceAddress = ((u16)index) << 8;
+    u16 destinationAddress = OAM_START_ADDR;
     for(u8 i = 0; i < 0xa0; i++)
     {
-        data = this->read(source_address + i);
-        this->write(dest_address + i, data);
+        u8 data = this->read(sourceAddress + i);
+        this->write(destinationAddress + i, data);
     }
 }
 
@@ -258,21 +256,21 @@ u8 Mmu::readHardwareRegister(u16 addr)
         case TIMA_ADDR: return timer->read(RegTIMA);
         case TMA_ADDR:  return timer->read(RegTMA);
         case TAC_ADDR:  return timer->read(RegTAC);
-        case LCDC_ADDR: return this->graphicsController->displayRegisterRead(RegLCDC);
-        case STAT_ADDR: return this->graphicsController->displayRegisterRead(RegSTAT);
-        case SCY_ADDR:  return this->graphicsController->displayRegisterRead(RegSCY);
-        case SCX_ADDR:  return this->graphicsController->displayRegisterRead(RegSCX);
-        case LY_ADDR:   return this->graphicsController->displayRegisterRead(RegLY);
-        case LYC_ADDR:  return this->graphicsController->displayRegisterRead(RegLYC);
-        case DMA_ADDR:  return this->graphicsController->displayRegisterRead(RegDMA);
-        case BGP_ADDR:  return this->graphicsController->displayRegisterRead(RegBGP);
-        case OBP0_ADDR: return this->graphicsController->displayRegisterRead(RegOBP0);
-        case OBP1_ADDR: return this->graphicsController->displayRegisterRead(RegOBP1);
-        case WY_ADDR:   return this->graphicsController->displayRegisterRead(RegWY);
-        case WX_ADDR:   return this->graphicsController->displayRegisterRead(RegWX);
-        case IF_ADDR:   return this->interruptController->getIF();
-        case IE_ADDR:   return this->interruptController->getIE();
-        default: return HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR];
+        case LCDC_ADDR: return graphicsController->displayRegisterRead(RegLCDC);
+        case STAT_ADDR: return graphicsController->displayRegisterRead(RegSTAT);
+        case SCY_ADDR:  return graphicsController->displayRegisterRead(RegSCY);
+        case SCX_ADDR:  return graphicsController->displayRegisterRead(RegSCX);
+        case LY_ADDR:   return graphicsController->displayRegisterRead(RegLY);
+        case LYC_ADDR:  return graphicsController->displayRegisterRead(RegLYC);
+        case DMA_ADDR:  return graphicsController->displayRegisterRead(RegDMA);
+        case BGP_ADDR:  return graphicsController->displayRegisterRead(RegBGP);
+        case OBP0_ADDR: return graphicsController->displayRegisterRead(RegOBP0);
+        case OBP1_ADDR: return graphicsController->displayRegisterRead(RegOBP1);
+        case WY_ADDR:   return graphicsController->displayRegisterRead(RegWY);
+        case WX_ADDR:   return graphicsController->displayRegisterRead(RegWX);
+        case IF_ADDR:   return interruptController->getIF();
+        case IE_ADDR:   return interruptController->getIE();
+        default:        return HardwareRegisters.mem[addr - HARDWARE_REGISTERS_START_ADDR];
     }
 }
 
@@ -296,8 +294,10 @@ void Mmu::writeHardwareRegister(u16 addr, u8 data)
         case SCX_ADDR:  graphicsController->displayRegisterWrite(RegSCX, data); break;
         case LY_ADDR:   graphicsController->displayRegisterWrite(RegLY, data); break;
         case LYC_ADDR:  graphicsController->displayRegisterWrite(RegLYC, data); break;
-        // case DMA_ADDR:  graphicsController->displayRegisterWrite(RegDMA, data); break;
-        case DMA_ADDR:  DMATransfer(data); graphicsController->displayRegisterWrite(RegDMA, data); break;
+        case DMA_ADDR:
+            DMATransfer(data);
+            graphicsController->displayRegisterWrite(RegDMA, data);
+            break;
         case BGP_ADDR:  graphicsController->displayRegisterWrite(RegBGP, data); break;
         case OBP0_ADDR: graphicsController->displayRegisterWrite(RegOBP0, data); break;
         case OBP1_ADDR: graphicsController->displayRegisterWrite(RegOBP1, data); break;

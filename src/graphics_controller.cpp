@@ -231,55 +231,66 @@ void GraphicsController::processBackgroundPixel(u8 x)
     u16 backgroundTileMapAddr = TILE_MAP_AREA_1;
     if(this->LCDC & 0x8)
         backgroundTileMapAddr = TILE_MAP_AREA_2;
-    u16 bgBaseAddr = TILE_DATA_AREA_1;
-    if(this->LCDC & 0x10)
-        bgBaseAddr = TILE_DATA_AREA_2;
 
+    u16 windowTileMapAddr = TILE_MAP_AREA_1;
+    if(this->LCDC & 0x40)
+        windowTileMapAddr = TILE_MAP_AREA_2;
+
+    u16 tileDataAddr = TILE_DATA_AREA_1;
+    if(this->LCDC & 0x10)
+        tileDataAddr = TILE_DATA_AREA_2;
+
+    int xPixel, yPixel, tileDataIndex;
     if(this->LCDC & 0x20 && x >= (this->WX - 6) && this->LY >= this->WY)
     {
         /* Window */
+
+        /* Get window coordinate. */
+        xPixel = this->WX - x;
+        yPixel = this->WY - this->LY;
+
+        /* Get tile id. */
+        int tileMapIndex = getTileIdx(xPixel, yPixel);
+        tileDataIndex = this->vramRead(windowTileMapAddr + tileMapIndex);
     }
     else
     {
         /* Background */
 
         /* Get background coordinate. */
-        int xPixel = (this->SCX + x) % 256;
-        int yPixel = ((int)this->LY + (int)this->SCY) % 256;
-        // int yPixel = this->LY;
+        xPixel = (SCX + x) % 256;
+        yPixel = ((int)LY + (int)SCY) % 256;
 
         /* Get tile id. */
-        int tileIdx = getTileIdx(xPixel, yPixel);
-        int chrCode = this->vramRead(backgroundTileMapAddr + tileIdx);
-
-        // fmt::print("LCDC: {:x}, x: {}, y: {}, map_addr: {:x}, tile_index: {:x}, tile address: {:x}\n", this->LCDC, x, this->LY, backgroundTileMapAddr + tileIdx, chrCode, bgBaseAddr + (16 * chrCode));
-
-        /* Fetch the pixel shade; */
-        int xBlock = 8 - (xPixel % 8);
-        int yBlock = yPixel % 8;
-        u16 addr = bgBaseAddr + (chrCode * 16) + (yBlock * 2);
-        u8 low = this->vramRead(addr);
-        u8 high = this->vramRead(addr + 1);
-        u8 pixelShade = ((low >> xBlock) & 0x1) | (((high >> xBlock) & 0x1) << 1);
-
-        u8 color = 0;
-        switch (pixelShade) {
-            case 0:
-                color = 255;
-                break;
-            case 1:
-                color = 170;
-                break;
-            case 2:
-                color = 85;
-                break;
-            case 3:
-                color = 0;
-                break;
-        }
-
-        this->display->updatePixel(x, this->LY, color, color, color, 0xff);
+        int tileMapIndex = getTileIdx(xPixel, yPixel);
+        tileDataIndex = this->vramRead(backgroundTileMapAddr + tileMapIndex);
     }
+
+    /* Fetch the pixel shade; */
+    int xBlock = 8 - (xPixel % 8);
+    int yBlock = yPixel % 8;
+    u16 addr = tileDataAddr + (tileDataIndex * 16) + (yBlock * 2);
+    u8 low = this->vramRead(addr);
+    u8 high = this->vramRead(addr + 1);
+    u8 pixelShade = ((low >> xBlock) & 0x1) | (((high >> xBlock) & 0x1) << 1);
+
+    u8 color = 0;
+    switch (pixelShade) {
+        case 0:
+            color = 255;
+            break;
+        case 1:
+            color = 170;
+            break;
+        case 2:
+            color = 85;
+            break;
+        case 3:
+            color = 0;
+            break;
+    }
+
+    this->display->updatePixel(x, this->LY, color, color, color, 0xff);
 }
 
 
