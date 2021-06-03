@@ -19,6 +19,7 @@
 #define JOYPAD_H
 
 #include <memory>
+#include <SDL2/SDL.h>
 #include "types.h"
 #include "interrupt_controller.h"
 
@@ -29,12 +30,28 @@ public:
     Joypad(std::shared_ptr<InterruptController> interruptController);
     ~Joypad();
 
-    u8 read() const;
+    u8 read();
     void write(u8 data);
+    void processInput();
+    bool getShutDown() const;
 
 private:
     std::shared_ptr<InterruptController> interruptController;
     u8 P1;
+
+    /* Buttons pressed. */
+    bool shutDown;
+    bool buttonA;
+    bool buttonB;
+    bool buttonSelect;
+    bool buttonStart;
+    bool buttonRight;
+    bool buttonLeft;
+    bool buttonUp;
+    bool buttonDown;
+
+    void processKeyDown(SDL_Keycode keysym);
+    void processKeyUp(SDL_Keycode keysym);
 };
 
 #endif /* JOYPAD_H */

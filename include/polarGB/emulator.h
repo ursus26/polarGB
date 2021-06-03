@@ -20,7 +20,6 @@
 
 #include <memory>
 #include <string>
-#include <SDL2/SDL.h>
 #include "types.h"
 #include "interrupt_controller.h"
 #include "joypad.h"

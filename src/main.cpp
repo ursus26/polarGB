@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <memory>
 #include <stdlib.h>
 #include <vector>
 #include <boost/program_options.hpp>
@@ -102,13 +103,10 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    /* Start the emulator and load the cartridge. */
-    Emulator* emu = new Emulator();
-    emu->start(cartridgePath);
 
-    /* Clean up. */
-    delete emu;
-    emu = nullptr;
+    /* Start the emulator and load the cartridge. */
+    unique_ptr<Emulator> emu = make_unique<Emulator>();
+    emu->start(cartridgePath);
 
     return EXIT_SUCCESS;
 }

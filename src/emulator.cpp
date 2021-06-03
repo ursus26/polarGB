@@ -67,7 +67,7 @@ void Emulator::startUp()
     this->joypad = std::make_shared<Joypad>(this->interruptController);
     this->timer = std::make_shared<Timer>(this->interruptController);
     this->graphicsController = std::make_shared<GraphicsController>(this->interruptController, false);
-    this->mmu = std::make_shared<Mmu>(this->graphicsController, this->interruptController, this->timer);
+    this->mmu = std::make_shared<Mmu>(this->graphicsController, this->interruptController, this->timer, this->joypad);
     this->cpu = std::make_shared<Cpu>(this->mmu, this->interruptController);
 }
 
@@ -133,22 +133,9 @@ void Emulator::runFrame()
         this->graphicsController->update(cpuCycles);
     }
 
-    /* Check if we should close our window. */
-    SDL_Event event;
-    while(SDL_PollEvent(&event) != 0)
-    {
-        if(event.type == SDL_QUIT)
-        {
-            this->isRunning = false;
-        }
-        else if(event.type == SDL_KEYDOWN)
-        {
-            if(event.key.keysym.sym == SDLK_ESCAPE)
-            {
-                this->isRunning = false;
-            }
-        }
-    }
+    /* Input processing. */
+    this->joypad->processInput();
+    this->isRunning = !this->joypad->getShutDown();
 
     cyclesCompleted -= INSTRUCTIONS_PER_FRAME;
 }

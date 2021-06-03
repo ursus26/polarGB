@@ -25,14 +25,17 @@
 using namespace std;
 
 
-Mmu::Mmu(std::shared_ptr<GraphicsController> gc, std::shared_ptr<InterruptController> ic, std::shared_ptr<Timer> timer)
+Mmu::Mmu(std::shared_ptr<GraphicsController> gc, std::shared_ptr<InterruptController> ic,
+    std::shared_ptr<Timer> timer, std::shared_ptr<Joypad> joypad)
 {
     assert(gc != nullptr);
     assert(ic != nullptr);
     assert(timer != nullptr);
+    assert(joypad != nullptr);
 
     this->graphicsController = gc;
     this->interruptController = ic;
+    this->joypad = joypad;
     this->timer = timer;
     this->rom.startUp();
 
@@ -60,27 +63,27 @@ Mmu::~Mmu()
 void Mmu::initializeMemory()
 {
     /* Reference: http://gbdev.gg8.se/wiki/articles/Power_Up_Sequence */
-    this->write(0xff05, 0x00);   /* TIMA */
-    this->write(0xff06, 0x00);   /* TMA */
-    this->write(0xff07, 0x00);   /* TAC */
-    this->write(0xff10, 0x80);   /* NR10 */
-    this->write(0xff11, 0xbf);   /* NR11 */
-    this->write(0xff12, 0xf3);   /* NR12 */
-    this->write(0xff14, 0xbf);   /* NR14 */
-    this->write(0xff16, 0x3f);   /* NR21 */
-    this->write(0xff17, 0x00);   /* NR22 */
-    this->write(0xff19, 0xbf);   /* NR24 */
-    this->write(0xff1a, 0x7f);   /* NR30 */
-    this->write(0xff1b, 0xff);   /* NR31 */
-    this->write(0xff1c, 0x9f);   /* NR32 */
-    this->write(0xff1e, 0xbf);   /* NR33 */
-    this->write(0xff20, 0xff);   /* NR41 */
-    this->write(0xff21, 0x00);   /* NR42 */
-    this->write(0xff22, 0x00);   /* NR43 */
-    this->write(0xff23, 0xbf);   /* NR44 */
-    this->write(0xff24, 0x77);   /* NR50 */
-    this->write(0xff25, 0xf3);   /* NR51 */
-    this->write(0xff26, 0xf1);   /* NR52 */
+    this->write(TIMA_ADDR, 0x00);   /* TIMA */
+    this->write(TMA_ADDR, 0x00);   /* TMA */
+    this->write(TAC_ADDR, 0x00);   /* TAC */
+    this->write(NR10_ADDR, 0x80);   /* NR10 */
+    this->write(NR11_ADDR, 0xbf);   /* NR11 */
+    this->write(NR12_ADDR, 0xf3);   /* NR12 */
+    this->write(NR14_ADDR, 0xbf);   /* NR14 */
+    this->write(NR21_ADDR, 0x3f);   /* NR21 */
+    this->write(NR22_ADDR, 0x00);   /* NR22 */
+    this->write(NR24_ADDR, 0xbf);   /* NR24 */
+    this->write(NR30_ADDR, 0x7f);   /* NR30 */
+    this->write(NR31_ADDR, 0xff);   /* NR31 */
+    this->write(NR32_ADDR, 0x9f);   /* NR32 */
+    this->write(NR33_ADDR, 0xbf);   /* NR33 */
+    this->write(NR41_ADDR, 0xff);   /* NR41 */
+    this->write(NR42_ADDR, 0x00);   /* NR42 */
+    this->write(NR43_ADDR, 0x00);   /* NR43 */
+    this->write(NR44_ADDR, 0xbf);   /* NR44 */
+    this->write(NR50_ADDR, 0x77);   /* NR50 */
+    this->write(NR51_ADDR, 0xf3);   /* NR51 */
+    this->write(NR52_ADDR, 0xf1);   /* NR52 */
     this->write(LCDC_ADDR, 0x91);
     this->write(SCY_ADDR, 0x00);
     this->write(SCX_ADDR, 0x00);
@@ -239,6 +242,7 @@ u8 Mmu::readHardwareRegister(u16 addr)
 
     switch(addr)
     {
+        case P1_ADDR:   return joypad->read();
         case DIV_ADDR:  return timer->read(RegDIV);
         case TIMA_ADDR: return timer->read(RegTIMA);
         case TMA_ADDR:  return timer->read(RegTMA);
@@ -271,6 +275,7 @@ void Mmu::writeHardwareRegister(u16 addr, u8 data)
 
     switch(addr)
     {
+        case P1_ADDR:   joypad->write(data); break;
         case DIV_ADDR:  timer->write(RegDIV, data); break;
         case TIMA_ADDR: timer->write(RegTIMA, data); break;
         case TMA_ADDR:  timer->write(RegTMA, data); break;

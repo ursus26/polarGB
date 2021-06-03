@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include "polarGB/types.h"
 #include "polarGB/interrupt_controller.h"
+#include "polarGB/joypad.h"
 #include "polarGB/timer.h"
 #include "polarGB/mmu.h"
 
@@ -14,8 +15,9 @@ protected:
     {
         ic = std::make_shared<InterruptController>();
         gc = std::make_shared<GraphicsController>(ic, true);
+        joypad = std::make_shared<Joypad>(ic);
         timer = std::make_shared<Timer>(ic);
-        mmu = std::make_shared<Mmu>(gc, ic, timer);
+        mmu = std::make_shared<Mmu>(gc, ic, timer, joypad);
     }
 
     void TearDown() override
@@ -24,8 +26,9 @@ protected:
         gc->shutDown();
     }
 
-    std::shared_ptr<InterruptController> ic;
     std::shared_ptr<GraphicsController> gc;
+    std::shared_ptr<InterruptController> ic;
+    std::shared_ptr<Joypad> joypad;
     std::shared_ptr<Timer> timer;
     std::shared_ptr<Mmu> mmu;
 };
