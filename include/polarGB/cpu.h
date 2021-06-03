@@ -18,17 +18,11 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include <memory>
 #include "types.h"
 #include "register.h"
 #include "mmu.h"
 #include "interrupt_controller.h"
-#include "timer.h"
-
-
-// const int FPS = 60;
-// const double FRAME_TIME = 1.0 / (double) FPS;
-// const int CPU_FREQUENCY = 1048575; /* Hz */
-// const int MAX_INSTRUCTIONS_PER_FRAME = CPU_FREQUENCY / FPS;
 
 
 enum ConditionFlag
@@ -62,6 +56,15 @@ typedef struct Operand
 } operand_t;
 
 
+enum CpuState
+{
+    off,
+    on,
+    stop,
+    halt
+};
+
+
 class Cpu
 {
 public:
@@ -78,23 +81,20 @@ public:
         void (Cpu::*executionFunction)(Instruction *);  /* Funtion that can execute this instruction. */
     } instruction_t;
 
-    Cpu();
+    Cpu(std::shared_ptr<Mmu> m, std::shared_ptr<InterruptController> ic);
     ~Cpu();
 
-    void startUp(Mmu* m, InterruptController* interruptController, Timer* timer);
     void shutDown();
 
     u8 step();
+    CpuState getState() const;
 
 private:
-    /* Member variables. */
     Register reg;
-    Mmu* mmu;
-    InterruptController* interruptController;
+    std::shared_ptr<Mmu> mmu;
+    std::shared_ptr<InterruptController> interruptController;
     instruction_t* currentInstruction;
-    Timer* timer;
-
-    bool isHalted;
+    CpuState state;
 
     /* Interrupt handling. */
     void checkInterrupts();

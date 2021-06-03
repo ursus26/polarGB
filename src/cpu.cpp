@@ -25,40 +25,29 @@
 
 using namespace std;
 
-Cpu::Cpu()
-{
-    this->mmu = nullptr;
-    this->interruptController = nullptr;
-    this->currentInstruction = nullptr;
-    this->timer = nullptr;
-    this->isHalted = false;
-}
-
-Cpu::~Cpu()
-{
-}
-
-
-void Cpu::startUp(Mmu* m, InterruptController* interruptController, Timer* timer)
+Cpu::Cpu(std::shared_ptr<Mmu> m, std::shared_ptr<InterruptController> ic)
 {
     assert(m != nullptr);
-    assert(interruptController != nullptr);
-    assert(timer != nullptr);
+    assert(ic != nullptr);
 
     this->mmu = m;
-    this->interruptController = interruptController;
+    this->interruptController = ic;
     this->interruptController->disableInterrupts();
     this->currentInstruction = new instruction_t;
-    this->timer = timer;
-    this->isHalted = false;
+    this->state = on;
 
     /* Initialise the registers. */
+    this->reg = Register();
     this->reg.write(RegID_AF, 0x01b0);    /* Initialise AF register. */
     this->reg.write(RegID_BC, 0x0013);    /* Initialise BC register. */
     this->reg.write(RegID_DE, 0x00d8);    /* Initialise DE register. */
     this->reg.write(RegID_HL, 0x014d);    /* Initialise HL register. */
     this->reg.write(RegID_SP, 0xfffe);    /* Initialise the stack. */
     this->reg.write(RegID_PC, 0x100);     /* Initialise the program counter */
+}
+
+Cpu::~Cpu()
+{
 }
 
 
@@ -68,7 +57,6 @@ void Cpu::shutDown()
     this->currentInstruction = nullptr;
 
     this->interruptController = nullptr;
-    this->timer = nullptr;
     this->mmu = nullptr;
 }
 
@@ -81,7 +69,7 @@ u8 Cpu::step()
 {
     u8 cycleCost = 1;
 
-    if(!this->isHalted)
+    if(this->state != halt)
     {
         /* Fetch the next instruction. */
         Instruction* instr = fetchDecode();
@@ -121,10 +109,10 @@ Cpu::instruction_t * Cpu::fetchDecode()
 void Cpu::checkInterrupts()
 {
     /* Check for an interrupt signal. */
-    u16 interruptSignal = this->interruptController->checkInterrupts(this->isHalted);
+    u16 interruptSignal = this->interruptController->checkInterrupts(this->state == halt);
 
-    if(interruptSignal > 0 && this->isHalted)
-        this->isHalted = false;
+    if(interruptSignal > 0 && this->state == halt)
+        this->state = on;
     else if(interruptSignal == 0x0)
         return;
     else
@@ -168,6 +156,12 @@ void Cpu::printInstructionInfo(instruction_t *instr)
     }
 
     fmt::print("\t{}\n", instr->mnemonic);
+}
+
+
+CpuState Cpu::getState() const
+{
+    return this->state;
 }
 
 
@@ -667,7 +661,7 @@ void Cpu::executeEI(instruction_t*)
 
 void Cpu::executeHALT(instruction_t*)
 {
-    this->isHalted = true;
+    this->state = halt;
 }
 
 

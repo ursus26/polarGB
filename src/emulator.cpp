@@ -33,6 +33,7 @@ Emulator::Emulator()
     this->graphicsController = nullptr;
     this->interruptController = nullptr;
     this->timer = nullptr;
+    this->joypad = nullptr;
 }
 
 Emulator::~Emulator()
@@ -62,37 +63,27 @@ void Emulator::startUp()
     this->isRunning = true;
     this->cyclesCompleted = 0;
 
-    this->interruptController = new InterruptController();
-    this->timer = new Timer(this->interruptController);
-    this->graphicsController = new GraphicsController();
-    this->mmu = new Mmu();
-    this->cpu = new Cpu();
-
-    this->graphicsController->startUp(this->interruptController, false);
-    this->mmu->startUp(this->graphicsController, this->interruptController, this->timer);
-    this->cpu->startUp(this->mmu, this->interruptController, this->timer);
+    this->interruptController = std::make_shared<InterruptController>();
+    this->joypad = std::make_shared<Joypad>(this->interruptController);
+    this->timer = std::make_shared<Timer>(this->interruptController);
+    this->graphicsController = std::make_shared<GraphicsController>(this->interruptController, false);
+    this->mmu = std::make_shared<Mmu>(this->graphicsController, this->interruptController, this->timer);
+    this->cpu = std::make_shared<Cpu>(this->mmu, this->interruptController);
 }
 
 
 void Emulator::shutDown()
 {
     this->cpu->shutDown();
-    delete this->cpu;
-    this->cpu = nullptr;
-
     this->mmu->shutDown();
-    delete this->mmu;
-    this->mmu = nullptr;
-
     this->graphicsController->shutDown();
-    delete this->graphicsController;
-    this->graphicsController = nullptr;
 
-    delete this->timer;
-    this->timer = nullptr;
-
-    delete this->interruptController;
-    this->interruptController = nullptr;
+    this->cpu.reset();
+    this->mmu.reset();
+    this->graphicsController.reset();
+    this->timer.reset();
+    this->joypad.reset();
+    this->interruptController.reset();
 }
 
 

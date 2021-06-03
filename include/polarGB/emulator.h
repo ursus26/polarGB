@@ -18,10 +18,12 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include <memory>
 #include <string>
 #include <SDL2/SDL.h>
 #include "types.h"
 #include "interrupt_controller.h"
+#include "joypad.h"
 #include "timer.h"
 #include "graphics_controller.h"
 #include "mmu.h"
@@ -46,11 +48,12 @@ private:
     bool isRunning;
     u64 cyclesCompleted;
 
-    InterruptController* interruptController;
-    Timer* timer;
-    GraphicsController* graphicsController;
-    Mmu* mmu;
-    Cpu* cpu;
+    std::shared_ptr<InterruptController> interruptController;
+    std::shared_ptr<Joypad> joypad;
+    std::shared_ptr<Timer> timer;
+    std::shared_ptr<GraphicsController> graphicsController;
+    std::shared_ptr<Mmu> mmu;
+    std::shared_ptr<Cpu> cpu;
 
     void startUp();
     void shutDown();

@@ -19,6 +19,7 @@
 #define GRAPHICS_CONTROLLER_H
 
 #include <array>
+#include <memory>
 #include <string>
 #include "types.h"
 #include "interrupt_controller.h"
@@ -45,11 +46,10 @@ typedef enum DisplayRegister
 class GraphicsController
 {
 public:
-    GraphicsController();
+    GraphicsController(std::shared_ptr<InterruptController> ic, bool noWindow);
     ~GraphicsController();
 
     /* Initialization and clean up. */
-    void startUp(InterruptController* interruptController, bool noWindow);
     void shutDown();
 
     /* Video RAM read and write. */
@@ -63,8 +63,11 @@ public:
     void update(u8 cycles);
 
 private:
+    /* Memory */
     ram_t vram;
     std::array<u8, 40 *4> oam; /* 40 objects of size 32 bits. */
+
+    /* Display registers */
     u8 LCDC;
     u8 STAT;
     u8 SCY;
@@ -84,7 +87,7 @@ private:
 
     bool noWindow;  /* Mainly used for testing in order to not setup the window. */
     GraphicsDisplay* display;
-    InterruptController* interruptController;
+    std::shared_ptr<InterruptController> interruptController;
 
     // void drawFrame();
     void updateMatchFlag();

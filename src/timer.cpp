@@ -21,7 +21,7 @@
 #include "polarGB/timer.h"
 
 
-Timer::Timer(InterruptController* interruptController)
+Timer::Timer(std::shared_ptr<InterruptController> interruptController)
 {
     assert(interruptController != nullptr);
 
@@ -31,14 +31,12 @@ Timer::Timer(InterruptController* interruptController)
     this->TAC = 0;
     this->timaClock = 0;
     this->divClock = 0;
-
     this->interruptController = interruptController;
 }
 
 
 Timer::~Timer()
 {
-    this->interruptController = nullptr;
 }
 
 

@@ -27,8 +27,11 @@ const u16 TILE_MAP_AREA_1 = 0x9800 - 0x8000;
 const u16 TILE_MAP_AREA_2 = 0x9c00 - 0x8000;
 
 
-GraphicsController::GraphicsController()
+GraphicsController::GraphicsController(std::shared_ptr<InterruptController> ic, bool noWindow)
 {
+    assert(ic != nullptr);
+
+    /* Display registers */
     this->LCDC = 0;
     this->STAT = 0;
     this->SCY = 0;
@@ -41,36 +44,17 @@ GraphicsController::GraphicsController()
     this->OBP1 = 0;
     this->WY = 0;
     this->WX = 0;
-    this->vram.size = 0;
-    this->vram.mem = nullptr;
+
+    /* Memory */
+    this->vram.size = 0x2000;
+    this->vram.mem = new u8[vram.size]();
     this->oam = {0};
+
     this->mode = 2;
     this->modeCycles = 0;
-    this->noWindow = false;
-    this->interruptController = nullptr;
-    this->display = nullptr;
-}
-
-
-GraphicsController::~GraphicsController()
-{
-}
-
-
-void GraphicsController::startUp(InterruptController* interruptController, bool noWindow)
-{
-    assert(interruptController != nullptr);
-
     this->noWindow = noWindow;
-    this->interruptController = interruptController;
-
-    vram.size = 0x2000;
-    vram.mem = new u8[vram.size]();
-
-    this->oam = {0};
-
-    this->mode = 2;
-    this->modeCycles = 0;
+    this->display = nullptr;
+    this->interruptController = ic;
 
     if(noWindow == false)
     {
@@ -83,6 +67,11 @@ void GraphicsController::startUp(InterruptController* interruptController, bool 
             this->display = nullptr;
         }
     }
+}
+
+
+GraphicsController::~GraphicsController()
+{
 }
 
 

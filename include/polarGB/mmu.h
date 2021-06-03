@@ -18,6 +18,7 @@
 #ifndef MEMORY_MANAGER_H
 #define MEMORY_MANAGER_H
 
+#include <memory>
 #include <string>
 #include "types.h"
 #include "cartridge.h"
@@ -69,11 +70,10 @@ const u16 IE_ADDR = 0xffff;
 class Mmu
 {
 public:
-    Mmu();
+    Mmu(std::shared_ptr<GraphicsController> gc, std::shared_ptr<InterruptController> ic, std::shared_ptr<Timer> timer);
     ~Mmu();
 
     /* Small boot program for the mmu. */
-    void startUp(GraphicsController* gc, InterruptController* interruptController, Timer* timer);
     void shutDown();
 
     /* Read from an address. */
@@ -94,10 +94,11 @@ private:
     ram_t HardwareRegisters;
     ram_t HRAM;       /* High Ram / CPU working RAM */
 
-    InterruptController* interruptController;
-    GraphicsController* graphicsController;
-    Timer* timer;
+    std::shared_ptr<InterruptController> interruptController;
+    std::shared_ptr<GraphicsController> graphicsController;
+    std::shared_ptr<Timer> timer;
 
+    void initializeMemory();
     void DMATransfer(u8 index);
     u8 readHardwareRegister(u16 addr);
     void writeHardwareRegister(u16 addr, u8 data);

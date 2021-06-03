@@ -25,20 +25,28 @@
 using namespace std;
 
 
-Mmu::Mmu()
+Mmu::Mmu(std::shared_ptr<GraphicsController> gc, std::shared_ptr<InterruptController> ic, std::shared_ptr<Timer> timer)
 {
-    this->interruptController = nullptr;
-    this->graphicsController = nullptr;
-    this->timer = nullptr;
+    assert(gc != nullptr);
+    assert(ic != nullptr);
+    assert(timer != nullptr);
 
-    this->ERAM.size = 0;
-    this->ERAM.mem = nullptr;
-    this->WRAM.size = 0;
-    this->WRAM.mem = nullptr;
-    this->HardwareRegisters.size = 0;
-    this->HardwareRegisters.mem = nullptr;
-    this->HRAM.size = 0;
-    this->HRAM.mem = nullptr;
+    this->graphicsController = gc;
+    this->interruptController = ic;
+    this->timer = timer;
+    this->rom.startUp();
+
+    /* Memory */
+    ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
+    ERAM.mem = new u8[ERAM.size]();
+    WRAM.size = WRAM_END_ADDR - WRAM_START_ADDR + 1;
+    WRAM.mem = new u8[WRAM.size]();
+    HardwareRegisters.size = HARDWARE_REGISTERS_END_ADDR - HARDWARE_REGISTERS_START_ADDR + 1;
+    HardwareRegisters.mem = new u8[HardwareRegisters.size]();
+    HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
+    HRAM.mem = new u8[HRAM.size]();
+
+    initializeMemory();
 }
 
 Mmu::~Mmu()
@@ -49,29 +57,8 @@ Mmu::~Mmu()
 /**
  * Small boot program that initializes specific memory locations.
  */
-void Mmu::startUp(GraphicsController* gc, InterruptController* interruptController, Timer* timer)
+void Mmu::initializeMemory()
 {
-    assert(gc != nullptr);
-    assert(interruptController != nullptr);
-    assert(timer != nullptr);
-
-    ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
-    ERAM.mem = new u8[ERAM.size]();
-
-    WRAM.size = WRAM_END_ADDR - WRAM_START_ADDR + 1;
-    WRAM.mem = new u8[WRAM.size]();
-
-    HardwareRegisters.size = HARDWARE_REGISTERS_END_ADDR - HARDWARE_REGISTERS_START_ADDR + 1;
-    HardwareRegisters.mem = new u8[HardwareRegisters.size]();
-
-    HRAM.size = HRAM_END_ADDR - HRAM_START_ADDR + 1;
-    HRAM.mem = new u8[HRAM.size]();
-
-    this->interruptController = interruptController;
-    this->timer = timer;
-    this->graphicsController = gc;
-    this->rom.startUp();
-
     /* Reference: http://gbdev.gg8.se/wiki/articles/Power_Up_Sequence */
     this->write(0xff05, 0x00);   /* TIMA */
     this->write(0xff06, 0x00);   /* TMA */
@@ -113,9 +100,9 @@ void Mmu::startUp(GraphicsController* gc, InterruptController* interruptControll
 void Mmu::shutDown()
 {
     this->rom.shutDown();
-    this->graphicsController = nullptr;
-    this->interruptController = nullptr;
-    this->timer = nullptr;
+    // this->graphicsController = nullptr;
+    // this->interruptController = nullptr;
+    // this->timer = nullptr;
 
     delete[] ERAM.mem;
     ERAM.mem = nullptr;
