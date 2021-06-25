@@ -1,10 +1,6 @@
 To do:
 
-- Draw background
-- Draw window
 - Draw objects
-- Add a README.md
-- Implement keyboard input
 - Implement controller input
 - Improve file loading
 - Implement save states

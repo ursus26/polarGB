@@ -4,7 +4,11 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2021-06-25: - Fixed off by 1 error in selecting the pixel shade.
 2021-06-03: - Started learning and using smart pointers for object creation.
+            - Implemented keyboard inputs. Tetris now progresses to main menu and can also be
+              played. However objects are not drawn and there are white vertical lines in the
+              background.
 2021-05-21: - Implemented window drawing.
 2021-05-13: - Fixed DAA instruction.
 2021-05-07: - Fixed tile selection which causes Blargg tests to be rendered correctly I think.

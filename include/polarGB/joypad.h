@@ -33,14 +33,14 @@ public:
     u8 read();
     void write(u8 data);
     void processInput();
-    bool getShutDown() const;
+    bool getButtonQuit() const;
 
 private:
     std::shared_ptr<InterruptController> interruptController;
     u8 P1;
 
     /* Buttons pressed. */
-    bool shutDown;
+    bool buttonQuit;
     bool buttonA;
     bool buttonB;
     bool buttonSelect;

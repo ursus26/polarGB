@@ -135,7 +135,7 @@ void Emulator::runFrame()
 
     /* Input processing. */
     this->joypad->processInput();
-    this->isRunning = !this->joypad->getShutDown();
+    this->isRunning = !this->joypad->getButtonQuit();
 
     cyclesCompleted -= INSTRUCTIONS_PER_FRAME;
 }

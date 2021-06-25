@@ -247,7 +247,7 @@ void GraphicsController::processBackgroundPixel(u8 x)
         /* Background */
 
         /* Get background coordinate. */
-        xPixel = (SCX + x) % 256;
+        xPixel = ((int)SCX + (int)x) % 256;
         yPixel = ((int)LY + (int)SCY) % 256;
 
         /* Get tile id. */
@@ -256,7 +256,7 @@ void GraphicsController::processBackgroundPixel(u8 x)
     }
 
     /* Fetch the pixel shade; */
-    int xBlock = 8 - (xPixel % 8);
+    int xBlock = 7 - (xPixel % 8);
     int yBlock = yPixel % 8;
     u16 addr = tileDataAddr + (tileDataIndex * 16) + (yBlock * 2);
     u8 low = this->vramRead(addr);

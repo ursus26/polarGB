@@ -35,7 +35,7 @@ Joypad::Joypad(std::shared_ptr<InterruptController> interruptController)
 
     this->interruptController = interruptController;
     this->P1 = 0x3f;
-    this->shutDown = false;
+    this->buttonQuit = false;
     this->buttonA = false;
     this->buttonB = false;
     this->buttonSelect = false;
@@ -60,7 +60,7 @@ void Joypad::processInput()
     {
         switch (event.type) {
             case SDL_QUIT:
-                this->shutDown = true;
+                this->buttonQuit = true;
                 break;
             case SDL_KEYDOWN:
                 processKeyDown(event.key.keysym.sym);
@@ -115,9 +115,9 @@ void Joypad::write(u8 data)
 }
 
 
-bool Joypad::getShutDown() const
+bool Joypad::getButtonQuit() const
 {
-    return this->shutDown;
+    return this->buttonQuit;
 }
 
 
@@ -125,7 +125,7 @@ void Joypad::processKeyDown(SDL_Keycode keysym)
 {
     switch(keysym) {
         case SDLK_ESCAPE:
-            this->shutDown = true;
+            this->buttonQuit = true;
             break;
         case SDLK_w:
             this->buttonUp = true;
@@ -161,7 +161,7 @@ void Joypad::processKeyUp(SDL_Keycode keysym)
 {
     switch(keysym) {
         case SDLK_ESCAPE:
-            this->shutDown = false;
+            this->buttonQuit = false;
             break;
         case SDLK_w:
             this->buttonUp = false;
