@@ -21,7 +21,6 @@
 #include <boost/program_options.hpp>
 #include <fmt/format.h>
 #include "polarGB/emulator.h"
-#include "polarGB/log.h"
 
 
 using namespace std;
@@ -38,7 +37,6 @@ void printHelp()
     fmt::print("Options:\n");
     fmt::print("  -h, --help           Display this help information\n");
     fmt::print("      --input-file     Input gameboy rom file\n");
-    fmt::print("  -v, --verbose        Verbose printing\n");
     fmt::print("      --version        Display emulator version information\n");
 
     exit(EXIT_SUCCESS);
@@ -64,7 +62,6 @@ int main(int argc, char* argv[])
         description.add_options()
             ("help,h", "Display this help information")
             ("input-file", po::value<vector<string>>(), "Input gameboy rom file")
-            ("verbose,v", "Verbose printing")
             ("version", "Display emulator version information");
 
         po::positional_options_description p;
@@ -86,23 +83,12 @@ int main(int argc, char* argv[])
             vector<string> files = vm["input-file"].as<vector<string>>();
             cartridgePath = files.front();
         }
-
-        /* Set the verbose flag. */
-        if(vm.count("verbose"))
-        {
-            Log::setVerbose(true);
-        }
-        else
-        {
-            Log::setVerbose(false);
-        }
     }
     catch(exception& e)
     {
         fmt::print(stderr, "Error, {}\nTry 'polarGB --help' for more information.\n", e.what());
         return EXIT_FAILURE;
     }
-
 
     /* Start the emulator and load the cartridge. */
     unique_ptr<Emulator> emu = make_unique<Emulator>();

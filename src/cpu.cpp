@@ -20,7 +20,6 @@
 #include <assert.h>
 #include <fmt/format.h>
 #include "polarGB/cpu.h"
-#include "polarGB/log.h"
 
 
 using namespace std;

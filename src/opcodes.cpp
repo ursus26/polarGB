@@ -19,7 +19,6 @@
 #include <string.h>
 #include <fmt/format.h>
 #include "polarGB/cpu.h"
-#include "polarGB/log.h"
 
 
 void Cpu::decodeOpcode(instruction_t *instr, u8 opcode)
