@@ -16,6 +16,7 @@
  */
 
 #include <stdlib.h>
+#include <stdexcept>
 #include <fstream>
 #include <fmt/format.h>
 #include "polarGB/cartridge.h"
@@ -28,7 +29,7 @@ Cartridge::Cartridge()
 {
     this->mem = nullptr;
     this->size = 0;
-
+    this->fileName = "";
     this->gameTitle = "";
     this->CGBFlag = 0;
     this->SGBFlag = false;
@@ -41,57 +42,59 @@ Cartridge::Cartridge()
 
 Cartridge::~Cartridge()
 {
+    this->removeLoadedCartridge();
 }
 
 
-void Cartridge::startUp()
+void Cartridge::load(string fileName)
 {
-    this->mem = nullptr;
-    this->size = 0;
+    if(this->mem != nullptr || this->size > 0)
+    {
+        fmt::print("Warning, a different file is already loaded in. New file '{}' will replace the old file '{}'\n", fileName, this->fileName);
+        removeLoadedCartridge();
+    }
+
+    this->loadFile(fileName);
 }
 
 
-void Cartridge::shutDown()
+void Cartridge::removeLoadedCartridge()
 {
     delete[] this->mem;
     this->mem = nullptr;
     this->size = 0;
+    this->fileName = "";
+    this->gameTitle = "";
+    this->CGBFlag = 0;
+    this->SGBFlag = false;
+    this->cartridgeType = 0;
+    this->romSize = 0;
+    this->ramSize = 0;
+    this->destinationCode = 0;
 }
 
 
-bool Cartridge::loadCartridge(string fileName)
+void Cartridge::loadFile(string fileName)
 {
     fmt::print("Loading a new cartridge from file: {}\n", fileName);
+    this->fileName = fileName;
 
-    /* Open the file that acts as a gameboy cartridge. */
     ifstream f;
     f.open(fileName, ios::in | ios::binary);
-
     if(!f.is_open())
     {
-        fmt::print(stderr, "Error, could not open \"{}\"\n", fileName);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            fmt::format("Could not open file: '{}'", fileName)
+        );
     }
 
-    if(f.good())
-    {
-        /* Get the length of the file. */
-        f.seekg (0, f.end);
-        this->size = f.tellg();
-        f.seekg (0, f.beg);
-    }
-
-    /* Read the cartridge into a buffer. */
+    this->size = getFileSize(&f);
     this->mem = new uint8_t[this->size];
     for(unsigned int i = 0; i < this->size && f.good(); i++)
         this->mem[i] = (uint8_t) f.get();
-
-    /* Close the file. */
     f.close();
 
     processCartridgeHeader();
-
-    return true;
 }
 
 
@@ -113,6 +116,19 @@ void Cartridge::write(u16 address, u8 data)
     }
 
     mem[address] = data;
+}
+
+
+unsigned int Cartridge::getFileSize(ifstream *f)
+{
+    unsigned int fileSize = 0;
+    if(f->is_open() && f->good())
+    {
+        f->seekg (0, f->end);
+        fileSize = f->tellg();
+        f->seekg (0, f->beg);
+    }
+    return fileSize;
 }
 
 
@@ -160,8 +176,9 @@ bool Cartridge::checksum()
 
     if(checksum != 0)
     {
-        fmt::print(stderr, "Error, cartridge header checksum failed. Probably trying to load an invalid cartridge.\n");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(
+            fmt::format("Cartridge header checksum failed. File '{}' is probably not a valid Game Boy ROM.", this->fileName)
+        );
     }
 
     fmt::print("Checksum: PASSED\n");

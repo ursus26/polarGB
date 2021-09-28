@@ -18,6 +18,7 @@
 #ifndef CARTRIDGE_H
 #define CARTRIDGE_H
 
+#include <fstream>
 #include <string>
 #include "types.h"
 
@@ -27,16 +28,14 @@ public:
     Cartridge();
     ~Cartridge();
 
-    void startUp();
-    void shutDown();
-
-    bool loadCartridge(std::string fileName);
+    void load(std::string fileName); /* Can throw a runtime_error. */
     void printInfo();
 
     u8 read(u16 address);
     void write(u16 address, u8 data);
 
 private:
+    std::string fileName;
     u8* mem;
     unsigned int size;
 
@@ -51,6 +50,9 @@ private:
 
     void processCartridgeHeader();
     bool checksum();
+    unsigned int getFileSize(std::ifstream *f);
+    void loadFile(std::string fileName);
+    void removeLoadedCartridge();
 };
 
 #endif /* CARTRIDGE_H */

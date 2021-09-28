@@ -121,7 +121,7 @@ public:
     void loadRom(std::string fileName);
 
 private:
-    Cartridge rom;  /* Game cartridge */
+    Cartridge rom;    /* Game cartridge */
     ram_t ERAM;       /* External RAM */
     ram_t WRAM;       /* Working RAM */
     ram_t HardwareRegisters;

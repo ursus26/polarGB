@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <exception>
 #include <stdlib.h>
 #include <cstring>
 #include <assert.h>
@@ -37,7 +38,6 @@ Mmu::Mmu(std::shared_ptr<GraphicsController> gc, std::shared_ptr<InterruptContro
     this->interruptController = ic;
     this->joypad = joypad;
     this->timer = timer;
-    this->rom.startUp();
 
     /* Memory */
     ERAM.size = ERAM_END_ADDR - ERAM_START_ADDR + 1;
@@ -102,7 +102,6 @@ void Mmu::initializeMemory()
  */
 void Mmu::shutDown()
 {
-    this->rom.shutDown();
     // this->graphicsController = nullptr;
     // this->interruptController = nullptr;
     // this->timer = nullptr;
@@ -217,7 +216,16 @@ void Mmu::write2Bytes(u16 addr, u16 data)
 
 void Mmu::loadRom(string fileName)
 {
-    this->rom.loadCartridge(fileName);
+    try
+    {
+        this->rom.load(fileName);
+    }
+    catch(exception& e)
+    {
+        fmt::print("Exception: {}\n", e.what());
+        exit(EXIT_FAILURE);
+    }
+
     this->rom.printInfo();
 }
 
