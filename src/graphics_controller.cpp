@@ -15,8 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <assert.h>
+#include <cassert>
 #include <fmt/format.h>
 #include "polarGB/graphics_controller.h"
 
@@ -48,7 +47,7 @@ GraphicsController::GraphicsController(std::shared_ptr<InterruptController> ic, 
     /* Memory */
     this->vram.size = 0x2000;
     this->vram.mem = new u8[vram.size]();
-    this->oam = {0};
+    this->oam = {};
 
     this->mode = 2;
     this->modeCycles = 0;
@@ -153,6 +152,7 @@ void GraphicsController::update(u8 cycles)
             if(modeCycles >= 20)
             {
                 modeCycles -= 20;
+                searchForObjectsOnCurrentScanline();
                 setCurrentMode(3);
             }
             break;
@@ -200,7 +200,7 @@ void GraphicsController::processScanline()
             else
                 this->display->updatePixel(i, this->LY, 0xff, 0xff, 0xff, 0xff);
 
-            processObjectPixel();
+            processObjectPixel(i);
         }
 
     }
@@ -212,6 +212,10 @@ void GraphicsController::processScanline()
 }
 
 
+/**
+ * Process the background or windows pixel. The pixel coordinate is (x, LY) where x is given as
+ * an argument and the y-pos is the current scanline.
+ */
 void GraphicsController::processBackgroundPixel(u8 x)
 {
     assert(LCDC & 0x1);
@@ -230,7 +234,9 @@ void GraphicsController::processBackgroundPixel(u8 x)
         tileDataAddr = TILE_DATA_AREA_2;
 
     int xPixel, yPixel, tileDataIndex;
-    if(this->LCDC & 0x20 && x >= (this->WX - 6) && this->LY >= this->WY)
+    bool windowEnabled = this->LCDC & 0x20;
+
+    if(windowEnabled && x >= (this->WX - 6) && this->LY >= this->WY)
     {
         /* Window */
 
@@ -282,9 +288,77 @@ void GraphicsController::processBackgroundPixel(u8 x)
     this->display->updatePixel(x, this->LY, color, color, color, 0xff);
 }
 
-
-void GraphicsController::processObjectPixel()
+/**
+ * Process a pixel in the object layer. This function might not set a pixel if there are no sprites
+ * located on the specific screen pixel. The pixel we are processing is (x,LY).
+ */
+void GraphicsController::processObjectPixel(u8 x)
 {
+
+    const u8 xOffset = 8;
+    const u8 spriteWidth = 8;
+
+    for(auto objectAttribute : this->objectsOnCurrentScanline)
+    {
+        /* Continue searching if x position is too small. */
+        if(objectAttribute.x - xOffset + spriteWidth < x)
+            continue;
+
+        /* Stop searching for the object when they are past the current pixel. (List is sorted on x-axis) */
+        if(objectAttribute.x - xOffset > x)
+            break;
+
+        /* Fetch the pixel shade; */
+        int xBlock = 7 - (x % 8);
+        int yBlock = LY % 8;
+        u16 addr = (objectAttribute.tileIndex * 16) + (yBlock * 2);
+        u8 low = this->vramRead(addr);
+        u8 high = this->vramRead(addr + 1);
+        u8 pixelShade = ((low >> xBlock) & 0x1) | (((high >> xBlock) & 0x1) << 1);
+
+        u8 color = 0;
+        switch (pixelShade) {
+            case 0:
+                color = 255;
+                break;
+            case 1:
+                color = 170;
+                break;
+            case 2:
+                color = 85;
+                break;
+            case 3:
+                color = 0;
+                break;
+        }
+
+        this->display->updatePixel(x, this->LY, color, color, color, 0xff);
+    }
+}
+
+
+void GraphicsController::searchForObjectsOnCurrentScanline()
+{
+    /* Clear objects from previous scanline. */
+    this->objectsOnCurrentScanline.clear();
+
+    int offsettedScanline = this->LY + 16;
+    for(auto spriteAttribute = this->oam.begin(); spriteAttribute != this->oam.end(); ++spriteAttribute)
+    {
+        if(spriteAttribute->y <= offsettedScanline && spriteAttribute->y + 8 > offsettedScanline)
+            this->objectsOnCurrentScanline.push_back(*spriteAttribute);
+    }
+
+    this->objectsOnCurrentScanline.sort(compareSpriteAttributesByXCoordinate);
+}
+
+
+bool compareSpriteAttributesByXCoordinate(SpriteAttributes first, SpriteAttributes second)
+{
+    if(first.x < second.x)
+        return true;
+    else
+        return false;
 }
 
 
@@ -336,13 +410,43 @@ void GraphicsController::vramWrite(u16 address, u8 data)
 
 u8 GraphicsController::oamRead(u16 address)
 {
-    return this->oam.at(address);
+    u16 attributeIndex = address >> 2;
+    SpriteAttributes attribute = this->oam.at(attributeIndex);
+
+    // u16 byteIndex = address & 0x3;
+    switch(address & 0x3) {
+        case 0:
+            return attribute.y;
+        case 1:
+            return attribute.x;
+        case 2:
+            return attribute.tileIndex;
+        case 3:
+            return attribute.flags;
+        default:
+            return 0;
+    }
 }
 
 
 void GraphicsController::oamWrite(u16 address, u8 data)
 {
-    this->oam.at(address) = data;
+    u16 attributeIndex = address >> 2;
+    u16 byteIndex = address & 0x3;
+    switch(byteIndex) {
+        case 0:
+            this->oam.at(attributeIndex).y = data;
+            break;
+        case 1:
+            this->oam.at(attributeIndex).x = data;
+            break;
+        case 2:
+            this->oam.at(attributeIndex).tileIndex = data;
+            break;
+        case 3:
+            this->oam.at(attributeIndex).flags = data;
+            break;
+    }
 }
 
 

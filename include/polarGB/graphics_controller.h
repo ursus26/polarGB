@@ -21,6 +21,7 @@
 #include <array>
 #include <memory>
 #include <string>
+#include <list>
 #include "types.h"
 #include "interrupt_controller.h"
 #include "graphics_display.h"
@@ -41,6 +42,17 @@ typedef enum DisplayRegister
     RegWY,
     RegWX
 } displayRegister_t;
+
+
+struct SpriteAttributes
+{
+    u8 y;
+    u8 x;
+    u8 tileIndex;
+    u8 flags;
+};
+
+bool compareSpriteAttributesByXCoordinate(SpriteAttributes first, SpriteAttributes second);
 
 
 class GraphicsController
@@ -65,7 +77,7 @@ public:
 private:
     /* Memory */
     ram_t vram;
-    std::array<u8, 40 *4> oam; /* 40 objects of size 32 bits. */
+    std::array<SpriteAttributes, 40> oam; /* 40 objects of size 32 bits. */
 
     /* Display registers */
     u8 LCDC;
@@ -84,18 +96,30 @@ private:
     /* Member variables */
     u8 mode;
     u64 modeCycles;
+    std::list<SpriteAttributes> objectsOnCurrentScanline;
 
     bool noWindow;  /* Mainly used for testing in order to not setup the window. */
     GraphicsDisplay* display;
     std::shared_ptr<InterruptController> interruptController;
 
-    // void drawFrame();
     void updateMatchFlag();
 
     void setCurrentMode(u8 newMode);
     void processScanline();
     void processBackgroundPixel(u8 x);
-    void processObjectPixel();
+    void processObjectPixel(u8 x);
+
+    /* MODE 2: OAM Scan */
+    void searchForObjectsOnCurrentScanline();
+
+    /* MODE 3: Drawing pixels */
+    /*
+    processScanline
+        processBackgroundPixel
+        processWindowPixel
+        processObjectPixel
+
+    */
 };
 
 
