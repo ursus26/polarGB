@@ -16,7 +16,7 @@
  */
 
 #include <memory>
-#include <stdlib.h>
+#include <string>
 #include <vector>
 #include <boost/program_options.hpp>
 #include <fmt/format.h>

@@ -16,7 +16,7 @@
  */
 
 
-#include <assert.h>
+#include <cassert>
 #include <fmt/format.h>
 #include "polarGB/joypad.h"
 

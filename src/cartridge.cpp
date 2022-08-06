@@ -15,9 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
 #include <stdexcept>
-#include <fstream>
 #include <fmt/format.h>
 #include "polarGB/cartridge.h"
 

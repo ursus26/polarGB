@@ -15,10 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cassert>
 #include <exception>
-#include <stdlib.h>
-#include <cstring>
-#include <assert.h>
+#include <string>
 #include <fmt/format.h>
 #include "polarGB/mmu.h"
 

@@ -2,9 +2,7 @@ To do:
 
 - Draw objects
 - Implement controller input
-- Improve file loading
 - Implement save states
-- Remove my implementation of logging
 - Replace bloated boost program options
 - Add support for MBC
 - Audio support

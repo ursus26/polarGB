@@ -16,7 +16,7 @@
  */
 
 #include <fmt/format.h>
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #include "polarGB/graphics_display.h"
 
