@@ -4,6 +4,9 @@ forget what I was working on. In order to remember what I was working on I will 
 in this file.):
 
 YYYY-MM-DD: Changes
+2022-08-06: - Implemented object drawing. It is not fully functional because I don't thank the
+              object flags into account. However, Tetris is not playable because you can see the
+              blocks.
 2021-06-25: - Fixed off by 1 error in selecting the pixel shade.
 2021-06-03: - Started learning and using smart pointers for object creation.
             - Implemented keyboard inputs. Tetris now progresses to main menu and can also be

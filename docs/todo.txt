@@ -1,6 +1,7 @@
 To do:
 
-- Draw objects
+- Handle object/sprite flags. (Byte 3 of an OAM object)
+- Print out what the controls are in stdout. (For usability)
 - Implement controller input
 - Implement save states
 - Replace bloated boost program options

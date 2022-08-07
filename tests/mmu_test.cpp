@@ -160,9 +160,10 @@ TEST_F(MmuTest, OAMUpperBoundTest)
 TEST_F(MmuTest, HardwareRegistersLowerBoundTest)
 {
     u8 testValue = 0xbb;
+    u8 expectedResult = 0x3f;
     u16 testAddr = HARDWARE_REGISTERS_START_ADDR;
     mmu->write(testAddr, testValue);
-    ASSERT_EQ(mmu->read(testAddr), testValue);
+    ASSERT_EQ(mmu->read(testAddr), expectedResult);
 }
 
 
