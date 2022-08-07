@@ -46,6 +46,7 @@ add_library(${PROJECT_LIB_NAME}
     ${PROJECT_SOURCE_DIR}/src/graphics_display.cpp
     ${PROJECT_SOURCE_DIR}/src/interrupt_controller.cpp
     ${PROJECT_SOURCE_DIR}/src/joypad.cpp
+    ${PROJECT_SOURCE_DIR}/src/mbc.cpp
     ${PROJECT_SOURCE_DIR}/src/mmu.cpp
     ${PROJECT_SOURCE_DIR}/src/opcodes.cpp
     ${PROJECT_SOURCE_DIR}/src/register.cpp

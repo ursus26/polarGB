@@ -153,7 +153,7 @@ void Cpu::printInstructionInfo(instruction_t *instr)
         fmt::print("          ");
     }
 
-    fmt::print("\t{}\n", instr->mnemonic);
+    fmt::print("\t{}    \t{}\n", instr->mnemonic, instr->cycleCost);
 }
 
 

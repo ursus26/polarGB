@@ -15,45 +15,38 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef CARTRIDGE_H
-#define CARTRIDGE_H
+#ifndef MBC_H
+#define MBC_H
 
 #include <fstream>
-#include <string>
+#include <vector>
 #include "types.h"
-#include "mbc.h"
 
-class Cartridge
+class MBC
 {
 public:
-    Cartridge();
-    ~Cartridge();
+    MBC(int romSizeInBytes, int ramSizeInBytes);
+    virtual ~MBC();
 
-    void load(std::string fileName); /* Can throw a runtime_error. */
+    void loadROM(std::ifstream *f);
     void clear();
-    void printInfo();
 
-    u8 read(u16 address);
-    void write(u16 address, u8 data);
+    virtual u8 read(u16 address);
+    virtual void write(u16 address, u8 data);
 
-private:
-    std::string fileName;
-    unsigned int fileSize;
-    MBC* mbc;
-
-    /* Cartridge info taken from the cartridge header. Memory location 0x100-0x150 */
-    std::string gameTitle;
-    int CGBFlag;
-    bool SGBFlag;
-    int cartridgeType;
+protected:
     int romSize;
-    int ramSize;
-    int destinationCode;
+    std::vector<u8> romMem;
 
-    unsigned int getFileSize(std::ifstream *f);
-    void processCartridgeHeader(std::ifstream *f);
-    bool checksum(u8* cartridgeHeader);
-    void initializeMBC(std::ifstream *f);
+    int ramSize;
+    std::vector<u8> ramMem;
 };
 
-#endif /* CARTRIDGE_H */
+class NoMBC : public MBC
+{
+public:
+    NoMBC(int romSizeInBytes, int ramSizeInBytes);
+    ~NoMBC();
+};
+
+#endif /* MBC_H */

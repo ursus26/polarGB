@@ -25,8 +25,8 @@ using namespace std;
 
 Cartridge::Cartridge()
 {
-    this->mem = nullptr;
-    this->size = 0;
+    this->mbc = nullptr;
+    this->fileSize = 0;
     this->fileName = "";
     this->gameTitle = "";
     this->CGBFlag = 0;
@@ -40,40 +40,18 @@ Cartridge::Cartridge()
 
 Cartridge::~Cartridge()
 {
-    this->removeLoadedCartridge();
+    this->clear();
 }
 
 
 void Cartridge::load(string fileName)
 {
-    if(this->mem != nullptr || this->size > 0)
+    if(this->mbc != nullptr || this->fileSize > 0)
     {
         fmt::print("Warning, a different file is already loaded in. New file '{}' will replace the old file '{}'\n", fileName, this->fileName);
-        removeLoadedCartridge();
+        this->clear();
     }
 
-    this->loadFile(fileName);
-}
-
-
-void Cartridge::removeLoadedCartridge()
-{
-    delete[] this->mem;
-    this->mem = nullptr;
-    this->size = 0;
-    this->fileName = "";
-    this->gameTitle = "";
-    this->CGBFlag = 0;
-    this->SGBFlag = false;
-    this->cartridgeType = 0;
-    this->romSize = 0;
-    this->ramSize = 0;
-    this->destinationCode = 0;
-}
-
-
-void Cartridge::loadFile(string fileName)
-{
     fmt::print("Loading a new cartridge from file: {}\n", fileName);
     this->fileName = fileName;
 
@@ -86,34 +64,57 @@ void Cartridge::loadFile(string fileName)
         );
     }
 
-    this->size = getFileSize(&f);
-    this->mem = new uint8_t[this->size];
-    for(unsigned int i = 0; i < this->size && f.good(); i++)
-        this->mem[i] = (uint8_t) f.get();
+    this->fileSize = getFileSize(&f);
+    processCartridgeHeader(&f);
+    initializeMBC(&f);
     f.close();
+}
 
-    processCartridgeHeader();
+
+/**
+ * Clears the cartridge from memory.
+ */
+void Cartridge::clear()
+{
+    if(this->mbc != nullptr)
+    {
+        delete this->mbc;
+        this->mbc = nullptr;
+    }
+
+    this->fileSize = 0;
+    this->fileName = "";
+    this->gameTitle = "";
+    this->CGBFlag = 0;
+    this->SGBFlag = false;
+    this->cartridgeType = 0;
+    this->romSize = 0;
+    this->ramSize = 0;
+    this->destinationCode = 0;
 }
 
 
 u8 Cartridge::read(u16 address)
 {
-    if(address > this->size || this->mem == nullptr)
-        return 0;
-
-    return mem[address];
+    return this->mbc->read(address);
+    // if(address > this->size || this->mem == nullptr)
+    //     return 0;
+    //
+    // return mem[address];
 }
 
 
 void Cartridge::write(u16 address, u8 data)
 {
-    if(address > this->size || this->mem == nullptr)
-    {
-        fmt::print(stderr, "{}: Error, invalid write request\n");
-        return;
-    }
+    // if(address > this->size || this->mem == nullptr)
+    // {
+    //     fmt::print(stderr, "{}: Error, invalid write request\n");
+    //     return;
+    // }
+    //
+    // mem[address] = data;
 
-    mem[address] = data;
+    return this->mbc->write(address, data);
 }
 
 
@@ -133,44 +134,39 @@ unsigned int Cartridge::getFileSize(ifstream *f)
 /**
  * More info can be found here: http://gbdev.gg8.se/wiki/articles/The_Cartridge_Header
  */
-void Cartridge::processCartridgeHeader()
+void Cartridge::processCartridgeHeader(ifstream *f)
 {
+    u8* buffer = new u8[0x150];
+    f->seekg(0, f->beg);
+    f->read((char *)buffer, 0x150);
+
     /* Read the game title. */
     this->gameTitle = "";
-    for(int i = 0x134; i < 0x144; i++)
-    {
-        u8 character = this->read(i);
-        if(character == 0)
-            break;
+    this->gameTitle = string((char *)(buffer + 0x134), 0x144 - 0x134);
 
-        gameTitle += character;
-    }
+    SGBFlag = (buffer[0x146] == 0x03) ? true : false;
+    cartridgeType = buffer[0x147];
+    romSize = buffer[0x148];
+    ramSize = buffer[0x149];
+    destinationCode = buffer[0x14a];
+    this->checksum(buffer);
 
-    /* Read the SGB Flag. */
-    if(this->read(0x146) == 0x03)
-        SGBFlag = true;
-    else
-        SGBFlag = false;
-
-    cartridgeType = this->read(0x147);
-    romSize = this->read(0x148);
-    ramSize = this->read(0x149);
-    destinationCode = this->read(0x14a);
-    this->checksum();
+    delete[] buffer;
 }
 
 
 void Cartridge::printInfo()
 {
     fmt::print("Game Title: {}\nCartridge Type: {:#x}\n", this->gameTitle, this->cartridgeType);
+    fmt::print("ROM size: {}\nRAM size: {}\n", this->romSize, this->ramSize);
 }
 
 
-bool Cartridge::checksum()
+bool Cartridge::checksum(u8* buffer)
 {
     u8 checksum = 0x19;
     for(u16 addr = 0x0134; addr <= 0x014d; addr++)
-        checksum += this->read(addr);
+        checksum += buffer[addr];
 
     if(checksum != 0)
     {
@@ -181,4 +177,45 @@ bool Cartridge::checksum()
 
     fmt::print("Checksum: PASSED\n");
     return true;
+}
+
+
+void Cartridge::initializeMBC(std::ifstream *f)
+{
+    int romSizeInBytes = 0x8000 * (1 << this->romSize);
+    int ramSizeInBytes = 0;
+    switch (this->ramSize) {
+        case 0x0:
+            ramSizeInBytes = 0;
+            break;
+
+        case 0x2:
+            ramSizeInBytes = 0x2000;
+            break;
+
+        case 0x3:
+            ramSizeInBytes = 0x8000;
+            break;
+
+        case 0x4:
+            ramSizeInBytes = 0x20000;
+            break;
+
+        case 0x5:
+            ramSizeInBytes = 0x10000;
+            break;
+    }
+
+    switch (cartridgeType) {
+        case 0x0:
+            this->mbc = new NoMBC(romSizeInBytes, ramSizeInBytes);
+            break;
+
+        default:
+            fmt::print(stderr, "Error, emulator does not support cartridge type {:#x}\n", cartridgeType);
+            exit(EXIT_FAILURE);
+            break;
+    }
+
+    this->mbc->loadROM(f);
 }
