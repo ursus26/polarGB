@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 4.0)
+
+set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 
 project(polarGB)
 set(PROJECT_LIB_NAME polargb)
@@ -27,11 +29,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ###############################################################################
 
 # Required packages
+find_package(fmt CONFIG REQUIRED)
 find_package(Boost 1.71.0 REQUIRED COMPONENTS program_options)
-find_package(SDL2 REQUIRED)
-
-# Third party
-add_subdirectory(third_party)
+find_package(SDL3 CONFIG REQUIRED)
 
 
 ###############################################################################
@@ -53,10 +53,9 @@ add_library(${PROJECT_LIB_NAME}
     ${PROJECT_SOURCE_DIR}/src/timer.cpp
 )
 
-message(status ${SDL2_INCLUDE_DIRS})
-target_include_directories(${PROJECT_LIB_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include ${SDL2_INCLUDE_DIRS})
+target_include_directories(${PROJECT_LIB_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
-target_link_libraries(${PROJECT_LIB_NAME} PRIVATE pthread dl fmt::fmt ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_LIB_NAME} PRIVATE pthread dl fmt::fmt SDL3::SDL3)
 
 target_compile_options(${PROJECT_LIB_NAME} PUBLIC -Wall -Wextra -Wpedantic -ggdb3)
 

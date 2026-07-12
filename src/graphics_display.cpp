@@ -43,15 +43,13 @@ int GraphicsDisplay::startUp()
     this->width = SCREEN_WIDTH;
     this->height = SCREEN_HEIGHT;
 
-    if(SDL_Init(SDL_INIT_VIDEO) < 0)
+    if(!SDL_Init(SDL_INIT_VIDEO))
     {
         fmt::print(stderr, "Could not initialize SDL, reason: {}\n", SDL_GetError());
         return 1;
     }
 
     this->window = SDL_CreateWindow(this->windowName.c_str(),
-                                    SDL_WINDOWPOS_UNDEFINED,
-                                    SDL_WINDOWPOS_UNDEFINED,
                                     this->width,
                                     this->height,
                                     0);
@@ -63,7 +61,7 @@ int GraphicsDisplay::startUp()
         return 1;
     }
 
-    this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
+    this->renderer = SDL_CreateRenderer(this->window, nullptr);
     if(renderer == NULL)
     {
         fmt::print(stderr, "Could not create renderer, reason: {}\n", SDL_GetError());
@@ -109,7 +107,7 @@ void GraphicsDisplay::drawFrame()
     SDL_RenderClear(this->renderer);
 
     /* Render ?? */
-    SDL_RenderCopy(this->renderer, this->texture, NULL, NULL);
+    SDL_RenderTexture(this->renderer, this->texture, NULL, NULL);
 
     /* Update screen. */
     SDL_RenderPresent(this->renderer);

@@ -69,3 +69,12 @@ _deps
 ### CMake Patch ###
 # External projects
 *-prefix/
+
+
+### vcpkg ###
+# Vcpkg
+
+vcpkg-manifest-install.log
+
+## Manifest Mode
+vcpkg_installed/

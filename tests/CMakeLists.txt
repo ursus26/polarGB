@@ -1,5 +1,8 @@
 set(TEST_BINARY tests)
 
+find_package(GTest CONFIG REQUIRED)
+# # 
+
 # Find all the source files
 file(GLOB TEST_SRC_FILES
     "${PROJECT_SOURCE_DIR}/tests/*.h"
@@ -10,6 +13,7 @@ add_executable(${TEST_BINARY} ${TEST_SRC_FILES})
 
 target_include_directories(${TEST_BINARY} PRIVATE ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include)
 
-target_link_libraries(${TEST_BINARY} gtest gtest_main ${PROJECT_LIB_NAME} GL X11 pthread dl fmt::fmt)
+target_link_libraries(${TEST_BINARY} PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main ${PROJECT_LIB_NAME})
+# target_link_libraries(${TEST_BINARY} gtest gtest_main ${PROJECT_LIB_NAME} GL X11 pthread dl fmt::fmt)
 
 add_test(NAME ${TEST_BINARY} COMMAND ${TEST_BINARY})
